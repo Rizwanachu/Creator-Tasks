@@ -58,7 +58,7 @@ router.get("/tasks/:id", async (req, res) => {
     }
 
     const submission = await db.query.submissions.findFirst({
-      where: eq(submissions.taskId, id),
+      where: and(eq(submissions.taskId, id), eq(submissions.status, "pending")),
     });
 
     let workerClerkId: string | null = null;
@@ -179,7 +179,18 @@ router.post("/tasks/:id/submit", requireAuth, async (req, res) => {
       return;
     }
 
-    await db.insert(submissions).values({ taskId: id, content });
+    const existing = await db.query.submissions.findFirst({
+      where: eq(submissions.taskId, id),
+    });
+
+    if (existing) {
+      await db
+        .update(submissions)
+        .set({ content, status: "pending" })
+        .where(eq(submissions.taskId, id));
+    } else {
+      await db.insert(submissions).values({ taskId: id, content });
+    }
 
     const [updated] = await db
       .update(tasks)
