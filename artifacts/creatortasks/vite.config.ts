@@ -53,7 +53,12 @@ export default defineConfig(async ({ command }) => {
 
   return {
     base: basePath,
-    plugins: [react(), tailwindcss(), runtimeErrorOverlay(), ...replitPlugins],
+    plugins: [
+      react(),
+      tailwindcss(),
+      ...(process.env.NODE_ENV !== "production" ? [runtimeErrorOverlay()] : []),
+      ...replitPlugins,
+    ],
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "src"),
