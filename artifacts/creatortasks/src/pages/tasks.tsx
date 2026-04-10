@@ -67,7 +67,9 @@ export function Tasks() {
         </div>
       ) : error ? (
         <div className="text-center py-16 bg-card border border-red-500/20 rounded-2xl px-4">
-          <p className="text-red-500 mb-4 font-medium">Failed to load tasks.</p>
+          <p className="text-red-500 mb-4 font-medium">
+            {(error as Error)?.message ?? "Failed to load tasks."}
+          </p>
           <Button variant="outline" onClick={() => window.location.reload()}>
             Try again
           </Button>

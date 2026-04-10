@@ -5,14 +5,19 @@ import * as schema from "./schema";
 const { Pool } = pg;
 
 if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+  console.warn(
+    "[db] DATABASE_URL is not set — all database queries will fail at connection time.",
   );
 }
 
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL ?? "",
   max: 1,
+  ssl: process.env.DATABASE_URL?.includes("sslmode=require")
+    ? undefined
+    : process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : undefined,
 });
 export const db = drizzle(pool, { schema });
 
