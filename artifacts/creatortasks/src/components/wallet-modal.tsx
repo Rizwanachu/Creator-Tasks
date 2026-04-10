@@ -30,15 +30,15 @@ export function WalletModal({ open, onClose, title, children, className }: Walle
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
-      <div className={cn("bg-[#111217] border border-[#1F2228] rounded-2xl p-6 w-full max-w-sm mx-4 relative", className)}>
+      <div className={cn("bg-card border border-border rounded-2xl p-6 w-full max-w-sm mx-4 relative shadow-2xl", className)}>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-white transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X size={18} />
           </button>

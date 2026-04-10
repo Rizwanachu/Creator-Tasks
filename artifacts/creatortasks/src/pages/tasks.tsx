@@ -23,7 +23,7 @@ export function Tasks() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-1">Task Board</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight mb-1">Task Board</h1>
           <p className="text-zinc-500 text-sm">Find opportunities and earn by completing tasks.</p>
         </div>
         <Button asChild className="btn-gradient text-white rounded-xl border-0 font-semibold shrink-0 w-full sm:w-auto">
@@ -40,7 +40,7 @@ export function Tasks() {
             className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 whitespace-nowrap shrink-0 ${
               activeCategory === cat.value
                 ? "btn-gradient text-white border-transparent"
-                : "border-[#1F2228] text-zinc-400 hover:border-purple-500/40 hover:text-white bg-transparent"
+                : "border-border text-muted-foreground hover:border-purple-500/40 hover:text-foreground bg-transparent"
             }`}
           >
             {cat.label}
@@ -51,30 +51,30 @@ export function Tasks() {
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-[#111217] border border-[#1F2228] rounded-2xl p-6 h-[220px] flex flex-col gap-3">
+            <div key={i} className="bg-card border border-border rounded-2xl p-6 h-[220px] flex flex-col gap-3">
               <div className="flex justify-between">
-                <Skeleton className="h-5 w-20 bg-white/5 rounded-full" />
-                <Skeleton className="h-5 w-14 bg-white/5 rounded-full" />
+                <Skeleton className="h-5 w-20 rounded-full" />
+                <Skeleton className="h-5 w-14 rounded-full" />
               </div>
-              <Skeleton className="h-5 w-full bg-white/5" />
-              <Skeleton className="h-4 w-3/4 bg-white/5" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-4 w-3/4" />
               <div className="mt-auto flex justify-between items-center">
-                <Skeleton className="h-5 w-16 bg-white/5 rounded-full" />
-                <Skeleton className="h-8 w-20 bg-white/5 rounded-xl" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-8 w-20 rounded-xl" />
               </div>
             </div>
           ))}
         </div>
       ) : error ? (
-        <div className="text-center py-16 bg-[#111217] border border-red-500/20 rounded-2xl px-4">
-          <p className="text-red-400 mb-4 font-medium">Failed to load tasks.</p>
-          <Button variant="outline" className="border-white/10 text-white" onClick={() => window.location.reload()}>
+        <div className="text-center py-16 bg-card border border-red-500/20 rounded-2xl px-4">
+          <p className="text-red-500 mb-4 font-medium">Failed to load tasks.</p>
+          <Button variant="outline" onClick={() => window.location.reload()}>
             Try again
           </Button>
         </div>
       ) : tasks?.length === 0 ? (
-        <div className="text-center py-24 bg-[#111217] border border-[#1F2228] rounded-2xl flex flex-col items-center justify-center px-4">
-          <h3 className="text-xl font-semibold text-white mb-2">No tasks available</h3>
+        <div className="text-center py-24 bg-card border border-border rounded-2xl flex flex-col items-center justify-center px-4">
+          <h3 className="text-xl font-semibold text-foreground mb-2">No tasks available</h3>
           <p className="text-zinc-500 mb-6 max-w-sm text-sm">
             {activeCategory
               ? `No ${activeCategory} tasks posted yet. Try another category or post one.`

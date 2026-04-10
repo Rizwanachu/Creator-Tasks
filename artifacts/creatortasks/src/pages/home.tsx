@@ -119,10 +119,10 @@ function StatCard({ icon: Icon, value, prefix = "", suffix = "", label, color }:
   return (
     <div
       ref={ref}
-      className="relative p-6 rounded-2xl border border-[#1F2228] card-lit card-glow transition-all duration-300 overflow-hidden group"
+      className="relative p-6 rounded-2xl border border-border card-lit card-glow transition-all duration-300 overflow-hidden group"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.015] to-transparent pointer-events-none" />
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-5 bg-white/5 border border-white/5`}>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-5 bg-muted border border-border`}>
         <Icon size={20} className={color} />
       </div>
       <div className={`text-3xl font-bold tracking-tight mb-1 num-glow ${color}`}>
@@ -144,7 +144,7 @@ export function Home() {
     <div className="flex flex-col w-full overflow-x-hidden">
 
       {/* Live Ticker */}
-      <div className="border-b border-[#1F2228] bg-[#0e0e13]/80 py-2 overflow-hidden">
+      <div className="border-b border-border bg-muted/40 py-2 overflow-hidden">
         <div className="flex animate-ticker whitespace-nowrap">
           {TICKER_ITEMS.map((item, i) => (
             <span key={i} className="inline-flex items-center gap-2 px-6 text-xs text-zinc-500">
@@ -193,14 +193,14 @@ export function Home() {
               <Button
                 asChild
                 size="lg"
-                className="bg-transparent hover:bg-white/5 border border-white/10 text-zinc-400 hover:text-white rounded-xl text-base px-8 py-6 h-auto transition-all duration-200 hover:border-white/15"
+                className="bg-transparent hover:bg-muted border border-border text-muted-foreground hover:text-foreground rounded-xl text-base px-8 py-6 h-auto transition-all duration-200"
               >
                 <Link href="/create">Post a Task</Link>
               </Button>
             </div>
 
             {/* Trust anchor — important credibility line */}
-            <div className="flex flex-wrap items-center gap-5 mt-8 pt-8 border-t border-white/5 animate-fade-up-delay-3">
+            <div className="flex flex-wrap items-center gap-5 mt-8 pt-8 border-t border-border animate-fade-up-delay-3">
               <div className="flex items-center gap-1.5 text-xs text-zinc-500">
                 <ShieldCheck size={13} className="text-green-500" />
                 <span>Secure payouts via <span className="text-zinc-400 font-medium">Razorpay</span></span>
@@ -225,9 +225,9 @@ export function Home() {
                   <span className="text-xs bg-pink-500/10 text-pink-400 border border-pink-500/20 px-2.5 py-1 rounded-full font-medium">Reels</span>
                   <span className="text-purple-400 font-bold text-sm">₹2,500</span>
                 </div>
-                <div className="font-semibold text-white text-sm mb-1.5 leading-snug">Edit 30s TikTok Reel from podcast</div>
-                <div className="text-xs text-zinc-500 mb-4 leading-relaxed">Add captions, B-roll, and effects...</div>
-                <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                <div className="font-semibold text-foreground text-sm mb-1.5 leading-snug">Edit 30s TikTok Reel from podcast</div>
+                <div className="text-xs text-muted-foreground mb-4 leading-relaxed">Add captions, B-roll, and effects...</div>
+                <div className="flex items-center justify-between pt-3 border-t border-border">
                   <span className="text-xs text-zinc-600">Alex M. · 2h ago</span>
                   <div className="flex items-center gap-1.5 text-xs text-zinc-500">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -246,7 +246,7 @@ export function Home() {
                   </div>
                   <span className="text-xs text-green-400 font-semibold">Just paid out</span>
                 </div>
-                <div className="text-[2rem] font-black text-white tracking-tight leading-none mb-1">₹1,350</div>
+                <div className="text-[2rem] font-black text-foreground tracking-tight leading-none mb-1">₹1,350</div>
                 <div className="text-xs text-zinc-500 mt-2">Hooks task approved · 2 min ago</div>
               </div>
             </div>
@@ -258,8 +258,8 @@ export function Home() {
                   <span className="text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2.5 py-1 rounded-full font-medium">Thumbnails</span>
                   <span className="text-purple-400 font-bold text-sm">₹1,500</span>
                 </div>
-                <div className="font-semibold text-white text-sm mb-1.5 leading-snug">YouTube thumbnail for React tutorial</div>
-                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/5">
+                <div className="font-semibold text-foreground text-sm mb-1.5 leading-snug">YouTube thumbnail for React tutorial</div>
+                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border">
                   <span className="text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full font-medium">Trending</span>
                   <span className="text-xs text-zinc-600">4 people viewing</span>
                 </div>
@@ -270,11 +270,11 @@ export function Home() {
       </section>
 
       {/* Featured Tasks */}
-      <section className="py-20 border-y border-[#1F2228] bg-[#0e0e13]/60">
+      <section className="py-20 border-y border-border bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-10">
             <div>
-              <h2 className="text-2xl font-bold text-white tracking-tight mb-1">Recent Opportunities</h2>
+              <h2 className="text-2xl font-bold text-foreground tracking-tight mb-1">Recent Opportunities</h2>
               <p className="text-zinc-600 text-sm">Tasks fill up fast — jump in</p>
             </div>
             <Link href="/tasks" className="text-sm text-purple-400 hover:text-purple-300 font-medium transition-colors">
@@ -293,8 +293,8 @@ export function Home() {
       <section className="py-20 px-4 container mx-auto">
         <div className="text-center mb-14">
           {/* Section label is subordinate — h2 is the focus */}
-          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-600 mb-3">By the numbers</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-3">The platform that pays</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">By the numbers</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-3">The platform that pays</h2>
           <p className="text-zinc-500 text-sm max-w-sm mx-auto">Real money, real creators, real results.</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -307,12 +307,11 @@ export function Home() {
       {/* CTA Section */}
       <section className="pb-20 px-4">
         <div className="container mx-auto">
-          <div className="relative rounded-3xl overflow-hidden border border-purple-500/20 bg-[#111217] p-12 md:p-20 text-center card-lit">
+          <div className="relative rounded-3xl overflow-hidden border border-purple-500/20 bg-card p-12 md:p-20 text-center card-lit">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-pink-900/10 pointer-events-none" />
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-40 bg-purple-600/15 blur-3xl pointer-events-none" />
             <div className="relative">
-              {/* Dominant h2 */}
-              <h2 className="text-4xl md:text-6xl font-black text-white tracking-[-0.03em] leading-[0.95] mb-4">
+              <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-[-0.03em] leading-[0.95] mb-4">
                 Ready to <span className="text-gradient-purple">earn?</span>
               </h2>
               {/* Subordinate subtext */}
@@ -328,10 +327,10 @@ export function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[#1F2228] py-8 px-4">
+      <footer className="border-t border-border py-8 px-4">
         <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-sm font-bold text-white">CreatorTasks</div>
-          <div className="text-xs text-zinc-700">AI Content Marketplace · Secure payouts by Razorpay</div>
+          <div className="text-sm font-bold text-foreground">CreatorTasks</div>
+          <div className="text-xs text-muted-foreground">AI Content Marketplace · Secure payouts by Razorpay</div>
         </div>
       </footer>
     </div>

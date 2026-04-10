@@ -7,10 +7,10 @@ import { toast } from "sonner";
 import { Clock, Eye, Flame } from "lucide-react";
 
 const CATEGORY_COLORS: Record<string, string> = {
-  reels: "bg-pink-500/10 text-pink-400 border-pink-500/20",
-  hooks: "bg-orange-500/10 text-orange-400 border-orange-500/20",
-  thumbnails: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-  other: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+  reels: "bg-pink-500/10 text-pink-500 border-pink-500/20",
+  hooks: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  thumbnails: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20",
+  other: "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -21,12 +21,12 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  open: "bg-green-500/10 text-green-400 border-green-500/20",
-  in_progress: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  submitted: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  completed: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  rejected: "bg-red-500/10 text-red-400 border-red-500/20",
-  revision_requested: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  open: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
+  in_progress: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20",
+  submitted: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+  completed: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+  rejected: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+  revision_requested: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -49,11 +49,10 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-/** Deterministic fake viewer count seeded on task id — same render every time */
 function viewerCount(id: string): number {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffffffff;
-  return 2 + (Math.abs(h) % 5); // 2–6
+  return 2 + (Math.abs(h) % 5);
 }
 
 export function TaskCard({ task }: { task: Task }) {
@@ -79,8 +78,7 @@ export function TaskCard({ task }: { task: Task }) {
   };
 
   return (
-    <div className="group card-lit bg-[#111217] border border-[#1F2228] rounded-2xl p-6 card-glow transition-all duration-300 flex flex-col h-full">
-      {/* Top: category + budget — both at same level but budget is the accent */}
+    <div className="group card-lit bg-card border border-border rounded-2xl p-6 card-glow transition-all duration-300 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Badge
@@ -90,34 +88,30 @@ export function TaskCard({ task }: { task: Task }) {
             {CATEGORY_LABELS[task.category] ?? task.category}
           </Badge>
           {isTrending && task.status === "open" && (
-            <Badge variant="outline" className="text-xs font-medium bg-orange-500/8 text-orange-400 border-orange-500/20 flex items-center gap-1">
+            <Badge variant="outline" className="text-xs font-medium bg-orange-500/8 text-orange-500 border-orange-500/20 flex items-center gap-1">
               <Flame size={10} />
               Trending
             </Badge>
           )}
         </div>
-        {/* Budget is the dominant accent */}
-        <span className="font-bold text-purple-400 text-sm tabular-nums">₹{task.budget.toLocaleString()}</span>
+        <span className="font-bold text-purple-600 dark:text-purple-400 text-sm tabular-nums">₹{task.budget.toLocaleString()}</span>
       </div>
 
-      {/* Title — primary content, stands out */}
-      <h3 className="font-semibold text-[15px] text-white line-clamp-2 mb-2 leading-snug group-hover:text-purple-100 transition-colors duration-200">
+      <h3 className="font-semibold text-[15px] text-foreground line-clamp-2 mb-2 leading-snug group-hover:text-primary transition-colors duration-200">
         {task.title}
       </h3>
 
-      {/* Description — subordinate, clearly dimmer */}
-      <p className="text-zinc-600 text-sm line-clamp-2 mb-6 flex-1 leading-relaxed">
+      <p className="text-muted-foreground text-sm line-clamp-2 mb-6 flex-1 leading-relaxed">
         {task.description}
       </p>
 
-      {/* Urgency signals */}
       {task.status === "open" && (
-        <div className="flex items-center gap-3 mb-4 text-xs text-zinc-600">
+        <div className="flex items-center gap-3 mb-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
-            <Eye size={11} className="text-zinc-500" />
+            <Eye size={11} />
             {viewers} viewing
           </span>
-          <span className="w-1 h-1 rounded-full bg-zinc-700" />
+          <span className="w-1 h-1 rounded-full bg-border" />
           <span className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
             Available
@@ -125,8 +119,7 @@ export function TaskCard({ task }: { task: Task }) {
         </div>
       )}
 
-      {/* Bottom divider row */}
-      <div className="mt-auto pt-4 border-t border-white/[0.06]">
+      <div className="mt-auto pt-4 border-t border-border">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-1 min-w-0">
             <Badge
@@ -135,7 +128,7 @@ export function TaskCard({ task }: { task: Task }) {
             >
               {STATUS_LABELS[task.status] ?? task.status}
             </Badge>
-            <div className="flex items-center gap-1.5 text-xs text-zinc-700">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               {task.creatorName && <span className="truncate">{task.creatorName}</span>}
               {task.creatorName && <span>·</span>}
               <Clock size={10} />
@@ -161,7 +154,7 @@ export function TaskCard({ task }: { task: Task }) {
             <Button
               asChild
               size="sm"
-              className="bg-white/[0.04] hover:bg-white/8 border border-white/8 hover:border-white/15 rounded-xl text-zinc-400 hover:text-white text-xs px-3 transition-all duration-200"
+              className="bg-muted hover:bg-muted/70 border border-border hover:border-primary/30 rounded-xl text-muted-foreground hover:text-foreground text-xs px-3 transition-all duration-200"
             >
               <Link href={`/tasks/${task.id}`}>
                 {isCreator ? "Manage" : isWorker ? "My Work" : "View"}

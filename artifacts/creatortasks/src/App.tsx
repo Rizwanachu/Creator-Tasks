@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { ClerkProvider, Show, useClerk, useAuth } from '@clerk/react';
 import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wouter';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider, useTheme } from "next-themes";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
@@ -100,14 +100,19 @@ function ClerkProviderWithRoutes() {
   );
 }
 
+function ThemedToaster() {
+  const { resolvedTheme } = useTheme();
+  return <Toaster theme={(resolvedTheme === "light" ? "light" : "dark") as "light" | "dark"} />;
+}
+
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <TooltipProvider>
         <WouterRouter base={basePath}>
           <ClerkProviderWithRoutes />
         </WouterRouter>
-        <Toaster theme="dark" />
+        <ThemedToaster />
       </TooltipProvider>
     </ThemeProvider>
   );

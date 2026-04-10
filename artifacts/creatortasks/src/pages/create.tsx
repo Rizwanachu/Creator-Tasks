@@ -142,20 +142,19 @@ function TaskPreview({
     return (
       <div className="space-y-4">
         {/* Ghost empty state */}
-        <div className="card-lit bg-[#111217] border border-[#1F2228] rounded-2xl p-5 relative overflow-hidden">
-          {/* Shimmer overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent animate-shimmer pointer-events-none" />
+        <div className="card-lit bg-card border border-border rounded-2xl p-5 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/[0.02] to-transparent animate-shimmer pointer-events-none" />
           <div className="flex items-center justify-between mb-4">
-            <div className="h-5 w-16 bg-white/5 rounded-full" />
-            <div className="h-4 w-12 bg-white/5 rounded-full" />
+            <div className="h-5 w-16 bg-muted rounded-full" />
+            <div className="h-4 w-12 bg-muted rounded-full" />
           </div>
-          <div className="h-4 w-3/4 bg-white/5 rounded-lg mb-2" />
-          <div className="h-4 w-1/2 bg-white/5 rounded-lg mb-5" />
-          <div className="h-3 w-full bg-white/[0.03] rounded mb-2" />
-          <div className="h-3 w-4/5 bg-white/[0.03] rounded mb-5" />
-          <div className="flex items-center justify-between pt-4 border-t border-white/[0.04]">
-            <div className="h-3 w-20 bg-white/5 rounded" />
-            <div className="h-5 w-20 bg-white/5 rounded-full" />
+          <div className="h-4 w-3/4 bg-muted rounded-lg mb-2" />
+          <div className="h-4 w-1/2 bg-muted rounded-lg mb-5" />
+          <div className="h-3 w-full bg-muted/50 rounded mb-2" />
+          <div className="h-3 w-4/5 bg-muted/50 rounded mb-5" />
+          <div className="flex items-center justify-between pt-4 border-t border-border">
+            <div className="h-3 w-20 bg-muted rounded" />
+            <div className="h-5 w-20 bg-muted rounded-full" />
           </div>
         </div>
         <p className="text-center text-xs text-zinc-700 py-2">
@@ -183,35 +182,31 @@ function TaskPreview({
   return (
     <div className="space-y-4">
       {/* Preview card */}
-      <div className="card-lit bg-[#111217] border border-[#1F2228] rounded-2xl p-5">
-        {/* Top row */}
+      <div className="card-lit bg-card border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${CATEGORY_BADGE[category ?? "reels"]}`}>
             {cat.icon} {cat.label}
           </span>
           <AnimatedPreviewSection animKey={budgetKey}>
-            <span className={`font-bold text-sm tabular-nums ${hasBudget ? "text-purple-400" : "text-zinc-600"}`}>
+            <span className={`font-bold text-sm tabular-nums ${hasBudget ? "text-purple-600 dark:text-purple-400" : "text-muted-foreground"}`}>
               {hasBudget ? `₹${budget!.toLocaleString()}` : "₹—"}
             </span>
           </AnimatedPreviewSection>
         </div>
 
-        {/* Title */}
         <AnimatedPreviewSection animKey={titleKey}>
-          <h3 className={`font-semibold text-[15px] leading-snug mb-2 ${hasTitle ? "text-white" : "text-zinc-700"}`}>
+          <h3 className={`font-semibold text-[15px] leading-snug mb-2 ${hasTitle ? "text-foreground" : "text-muted-foreground"}`}>
             {hasTitle ? title : "Your task title will appear here"}
           </h3>
         </AnimatedPreviewSection>
 
-        {/* Description */}
         <AnimatedPreviewSection animKey={descKey}>
-          <p className={`text-sm leading-relaxed line-clamp-3 mb-5 ${hasDesc ? "text-zinc-500" : "text-zinc-700"}`}>
+          <p className={`text-sm leading-relaxed line-clamp-3 mb-5 ${hasDesc ? "text-muted-foreground" : "text-muted-foreground/50"}`}>
             {hasDesc ? description : "Your description will appear here as creators see it..."}
           </p>
         </AnimatedPreviewSection>
 
-        {/* Bottom with urgency */}
-        <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
+        <div className="flex items-center justify-between pt-4 border-t border-border">
           <div className="flex items-center gap-1.5 text-xs text-zinc-500">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
             <span>⚡ Accepted in ~3 mins</span>
@@ -225,10 +220,10 @@ function TaskPreview({
       {/* Payout breakdown */}
       {hasBudget && (
         <AnimatedPreviewSection animKey={`breakdown-${budgetKey}`}>
-          <div className="bg-[#0e0e13] border border-[#1F2228] rounded-xl p-4 space-y-2 text-sm">
-            <div className="flex justify-between text-zinc-400">
+          <div className="bg-muted border border-border rounded-xl p-4 space-y-2 text-sm">
+            <div className="flex justify-between text-muted-foreground">
               <span>You pay</span>
-              <span className="font-semibold text-white tabular-nums">₹{budget!.toLocaleString()}</span>
+              <span className="font-semibold text-foreground tabular-nums">₹{budget!.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-zinc-500">
               <span>Creator receives</span>
@@ -389,7 +384,7 @@ export function CreateTask() {
               <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
               New Task
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-tight mb-2">
+            <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight leading-tight mb-2">
               Create a paid AI task
             </h1>
             <p className="text-zinc-500 text-sm max-w-md">
@@ -401,7 +396,7 @@ export function CreateTask() {
           <button
             type="button"
             onClick={fillExample}
-            className="self-start sm:mt-10 flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-zinc-400 hover:text-white hover:border-white/20 hover:bg-white/[0.06] transition-all duration-200 text-sm font-medium shrink-0"
+            className="self-start sm:mt-10 flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted transition-all duration-200 text-sm font-medium shrink-0"
           >
             <Sparkles size={14} className="text-purple-400" />
             Fill with example
@@ -412,7 +407,7 @@ export function CreateTask() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
 
           {/* ── LEFT: Form ── */}
-          <div className="card-lit bg-[#111217] border border-[#1F2228] rounded-2xl p-6 md:p-8">
+          <div className="card-lit bg-card border border-border rounded-2xl p-6 md:p-8">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-7">
 
@@ -422,11 +417,11 @@ export function CreateTask() {
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-zinc-200 text-sm font-semibold">Task Title</FormLabel>
+                      <FormLabel className="text-foreground text-sm font-semibold">Task Title</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="e.g., Edit 30s TikTok Reel from podcast clip"
-                          className="bg-[#0B0B0F] border-white/10 text-white focus-visible:ring-purple-500 rounded-xl h-11 placeholder:text-zinc-600"
+                          className="focus-visible:ring-ring rounded-xl h-11"
                           {...field}
                         />
                       </FormControl>
@@ -448,7 +443,7 @@ export function CreateTask() {
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-zinc-200 text-sm font-semibold">Category</FormLabel>
+                      <FormLabel className="text-foreground text-sm font-semibold">Category</FormLabel>
                       <FormControl>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
                           {CATEGORIES.map((cat) => {
@@ -461,7 +456,7 @@ export function CreateTask() {
                                 className={`flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl border text-center transition-all duration-200 active:scale-95 ${
                                   isActive
                                     ? cat.activeColor
-                                    : "border-white/8 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/15 text-zinc-500 hover:text-zinc-300"
+                                    : "border-border bg-muted/30 hover:bg-muted hover:border-border text-muted-foreground hover:text-foreground"
                                 }`}
                               >
                                 <span className="text-lg leading-none">{cat.icon}</span>
@@ -483,11 +478,11 @@ export function CreateTask() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-zinc-200 text-sm font-semibold">What should the creator deliver?</FormLabel>
+                      <FormLabel className="text-foreground text-sm font-semibold">What should the creator deliver?</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder={`Describe exactly what you need. Be specific — good briefs get better work.\n\nExample:\n• 30s reel with dynamic captions\n• Hook in the first 3 seconds\n• Include trending background music\n• Export as 1080×1920 MP4`}
-                          className="min-h-[160px] bg-[#0B0B0F] border-white/10 text-white focus-visible:ring-purple-500 resize-none rounded-xl placeholder:text-zinc-700 text-sm leading-relaxed"
+                          className="min-h-[160px] focus-visible:ring-ring resize-none rounded-xl text-sm leading-relaxed"
                           {...field}
                         />
                       </FormControl>
@@ -502,15 +497,15 @@ export function CreateTask() {
                   name="budget"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-zinc-200 text-sm font-semibold">Budget (₹)</FormLabel>
+                      <FormLabel className="text-foreground text-sm font-semibold">Budget (₹)</FormLabel>
                       <FormControl>
                         <div className="space-y-3">
                           <div className="relative">
-                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-sm font-medium">₹</span>
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">₹</span>
                             <Input
                               type="number"
                               placeholder="1000"
-                              className="pl-8 bg-[#0B0B0F] border-white/10 text-white focus-visible:ring-purple-500 rounded-xl h-11 placeholder:text-zinc-600 text-base font-semibold"
+                              className="pl-8 focus-visible:ring-ring rounded-xl h-11 text-base font-semibold"
                               {...field}
                               value={field.value || ""}
                             />
@@ -525,7 +520,7 @@ export function CreateTask() {
                                 className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 active:scale-95 ${
                                   Number(field.value) === preset
                                     ? "btn-gradient text-white border-transparent"
-                                    : "border-white/10 text-zinc-500 hover:border-purple-500/30 hover:text-zinc-300 bg-transparent"
+                                    : "border-border text-muted-foreground hover:border-purple-500/30 hover:text-foreground bg-transparent"
                                 }`}
                               >
                                 ₹{preset >= 1000 ? `${preset / 1000}k` : preset}
@@ -553,7 +548,7 @@ export function CreateTask() {
                   const locked = wallet?.pendingBalance ?? 0;
                   const hasInsufficientFunds = budgetNum >= 100 && available < budgetNum;
                   return (
-                    <div className={`rounded-xl border p-3 text-xs space-y-1.5 ${hasInsufficientFunds ? "border-amber-500/30 bg-amber-500/5" : "border-white/[0.06] bg-white/[0.02]"}`}>
+                    <div className={`rounded-xl border p-3 text-xs space-y-1.5 ${hasInsufficientFunds ? "border-amber-500/30 bg-amber-500/5" : "border-border bg-muted/30"}`}>
                       <div className="flex items-center justify-between text-zinc-500">
                         <span className="flex items-center gap-1.5">
                           <Lock size={10} className="text-purple-400" />
@@ -575,7 +570,7 @@ export function CreateTask() {
                 })()}
 
                 {/* Footer */}
-                <div className="pt-4 border-t border-white/[0.06] space-y-4">
+                <div className="pt-4 border-t border-border space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <button
                       type="button"
@@ -636,7 +631,7 @@ export function CreateTask() {
                 placeholder="1000"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
-                className="w-full pl-8 pr-4 py-2 bg-background border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="w-full pl-8 pr-4 py-2 bg-input border border-border text-foreground rounded-xl focus:outline-none focus:ring-2 focus:ring-ring text-sm"
               />
             </div>
           </div>
@@ -646,7 +641,7 @@ export function CreateTask() {
                 key={preset}
                 type="button"
                 onClick={() => setDepositAmount(String(preset))}
-                className="flex-1 py-2 rounded-xl border border-white/10 text-sm text-zinc-400 hover:border-purple-500/40 hover:text-white transition-all duration-200 font-medium"
+                className="flex-1 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:border-purple-500/40 hover:text-foreground transition-all duration-200 font-medium"
               >
                 ₹{preset >= 1000 ? `${preset / 1000}k` : preset}
               </button>

@@ -135,7 +135,7 @@ export function TaskDetail() {
   if (error || !task) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <h2 className="text-2xl font-bold text-white mb-4">Task not found</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-4">Task not found</h2>
         <Button asChild className="btn-gradient text-white rounded-xl border-0">
           <Link href="/tasks">Back to Tasks</Link>
         </Button>
@@ -237,7 +237,7 @@ export function TaskDetail() {
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
-      <Link href="/tasks" className="inline-flex items-center gap-1.5 text-zinc-500 hover:text-white text-sm mb-6 transition-colors group">
+      <Link href="/tasks" className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm mb-6 transition-colors group">
         <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
         Back to Tasks
       </Link>
@@ -248,7 +248,7 @@ export function TaskDetail() {
         {/* Left Column: Task Details — order-2 on mobile, order-1 on desktop */}
         <div className="lg:col-span-2 order-2 lg:order-1 space-y-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight mb-4">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-tight mb-4">
               {task.title}
             </h1>
 
@@ -268,7 +268,7 @@ export function TaskDetail() {
             </div>
           </div>
 
-          <div className="card-lit bg-[#111217] border border-[#1F2228] rounded-2xl p-5 md:p-8 whitespace-pre-wrap text-zinc-300 leading-relaxed text-sm md:text-base">
+          <div className="card-lit bg-card border border-border rounded-2xl p-5 md:p-8 whitespace-pre-wrap text-muted-foreground leading-relaxed text-sm md:text-base">
             {task.description}
           </div>
         </div>
@@ -276,9 +276,9 @@ export function TaskDetail() {
         {/* Right Column: Actions — order-1 on mobile (appears first!), order-2 on desktop */}
         <div className="space-y-4 order-1 lg:order-2">
           {/* Budget Card */}
-          <Card className="card-lit bg-[#111217] border-[#1F2228]">
+          <Card className="card-lit bg-card border-border">
             <CardContent className="p-5 md:p-6">
-              <div className="text-xs text-zinc-500 uppercase tracking-wide font-medium mb-1">Task Budget</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-1">Task Budget</div>
               <div className="text-3xl md:text-4xl font-bold text-purple-400 mb-1">
                 ₹{task.budget.toLocaleString()}
               </div>
@@ -292,7 +292,7 @@ export function TaskDetail() {
                   disabled={!canAccept || acceptTask.isPending}
                   className={`w-full rounded-xl py-5 text-base font-semibold border-0 ${
                     isCreator
-                      ? "bg-white/5 text-zinc-500 cursor-not-allowed"
+                      ? "bg-muted text-muted-foreground cursor-not-allowed"
                       : "btn-gradient text-white"
                   }`}
                 >
@@ -304,7 +304,7 @@ export function TaskDetail() {
 
           {/* Creator: cancel open task to reclaim escrow */}
           {isCreator && task.status === "open" && (
-            <Card className="bg-[#111217] border border-zinc-800">
+            <Card className="bg-card border border-border">
               <CardContent className="p-4">
                 <Button
                   onClick={handleCancel}
@@ -323,12 +323,12 @@ export function TaskDetail() {
 
           {/* Worker: submit work */}
           {isWorker && task.status === "in_progress" && (
-            <Card className="bg-[#111217] border-[#1F2228]">
+            <Card className="bg-card border-border">
               <CardContent className="p-5 md:p-6">
-                <h3 className="text-base font-semibold text-white mb-4">Submit Your Work</h3>
+                <h3 className="text-base font-semibold text-foreground mb-4">Submit Your Work</h3>
                 <Textarea
                   placeholder="Paste link (Google Drive, Figma, frame.io...) or describe your delivery"
-                  className="min-h-[110px] bg-background border-white/10 text-white focus-visible:ring-purple-500 resize-none mb-4 text-sm"
+                  className="min-h-[110px] focus-visible:ring-ring resize-none mb-4 text-sm"
                   value={submissionContent}
                   onChange={(e) => setSubmissionContent(e.target.value)}
                 />
@@ -345,7 +345,7 @@ export function TaskDetail() {
 
           {/* Worker: revision requested */}
           {isWorker && task.status === "revision_requested" && (
-            <Card className="bg-[#111217] border border-amber-500/30">
+            <Card className="bg-card border border-amber-500/30">
               <CardContent className="p-5 md:p-6">
                 <h3 className="text-base font-semibold text-amber-400 mb-3">Revision Requested</h3>
                 {task.revisionNote && (
@@ -359,7 +359,7 @@ export function TaskDetail() {
                 </p>
                 <Textarea
                   placeholder="Paste revised work link..."
-                  className="min-h-[100px] bg-background border-white/10 text-white focus-visible:ring-purple-500 resize-none mb-4 text-sm"
+                  className="min-h-[100px] focus-visible:ring-ring resize-none mb-4 text-sm"
                   value={submissionContent}
                   onChange={(e) => setSubmissionContent(e.target.value)}
                 />
@@ -376,22 +376,22 @@ export function TaskDetail() {
 
           {/* Creator: review submission */}
           {isCreator && task.status === "submitted" && (
-            <Card className="bg-[#111217] border border-blue-500/30">
+            <Card className="bg-card border border-blue-500/30">
               <CardContent className="p-5 md:p-6">
-                <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
                   Review Submission
                 </h3>
-                <div className="bg-background border border-white/10 rounded-xl p-4 mb-5 text-sm text-zinc-300 break-words whitespace-pre-wrap">
+                <div className="bg-muted border border-border rounded-xl p-4 mb-5 text-sm text-foreground break-words whitespace-pre-wrap">
                   {task.submissionContent}
                 </div>
 
                 {showRevisionForm ? (
                   <div className="mb-4">
-                    <label className="text-sm text-zinc-400 mb-2 block">Revision note (optional)</label>
+                    <label className="text-sm text-muted-foreground mb-2 block">Revision note (optional)</label>
                     <Textarea
                       placeholder="Describe what needs to change..."
-                      className="min-h-[80px] bg-background border-white/10 text-white focus-visible:ring-purple-500 resize-none mb-3 text-sm"
+                      className="min-h-[80px] focus-visible:ring-ring resize-none mb-3 text-sm"
                       value={revisionNote}
                       onChange={(e) => setRevisionNote(e.target.value)}
                     />
@@ -406,7 +406,7 @@ export function TaskDetail() {
                       <Button
                         onClick={() => setShowRevisionForm(false)}
                         variant="ghost"
-                        className="text-zinc-400 hover:text-white"
+                        className="text-muted-foreground hover:text-foreground"
                       >
                         Cancel
                       </Button>
@@ -441,7 +441,7 @@ export function TaskDetail() {
                         </Button>
                       ) : (
                         <div
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-white/5 text-zinc-600 text-sm cursor-not-allowed"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-border text-muted-foreground text-sm cursor-not-allowed"
                           title="Request at least 1 revision before rejecting — protects workers"
                         >
                           🔒 Reject
@@ -461,7 +461,7 @@ export function TaskDetail() {
 
           {/* Worker: pending review */}
           {isWorker && task.status === "submitted" && (
-            <Card className="bg-[#111217] border border-blue-500/20">
+            <Card className="bg-card border border-blue-500/20">
               <CardContent className="p-5 text-center">
                 <div className="text-blue-400 mb-2 font-semibold">Pending Review</div>
                 <p className="text-zinc-500 text-sm">
@@ -473,7 +473,7 @@ export function TaskDetail() {
 
           {/* Completed */}
           {task.status === "completed" && (
-            <Card className="bg-[#111217] border border-purple-500/20">
+            <Card className="bg-card border border-purple-500/20">
               <CardContent className="p-5 text-center">
                 <div className="text-purple-400 mb-2 text-lg font-bold">Task Completed</div>
                 <p className="text-zinc-500 text-sm">
@@ -496,15 +496,15 @@ export function TaskDetail() {
             </div>
           )}
           <div>
-            <label className="text-sm text-zinc-400 mb-2 block font-medium">Amount to Add (₹)</label>
+            <label className="text-sm text-muted-foreground mb-2 block font-medium">Amount to Add (₹)</label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-zinc-500 text-sm">₹</span>
+              <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
               <Input
                 type="number"
                 placeholder="1000"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
-                className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500 rounded-xl"
+                className="pl-8 focus-visible:ring-ring rounded-xl"
               />
             </div>
           </div>
@@ -513,7 +513,7 @@ export function TaskDetail() {
               <button
                 key={preset}
                 onClick={() => setDepositAmount(String(preset))}
-                className="flex-1 py-2 rounded-xl border border-white/10 text-sm text-zinc-400 hover:border-purple-500/40 hover:text-white transition-all duration-200 font-medium"
+                className="flex-1 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:border-purple-500/40 hover:text-foreground transition-all duration-200 font-medium"
               >
                 ₹{preset >= 1000 ? `${preset / 1000}k` : preset}
               </button>
