@@ -5,6 +5,20 @@ import { Task, useAcceptTask } from "@/hooks/use-tasks";
 import { useAuth } from "@clerk/react";
 import { toast } from "sonner";
 
+const CATEGORY_COLORS: Record<string, string> = {
+  reels: "bg-pink-500/10 text-pink-400 border-pink-500/20",
+  hooks: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+  thumbnails: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+  other: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  reels: "Reels",
+  hooks: "Hooks",
+  thumbnails: "Thumbnails",
+  other: "Other",
+};
+
 export function TaskCard({ task }: { task: Task }) {
   const { userId } = useAuth();
   const acceptTask = useAcceptTask();
@@ -19,6 +33,7 @@ export function TaskCard({ task }: { task: Task }) {
     submitted: "bg-blue-500/10 text-blue-500 border-blue-500/20",
     completed: "bg-purple-500/10 text-purple-500 border-purple-500/20",
     rejected: "bg-red-500/10 text-red-500 border-red-500/20",
+    revision_requested: "bg-amber-500/10 text-amber-500 border-amber-500/20",
   };
 
   const statusLabels: Record<string, string> = {
@@ -27,6 +42,7 @@ export function TaskCard({ task }: { task: Task }) {
     submitted: "Submitted",
     completed: "Completed",
     rejected: "Rejected",
+    revision_requested: "Revision Needed",
   };
 
   const handleAccept = (e: React.MouseEvent) => {
@@ -47,6 +63,12 @@ export function TaskCard({ task }: { task: Task }) {
       <div className="flex justify-between items-start mb-3 gap-4">
         <h3 className="font-semibold text-lg text-white line-clamp-1">{task.title}</h3>
         <span className="font-semibold text-purple-500 shrink-0">₹{task.budget}</span>
+      </div>
+
+      <div className="flex items-center gap-2 mb-3">
+        <Badge variant="outline" className={`text-xs ${CATEGORY_COLORS[task.category] ?? CATEGORY_COLORS.other}`}>
+          {CATEGORY_LABELS[task.category] ?? task.category}
+        </Badge>
       </div>
 
       <p className="text-zinc-400 text-sm line-clamp-2 mb-6 flex-1">

@@ -2,12 +2,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
 import { apiFetch } from "@/lib/api";
 
+export type TaskCategory = "reels" | "hooks" | "thumbnails" | "other";
+
 export interface Task {
   id: string;
   title: string;
   description: string;
   budget: number;
-  status: "open" | "in_progress" | "submitted" | "completed" | "rejected";
+  category: TaskCategory;
+  status: "open" | "in_progress" | "submitted" | "completed" | "rejected" | "revision_requested";
+  revisionNote: string | null;
   creatorId: string;
   workerId: string | null;
   creatorClerkId: string | null;
@@ -17,11 +21,14 @@ export interface Task {
   creatorName?: string;
 }
 
-export function useTasks() {
+export function useTasks(category?: TaskCategory) {
   const { getToken } = useAuth();
   return useQuery<Task[]>({
-    queryKey: ["tasks"],
-    queryFn: () => apiFetch("/api/tasks", {}, getToken),
+    queryKey: ["tasks", { category }],
+    queryFn: () => {
+      const url = category ? `/api/tasks?category=${category}` : "/api/tasks";
+      return apiFetch(url, {}, getToken);
+    },
   });
 }
 
@@ -39,7 +46,7 @@ export function useCreateTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { title: string; description: string; budget: number }) =>
+    mutationFn: (data: { title: string; description: string; budget: number; category: TaskCategory }) =>
       apiFetch("/api/tasks", { method: "POST", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -102,6 +109,21 @@ export function useRejectTask() {
     mutationFn: (id: string) =>
       apiFetch(`/api/tasks/${id}/reject`, { method: "POST" }, getToken),
     onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks", id] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useRequestRevision() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) =>
+      apiFetch(`/api/tasks/${id}/request-revision`, { method: "POST", data: { note } }, getToken),
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["tasks", id] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });

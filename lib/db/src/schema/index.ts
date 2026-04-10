@@ -14,7 +14,9 @@ export const tasks = pgTable("tasks", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   budget: integer("budget").notNull(),
+  category: text("category").notNull().default("other"),
   status: text("status").default("open"),
+  revisionNote: text("revision_note"),
   creatorId: uuid("creator_id").notNull(),
   workerId: uuid("worker_id"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -32,5 +34,14 @@ export const transactions = pgTable("transactions", {
   userId: uuid("user_id").notNull(),
   amount: integer("amount").notNull(),
   type: text("type").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const withdrawals = pgTable("withdrawals", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  amount: integer("amount").notNull(),
+  upiId: text("upi_id").notNull(),
+  status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
 });

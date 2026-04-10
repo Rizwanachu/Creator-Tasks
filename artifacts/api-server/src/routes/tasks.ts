@@ -5,15 +5,26 @@ import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
+const CATEGORIES = ["reels", "hooks", "thumbnails", "other"] as const;
+type Category = (typeof CATEGORIES)[number];
+
+function isValidCategory(v: unknown): v is Category {
+  return CATEGORIES.includes(v as Category);
+}
+
 router.get("/tasks", async (req, res) => {
   try {
-    const allTasks = await db
+    const { category } = req.query as { category?: string };
+
+    const baseQuery = db
       .select({
         id: tasks.id,
         title: tasks.title,
         description: tasks.description,
         budget: tasks.budget,
+        category: tasks.category,
         status: tasks.status,
+        revisionNote: tasks.revisionNote,
         creatorId: tasks.creatorId,
         workerId: tasks.workerId,
         createdAt: tasks.createdAt,
@@ -21,8 +32,11 @@ router.get("/tasks", async (req, res) => {
         creatorClerkId: users.clerkId,
       })
       .from(tasks)
-      .leftJoin(users, eq(tasks.creatorId, users.id))
-      .orderBy(sql`${tasks.createdAt} DESC`);
+      .leftJoin(users, eq(tasks.creatorId, users.id));
+
+    const allTasks = category && isValidCategory(category)
+      ? await baseQuery.where(eq(tasks.category, category)).orderBy(sql`${tasks.createdAt} DESC`)
+      : await baseQuery.orderBy(sql`${tasks.createdAt} DESC`);
 
     res.json(allTasks);
   } catch (err) {
@@ -41,7 +55,9 @@ router.get("/tasks/:id", async (req, res) => {
         title: tasks.title,
         description: tasks.description,
         budget: tasks.budget,
+        category: tasks.category,
         status: tasks.status,
+        revisionNote: tasks.revisionNote,
         creatorId: tasks.creatorId,
         workerId: tasks.workerId,
         createdAt: tasks.createdAt,
@@ -84,10 +100,11 @@ router.get("/tasks/:id", async (req, res) => {
 
 router.post("/tasks", requireAuth, async (req, res) => {
   try {
-    const { title, description, budget } = req.body as {
+    const { title, description, budget, category } = req.body as {
       title?: string;
       description?: string;
       budget?: unknown;
+      category?: unknown;
     };
 
     if (!title || !description || !budget) {
@@ -101,12 +118,15 @@ router.post("/tasks", requireAuth, async (req, res) => {
       return;
     }
 
+    const categoryVal: Category = isValidCategory(category) ? category : "other";
+
     const [task] = await db
       .insert(tasks)
       .values({
         title,
         description,
         budget: budgetNum,
+        category: categoryVal,
         creatorId: req.dbUser!.id,
       })
       .returning();
@@ -174,8 +194,8 @@ router.post("/tasks/:id/submit", requireAuth, async (req, res) => {
       return;
     }
 
-    if (task.status !== "in_progress") {
-      res.status(400).json({ error: "Task is not in progress" });
+    if (task.status !== "in_progress" && task.status !== "revision_requested") {
+      res.status(400).json({ error: "Task is not in a submittable state" });
       return;
     }
 
@@ -194,7 +214,7 @@ router.post("/tasks/:id/submit", requireAuth, async (req, res) => {
 
     const [updated] = await db
       .update(tasks)
-      .set({ status: "submitted" })
+      .set({ status: "submitted", revisionNote: null })
       .where(eq(tasks.id, id))
       .returning();
 
@@ -304,6 +324,45 @@ router.post("/tasks/:id/reject", requireAuth, async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Error rejecting task");
     res.status(500).json({ error: "Failed to reject task" });
+  }
+});
+
+router.post("/tasks/:id/request-revision", requireAuth, async (req, res) => {
+  try {
+    const id = String(req.params.id);
+    const { note } = req.body as { note?: string };
+    const currentUser = req.dbUser!;
+
+    const task = await db.query.tasks.findFirst({ where: eq(tasks.id, id) });
+    if (!task) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+
+    if (task.creatorId !== currentUser.id) {
+      res.status(403).json({ error: "Only the creator can request a revision" });
+      return;
+    }
+
+    if (task.status !== "submitted") {
+      res.status(400).json({ error: "Task has not been submitted yet" });
+      return;
+    }
+
+    await db.update(submissions)
+      .set({ status: "rejected" })
+      .where(eq(submissions.taskId, id));
+
+    const [updated] = await db
+      .update(tasks)
+      .set({ status: "revision_requested", revisionNote: note || null })
+      .where(eq(tasks.id, id))
+      .returning();
+
+    res.json(updated);
+  } catch (err) {
+    req.log.error({ err }, "Error requesting revision");
+    res.status(500).json({ error: "Failed to request revision" });
   }
 });
 
