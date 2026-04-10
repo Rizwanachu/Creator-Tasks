@@ -36,6 +36,17 @@ function ThemeToggle() {
   );
 }
 
+function Logo({ className = "w-8 h-8" }: { className?: string }) {
+  return (
+    <img
+      src="/logo.png"
+      alt="CreatorTasks logo"
+      className={`rounded-xl ${className}`}
+      draggable={false}
+    />
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
@@ -56,10 +67,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           {/* Left: Logo + desktop nav */}
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 group shrink-0">
-              <div className="w-7 h-7 rounded-lg btn-gradient flex items-center justify-center">
-                <span className="text-white text-xs font-bold">CT</span>
-              </div>
+            <Link href="/" className="flex items-center gap-2.5 group shrink-0">
+              <Logo className="w-8 h-8" />
               <span className="text-base font-bold tracking-tight text-foreground group-hover:opacity-80 transition-opacity">
                 CreatorTasks
               </span>
@@ -206,6 +215,95 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 flex flex-col">
         {children}
       </main>
+
+      <footer className="border-t border-border bg-card/50 mt-auto">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+
+            {/* Brand column */}
+            <div className="md:col-span-2 flex flex-col gap-4">
+              <Link href="/" className="flex items-center gap-2.5 group w-fit">
+                <Logo className="w-9 h-9" />
+                <span className="text-lg font-bold tracking-tight text-foreground group-hover:opacity-80 transition-opacity">
+                  CreatorTasks
+                </span>
+              </Link>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
+                The marketplace for AI content creators. Post tasks, earn money, and grow your skills — all with instant Razorpay payouts.
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full px-3 py-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+                  Powered by Razorpay
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400 bg-zinc-500/10 border border-zinc-500/20 rounded-full px-3 py-1">
+                  10% platform fee
+                </span>
+              </div>
+            </div>
+
+            {/* Platform links */}
+            <div className="flex flex-col gap-3">
+              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Platform</h4>
+              <ul className="flex flex-col gap-2">
+                {[
+                  { href: "/tasks", label: "Browse Tasks" },
+                  { href: "/create", label: "Post a Task" },
+                  { href: "/dashboard", label: "Dashboard" },
+                  { href: "/sign-up", label: "Sign Up Free" },
+                ].map(({ href, label }) => (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Categories */}
+            <div className="flex flex-col gap-3">
+              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Categories</h4>
+              <ul className="flex flex-col gap-2">
+                {[
+                  { href: "/tasks?category=reels", label: "Reels" },
+                  { href: "/tasks?category=hooks", label: "Hooks" },
+                  { href: "/tasks?category=thumbnails", label: "Thumbnails" },
+                  { href: "/tasks?category=other", label: "Other Content" },
+                ].map(({ href, label }) => (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-3">
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} CreatorTasks. All rights reserved.
+            </p>
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-muted-foreground">
+                Secure payments via Razorpay
+              </span>
+              <span className="text-muted-foreground/30">·</span>
+              <span className="text-xs text-muted-foreground">
+                Built for AI content creators
+              </span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
