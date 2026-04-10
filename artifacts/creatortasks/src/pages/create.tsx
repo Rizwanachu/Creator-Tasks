@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -68,15 +67,14 @@ export function CreateTask() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-2xl">
-      <Card className="bg-[#111217] border-[#1F2228] text-white">
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold tracking-tight">Post a Task</CardTitle>
-          <CardDescription className="text-zinc-400">
-            Create a new opportunity for creators. A 10% commission applies on approval.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="container mx-auto px-4 py-8 md:py-12">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-2">Post a Task</h1>
+          <p className="text-zinc-500 text-sm">Create a new opportunity for creators. A 10% commission applies on approval.</p>
+        </div>
+
+        <div className="card-lit bg-[#111217] border border-[#1F2228] rounded-2xl p-6 md:p-8">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -84,15 +82,15 @@ export function CreateTask() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Task Title</FormLabel>
+                    <FormLabel className="text-zinc-300 text-sm font-medium">Task Title</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g., Edit 30s TikTok Reel from podcast clip"
-                        className="bg-background border-white/10 text-white focus-visible:ring-purple-500"
+                        className="bg-background border-white/10 text-white focus-visible:ring-purple-500 rounded-xl"
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )}
               />
@@ -102,10 +100,10 @@ export function CreateTask() {
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Category</FormLabel>
+                    <FormLabel className="text-zinc-300 text-sm font-medium">Category</FormLabel>
                     <FormControl>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger className="bg-background border-white/10 text-white focus:ring-purple-500">
+                        <SelectTrigger className="bg-background border-white/10 text-white focus:ring-purple-500 rounded-xl">
                           <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent className="bg-[#111217] border-[#1F2228] text-white">
@@ -121,7 +119,7 @@ export function CreateTask() {
                         </SelectContent>
                       </Select>
                     </FormControl>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )}
               />
@@ -131,15 +129,15 @@ export function CreateTask() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Description</FormLabel>
+                    <FormLabel className="text-zinc-300 text-sm font-medium">Description</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Describe the task details, requirements, and deliverables..."
-                        className="min-h-[150px] bg-background border-white/10 text-white focus-visible:ring-purple-500 resize-none"
+                        className="min-h-[150px] bg-background border-white/10 text-white focus-visible:ring-purple-500 resize-none rounded-xl"
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )}
               />
@@ -149,48 +147,48 @@ export function CreateTask() {
                 name="budget"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Budget (₹)</FormLabel>
+                    <FormLabel className="text-zinc-300 text-sm font-medium">Budget (₹)</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <span className="absolute left-3 top-2.5 text-zinc-500">₹</span>
+                        <span className="absolute left-3 top-2.5 text-zinc-500 text-sm">₹</span>
                         <Input
                           type="number"
                           placeholder="1000"
-                          className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500"
+                          className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500 rounded-xl"
                           {...field}
                           value={field.value || ""}
                         />
                       </div>
                     </FormControl>
-                    <FormDescription className="text-zinc-500">
-                      Minimum ₹100. Platform takes 10% commission.
+                    <FormDescription className="text-zinc-600 text-xs">
+                      Minimum ₹100. Platform takes 10% commission on approval.
                     </FormDescription>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage className="text-red-400 text-xs" />
                   </FormItem>
                 )}
               />
 
-              <div className="pt-4 flex justify-end gap-4 border-t border-white/10">
+              <div className="pt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 border-t border-white/[0.06]">
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={() => setLocation("/tasks")}
-                  className="hover:bg-white/5 text-zinc-400 hover:text-white"
+                  className="hover:bg-white/5 text-zinc-400 hover:text-white rounded-xl"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={createTask.isPending}
-                  className="bg-purple-600 hover:bg-purple-500 text-white rounded-xl px-8"
+                  className="btn-gradient text-white rounded-xl px-8 border-0 font-semibold"
                 >
                   {createTask.isPending ? "Posting..." : "Post Task"}
                 </Button>
               </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

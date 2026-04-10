@@ -1,0 +1,158 @@
+Upgrade the “Post a Task” experience
+1. 🧠 Headline → make it outcome-driven
+
+Right now:
+
+Post a Task
+
+That’s functional, not compelling.
+
+Replace with:
+
+Create a paid AI task
+
+Subtext:
+
+Get creators to work on your idea in minutes. You only pay when you approve.
+
+👉 This removes hesitation instantly.
+
+2. 💡 Add a “preview card” (HIGH IMPACT)
+
+While typing, show a live preview on the right.
+
+Example:
+[ Reels ]              ₹1000
+Edit 30s TikTok Reel...
+
+Need someone to edit a 30s clip...
+
+👉 This does 2 things:
+
+Makes it feel real
+Helps users write better tasks
+3. 🏷 Category → make it visual
+
+Instead of plain dropdown, make it feel like a choice.
+
+Upgrade:
+
+Use selectable pills:
+
+🎬 Reels
+✍️ Hooks
+🖼 Thumbnails
+🎙 Voiceover
+
+👉 Much more engaging than a dropdown
+
+4. 💰 Budget input → make it smarter
+
+Right now it’s just an input.
+
+Upgrade:
+
+Add quick presets:
+
+₹100
+₹500
+₹1000
+₹2000
+
+And show real payout:
+
+You’ll pay: ₹1000
+Creator receives: ₹900
+Platform fee: ₹100
+
+👉 This removes confusion + builds trust
+
+5. ✍️ Description → guide the user
+
+Right now:
+
+“Describe the task…”
+
+Too vague.
+
+Replace placeholder with:
+
+What should the creator deliver?
+Example:
+
+30s reel with captions
+Hook in first 3 seconds
+Include background music
+
+👉 Better inputs = better marketplace quality
+
+6. ⚡ Add urgency hint
+
+Below form:
+
+⚡ Tasks typically get accepted within minutes
+
+👉 Encourages posting
+
+7. 🎨 Button → make it feel important
+
+Right now:
+
+Post Task
+
+Upgrade:
+
+Primary CTA:
+
+🚀 Post Task & Get Creators
+
+Add:
+
+Gradient
+Slight glow
+8. ❌ Cancel button → reduce emphasis
+
+Right now it competes with CTA.
+
+Fix:
+Make it subtle text
+Not button-style
+9. 🧊 Form container → elevate it
+
+Add:
+
+Slight gradient background
+Softer border
+More padding
+
+👉 Makes it feel like a “creation panel”
+
+10. 🔥 Final polished version (what it should feel like)
+Title:
+
+Create a paid AI task
+
+Sub:
+
+Get creators to work on your idea in minutes. You only pay when you approve.
+
+Form:
+Task Title
+Category (visual pills)
+Description (guided)
+Budget (with presets + breakdown)
+Bottom:
+“⚡ Tasks get accepted fast”
+CTA: 🚀 Post Task & Get Creators
+🧠 Why this matters
+
+This page is not just a form.
+
+It’s:
+👉 where money enters your platform
+
+If this feels:
+
+confusing → no one posts
+basic → low-quality tasks
+premium → people trust it

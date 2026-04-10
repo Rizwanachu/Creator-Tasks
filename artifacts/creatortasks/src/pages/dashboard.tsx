@@ -124,25 +124,25 @@ export function Dashboard() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-semibold text-white tracking-tight mb-8">Dashboard</h1>
+    <div className="container mx-auto px-4 py-8 md:py-12">
+      <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-6 md:mb-8">Dashboard</h1>
 
       {/* Wallet Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <Card className="bg-[#111217] border-[#1F2228] md:col-span-2">
-          <CardContent className="p-6">
-            <div className="text-zinc-400 font-medium mb-2">Available Balance</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-10">
+        <Card className="card-lit bg-[#111217] border-[#1F2228] md:col-span-2">
+          <CardContent className="p-5 md:p-6">
+            <div className="text-xs text-zinc-500 uppercase tracking-wide font-medium mb-2">Available Balance</div>
             {loadingWallet ? (
-              <Skeleton className="h-10 w-32 bg-white/5" />
+              <Skeleton className="h-10 w-32 bg-white/5 mb-6" />
             ) : (
-              <div className="text-5xl font-semibold text-white tracking-tight mb-6">
+              <div className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-6">
                 ₹{wallet?.balance?.toLocaleString() || "0"}
               </div>
             )}
-            <div className="flex gap-3">
+            <div className="flex flex-col xs:flex-row gap-3">
               <Button
                 onClick={() => setShowDepositDialog(true)}
-                className="bg-purple-600 hover:bg-purple-500 text-white rounded-xl"
+                className="btn-gradient text-white rounded-xl border-0 font-semibold flex-1 xs:flex-none"
               >
                 <ArrowDownLeft size={16} className="mr-2" />
                 Deposit
@@ -150,7 +150,7 @@ export function Dashboard() {
               <Button
                 onClick={() => setShowWithdrawDialog(true)}
                 variant="outline"
-                className="border-white/10 text-white hover:bg-white/10 rounded-xl bg-transparent"
+                className="border-white/10 text-white hover:bg-white/5 rounded-xl bg-transparent flex-1 xs:flex-none"
               >
                 <ArrowUpRight size={16} className="mr-2" />
                 Withdraw
@@ -159,55 +159,61 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-[#111217] border-[#1F2228]">
-          <CardContent className="p-6">
-            <div className="text-zinc-400 font-medium mb-2">Pending Escrow</div>
+        <Card className="card-lit bg-[#111217] border-[#1F2228]">
+          <CardContent className="p-5 md:p-6">
+            <div className="text-xs text-zinc-500 uppercase tracking-wide font-medium mb-2">Pending Escrow</div>
             {loadingWallet ? (
               <Skeleton className="h-8 w-24 bg-white/5" />
             ) : (
-              <div className="text-3xl font-medium text-zinc-300">
+              <div className="text-3xl font-bold text-zinc-300">
                 ₹{wallet?.pendingBalance?.toLocaleString() || "0"}
               </div>
             )}
-            <p className="text-xs text-zinc-500 mt-2">Locked in ongoing tasks</p>
+            <p className="text-xs text-zinc-600 mt-2">Locked in ongoing tasks</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Tabs */}
       <Tabs defaultValue="posted" className="w-full">
-        <TabsList className="bg-[#111217] border border-[#1F2228] p-1 h-auto mb-8 rounded-xl w-full sm:w-auto overflow-x-auto flex-wrap sm:flex-nowrap justify-start">
-          <TabsTrigger
-            value="posted"
-            className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white text-zinc-400"
-          >
-            Posted Tasks
-          </TabsTrigger>
-          <TabsTrigger
-            value="accepted"
-            className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white text-zinc-400"
-          >
-            My Work
-          </TabsTrigger>
-          <TabsTrigger
-            value="transactions"
-            className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white text-zinc-400"
-          >
-            Transactions
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 mb-6 md:mb-8">
+          <TabsList className="bg-[#111217] border border-[#1F2228] p-1 h-auto rounded-xl inline-flex min-w-full md:min-w-0 w-full md:w-auto">
+            <TabsTrigger
+              value="posted"
+              className="flex-1 md:flex-none rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white text-zinc-400 text-sm whitespace-nowrap"
+            >
+              Posted Tasks
+            </TabsTrigger>
+            <TabsTrigger
+              value="accepted"
+              className="flex-1 md:flex-none rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white text-zinc-400 text-sm whitespace-nowrap"
+            >
+              My Work
+            </TabsTrigger>
+            <TabsTrigger
+              value="transactions"
+              className="flex-1 md:flex-none rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white text-zinc-400 text-sm whitespace-nowrap"
+            >
+              Transactions
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="posted" className="focus-visible:outline-none">
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               <Skeleton className="h-[200px] w-full rounded-2xl bg-white/5" />
               <Skeleton className="h-[200px] w-full rounded-2xl bg-white/5" />
             </div>
           ) : dashboard?.postedTasks?.length === 0 ? (
-            <div className="text-center py-20 bg-[#111217] border border-[#1F2228] rounded-2xl">
-              <p className="text-zinc-400">You haven't posted any tasks yet.</p>
+            <div className="text-center py-16 bg-[#111217] border border-[#1F2228] rounded-2xl px-4">
+              <p className="text-zinc-500 mb-4">You haven't posted any tasks yet.</p>
+              <Button asChild className="btn-gradient text-white rounded-xl border-0 font-semibold">
+                <a href="/create">Post Your First Task</a>
+              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {dashboard?.postedTasks?.map((task) => (
                 <TaskCard key={task.id} task={task} />
               ))}
@@ -217,16 +223,19 @@ export function Dashboard() {
 
         <TabsContent value="accepted" className="focus-visible:outline-none">
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               <Skeleton className="h-[200px] w-full rounded-2xl bg-white/5" />
               <Skeleton className="h-[200px] w-full rounded-2xl bg-white/5" />
             </div>
           ) : dashboard?.acceptedTasks?.length === 0 ? (
-            <div className="text-center py-20 bg-[#111217] border border-[#1F2228] rounded-2xl">
-              <p className="text-zinc-400">You haven't accepted any tasks yet.</p>
+            <div className="text-center py-16 bg-[#111217] border border-[#1F2228] rounded-2xl px-4">
+              <p className="text-zinc-500 mb-4">You haven't accepted any tasks yet.</p>
+              <Button asChild className="btn-gradient text-white rounded-xl border-0 font-semibold">
+                <a href="/tasks">Browse Tasks</a>
+              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {dashboard?.acceptedTasks?.map((task) => (
                 <TaskCard key={task.id} task={task} />
               ))}
@@ -240,8 +249,8 @@ export function Dashboard() {
               {isLoading ? (
                 Array(3).fill(0).map((_, i) => (
                   <div key={i} className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Skeleton className="h-10 w-10 rounded-full bg-white/5" />
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full bg-white/5 shrink-0" />
                       <div className="space-y-2">
                         <Skeleton className="h-4 w-32 bg-white/5" />
                         <Skeleton className="h-3 w-20 bg-white/5" />
@@ -251,44 +260,43 @@ export function Dashboard() {
                   </div>
                 ))
               ) : wallet?.transactions?.length === 0 ? (
-                <div className="p-8 text-center text-zinc-400">
+                <div className="p-8 text-center text-zinc-500 text-sm">
                   No transactions yet.
                 </div>
               ) : (
                 wallet?.transactions?.map((tx) => (
-                  <div key={tx.id} className="p-4 sm:p-6 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  <div key={tx.id} className="p-4 sm:p-5 flex items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
                         tx.type === "deposit" || tx.type === "payment"
-                          ? "bg-green-500/10 text-green-500"
+                          ? "bg-green-500/10 text-green-400"
                           : "bg-red-500/10 text-red-400"
                       }`}>
                         {tx.type === "deposit" || tx.type === "payment" ? (
-                          <ArrowDownLeft size={20} />
+                          <ArrowDownLeft size={18} />
                         ) : (
-                          <ArrowUpRight size={20} />
+                          <ArrowUpRight size={18} />
                         )}
                       </div>
-                      <div>
-                        <div className="font-medium text-white line-clamp-1">{tx.description}</div>
-                        <div className="text-sm text-zinc-500 flex items-center gap-2 mt-1">
+                      <div className="min-w-0">
+                        <div className="font-medium text-white text-sm line-clamp-1">{tx.description}</div>
+                        <div className="text-xs text-zinc-600 mt-0.5">
                           {new Date(tx.createdAt).toLocaleDateString()}
-                          <span className="hidden sm:inline">&bull;</span>
-                          <span className="hidden sm:inline capitalize">{tx.type}</span>
+                          <span className="hidden sm:inline"> · <span className="capitalize">{tx.type}</span></span>
                         </div>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className={`font-semibold ${
-                        tx.type === "deposit" || tx.type === "payment" ? "text-green-500" : "text-white"
+                      <div className={`font-semibold text-sm ${
+                        tx.type === "deposit" || tx.type === "payment" ? "text-green-400" : "text-white"
                       }`}>
-                        {tx.type === "deposit" || tx.type === "payment" ? "+" : "-"}₹{tx.amount}
+                        {tx.type === "deposit" || tx.type === "payment" ? "+" : "-"}₹{tx.amount.toLocaleString()}
                       </div>
-                      <div className="text-xs mt-1 flex items-center justify-end gap-1">
+                      <div className="text-xs mt-0.5 flex items-center justify-end gap-1">
                         {tx.status === "completed" ? (
-                          <><CheckCircle2 size={12} className="text-green-500" /><span className="text-zinc-400 capitalize">{tx.status}</span></>
+                          <><CheckCircle2 size={11} className="text-green-500" /><span className="text-zinc-500 capitalize">{tx.status}</span></>
                         ) : (
-                          <><Clock size={12} className="text-yellow-500" /><span className="text-zinc-400 capitalize">{tx.status}</span></>
+                          <><Clock size={11} className="text-yellow-500" /><span className="text-zinc-500 capitalize">{tx.status}</span></>
                         )}
                       </div>
                     </div>
@@ -304,25 +312,25 @@ export function Dashboard() {
       <WalletModal open={showDepositDialog} onClose={() => setShowDepositDialog(false)} title="Add Money">
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-zinc-400 mb-2 block">Amount (₹)</label>
+            <label className="text-sm text-zinc-400 mb-2 block font-medium">Amount (₹)</label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-zinc-500">₹</span>
+              <span className="absolute left-3 top-2.5 text-zinc-500 text-sm">₹</span>
               <Input
                 type="number"
                 placeholder="500"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
-                className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500"
+                className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500 rounded-xl"
               />
             </div>
-            <p className="text-xs text-zinc-500 mt-1">Minimum ₹100</p>
+            <p className="text-xs text-zinc-600 mt-1">Minimum ₹100</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             {[500, 1000, 2000].map((preset) => (
               <button
                 key={preset}
                 onClick={() => setDepositAmount(String(preset))}
-                className="flex-1 py-1.5 rounded-lg border border-white/10 text-sm text-zinc-400 hover:border-purple-500/40 hover:text-white transition-colors"
+                className="flex-1 py-2 rounded-xl border border-white/10 text-sm text-zinc-400 hover:border-purple-500/40 hover:text-white transition-all duration-200 font-medium"
               >
                 ₹{preset}
               </button>
@@ -331,7 +339,7 @@ export function Dashboard() {
           <Button
             onClick={handleDeposit}
             disabled={createOrder.isPending}
-            className="w-full bg-purple-600 hover:bg-purple-500 text-white rounded-xl"
+            className="w-full btn-gradient text-white rounded-xl border-0 font-semibold"
           >
             {createOrder.isPending ? "Loading..." : "Pay with Razorpay"}
           </Button>
@@ -342,37 +350,37 @@ export function Dashboard() {
       <WalletModal open={showWithdrawDialog} onClose={() => setShowWithdrawDialog(false)} title="Withdraw Money">
         <div className="space-y-4">
           <div>
-            <label className="text-sm text-zinc-400 mb-2 block">Amount (₹)</label>
+            <label className="text-sm text-zinc-400 mb-2 block font-medium">Amount (₹)</label>
             <div className="relative">
-              <span className="absolute left-3 top-2.5 text-zinc-500">₹</span>
+              <span className="absolute left-3 top-2.5 text-zinc-500 text-sm">₹</span>
               <Input
                 type="number"
                 placeholder="500"
                 value={withdrawAmount}
                 onChange={(e) => setWithdrawAmount(e.target.value)}
-                className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500"
+                className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500 rounded-xl"
               />
             </div>
-            <p className="text-xs text-zinc-500 mt-1">
-              Available: ₹{wallet?.balance?.toLocaleString() || "0"} &bull; Minimum ₹100
+            <p className="text-xs text-zinc-600 mt-1">
+              Available: ₹{wallet?.balance?.toLocaleString() || "0"} · Minimum ₹100
             </p>
           </div>
           <div>
-            <label className="text-sm text-zinc-400 mb-2 block">UPI ID</label>
+            <label className="text-sm text-zinc-400 mb-2 block font-medium">UPI ID</label>
             <Input
               placeholder="yourname@upi"
               value={upiId}
               onChange={(e) => setUpiId(e.target.value)}
-              className="bg-background border-white/10 text-white focus-visible:ring-purple-500"
+              className="bg-background border-white/10 text-white focus-visible:ring-purple-500 rounded-xl"
             />
           </div>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-zinc-600">
             Withdrawals are processed within 24 hours to your UPI account.
           </p>
           <Button
             onClick={handleWithdraw}
             disabled={withdraw.isPending}
-            className="w-full bg-purple-600 hover:bg-purple-500 text-white rounded-xl"
+            className="w-full btn-gradient text-white rounded-xl border-0 font-semibold"
           >
             {withdraw.isPending ? "Processing..." : "Request Withdrawal"}
           </Button>

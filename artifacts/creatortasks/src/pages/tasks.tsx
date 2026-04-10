@@ -19,26 +19,27 @@ export function Tasks() {
   const { data: tasks, isLoading, error } = useTasks(activeCategory);
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div className="container mx-auto px-4 py-8 md:py-12">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-semibold text-white tracking-tight mb-2">Task Board</h1>
-          <p className="text-zinc-400">Find opportunities and earn by completing tasks.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-1">Task Board</h1>
+          <p className="text-zinc-500 text-sm">Find opportunities and earn by completing tasks.</p>
         </div>
-        <Button asChild className="bg-purple-600 hover:bg-purple-500 text-white rounded-xl">
+        <Button asChild className="btn-gradient text-white rounded-xl border-0 font-semibold shrink-0 w-full sm:w-auto">
           <Link href="/create">Post a Task</Link>
         </Button>
       </div>
 
-      {/* Category Filter */}
-      <div className="flex flex-wrap gap-2 mb-8">
+      {/* Category filter — horizontally scrollable on small screens */}
+      <div className="flex gap-2 mb-8 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.label}
             onClick={() => setActiveCategory(cat.value)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 whitespace-nowrap shrink-0 ${
               activeCategory === cat.value
-                ? "bg-purple-600 border-purple-600 text-white"
+                ? "btn-gradient text-white border-transparent"
                 : "border-[#1F2228] text-zinc-400 hover:border-purple-500/40 hover:text-white bg-transparent"
             }`}
           >
@@ -48,42 +49,43 @@ export function Tasks() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-[#111217] border border-[#1F2228] rounded-2xl p-5 h-[220px] flex flex-col">
-              <div className="flex justify-between mb-4">
-                <Skeleton className="h-6 w-3/4 bg-white/5" />
-                <Skeleton className="h-6 w-16 bg-white/5" />
+            <div key={i} className="bg-[#111217] border border-[#1F2228] rounded-2xl p-6 h-[220px] flex flex-col gap-3">
+              <div className="flex justify-between">
+                <Skeleton className="h-5 w-20 bg-white/5 rounded-full" />
+                <Skeleton className="h-5 w-14 bg-white/5 rounded-full" />
               </div>
-              <Skeleton className="h-5 w-16 bg-white/5 mb-3" />
-              <Skeleton className="h-4 w-full mb-2 bg-white/5" />
-              <Skeleton className="h-4 w-2/3 bg-white/5" />
-              <div className="mt-auto flex justify-between">
-                <Skeleton className="h-5 w-20 bg-white/5" />
-                <Skeleton className="h-9 w-24 bg-white/5" />
+              <Skeleton className="h-5 w-full bg-white/5" />
+              <Skeleton className="h-4 w-3/4 bg-white/5" />
+              <div className="mt-auto flex justify-between items-center">
+                <Skeleton className="h-5 w-16 bg-white/5 rounded-full" />
+                <Skeleton className="h-8 w-20 bg-white/5 rounded-xl" />
               </div>
             </div>
           ))}
         </div>
       ) : error ? (
-        <div className="text-center py-20 bg-[#111217] border border-red-500/20 rounded-2xl">
-          <p className="text-red-500 mb-4">Failed to load tasks.</p>
-          <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>
+        <div className="text-center py-16 bg-[#111217] border border-red-500/20 rounded-2xl px-4">
+          <p className="text-red-400 mb-4 font-medium">Failed to load tasks.</p>
+          <Button variant="outline" className="border-white/10 text-white" onClick={() => window.location.reload()}>
+            Try again
+          </Button>
         </div>
       ) : tasks?.length === 0 ? (
-        <div className="text-center py-32 bg-[#111217] border border-[#1F2228] rounded-2xl flex flex-col items-center justify-center">
-          <h3 className="text-xl font-medium text-white mb-2">No tasks available</h3>
-          <p className="text-zinc-400 mb-6 max-w-sm">
+        <div className="text-center py-24 bg-[#111217] border border-[#1F2228] rounded-2xl flex flex-col items-center justify-center px-4">
+          <h3 className="text-xl font-semibold text-white mb-2">No tasks available</h3>
+          <p className="text-zinc-500 mb-6 max-w-sm text-sm">
             {activeCategory
               ? `No ${activeCategory} tasks posted yet. Try another category or post one.`
-              : "There are currently no tasks posted. Check back later or be the first to post one."}
+              : "There are currently no tasks posted. Be the first to post one."}
           </p>
-          <Button asChild className="bg-purple-600 hover:bg-purple-500 text-white rounded-xl">
+          <Button asChild className="btn-gradient text-white rounded-xl border-0 font-semibold">
             <Link href="/create">Post a Task</Link>
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {tasks?.map((task) => (
             <TaskCard key={task.id} task={task} />
           ))}

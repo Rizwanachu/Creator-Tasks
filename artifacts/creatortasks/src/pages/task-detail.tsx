@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react";
 
 const CATEGORY_COLORS: Record<string, string> = {
   reels: "bg-pink-500/10 text-pink-400 border-pink-500/20",
@@ -47,9 +48,9 @@ export function TaskDetail() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
             <Skeleton className="h-10 w-3/4 bg-white/5" />
             <div className="flex gap-4">
               <Skeleton className="h-6 w-24 bg-white/5" />
@@ -57,8 +58,8 @@ export function TaskDetail() {
             </div>
             <Skeleton className="h-40 w-full bg-white/5" />
           </div>
-          <div className="space-y-6">
-            <Skeleton className="h-[300px] w-full rounded-2xl bg-white/5" />
+          <div className="space-y-6 order-1 lg:order-2">
+            <Skeleton className="h-[220px] w-full rounded-2xl bg-white/5" />
           </div>
         </div>
       </div>
@@ -69,7 +70,7 @@ export function TaskDetail() {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
         <h2 className="text-2xl font-bold text-white mb-4">Task not found</h2>
-        <Button asChild className="bg-purple-600 hover:bg-purple-500 text-white rounded-xl">
+        <Button asChild className="btn-gradient text-white rounded-xl border-0">
           <Link href="/tasks">Back to Tasks</Link>
         </Button>
       </div>
@@ -81,12 +82,12 @@ export function TaskDetail() {
   const canAccept = !!userId && !isCreator && task.status === "open";
 
   const statusColors: Record<string, string> = {
-    open: "bg-green-500/10 text-green-500 border-green-500/20",
-    in_progress: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-    submitted: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    completed: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-    rejected: "bg-red-500/10 text-red-500 border-red-500/20",
-    revision_requested: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+    open: "bg-green-500/10 text-green-400 border-green-500/20",
+    in_progress: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+    submitted: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    completed: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+    rejected: "bg-red-500/10 text-red-400 border-red-500/20",
+    revision_requested: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   };
 
   const statusLabels: Record<string, string> = {
@@ -147,58 +148,65 @@ export function TaskDetail() {
   const actionsPending = approveTask.isPending || rejectTask.isPending || requestRevision.isPending;
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <Link href="/tasks" className="text-zinc-400 hover:text-white text-sm mb-6 inline-flex items-center">
-        &larr; Back to Tasks
+    <div className="container mx-auto px-4 py-8 md:py-12">
+      <Link href="/tasks" className="inline-flex items-center gap-1.5 text-zinc-500 hover:text-white text-sm mb-6 transition-colors group">
+        <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
+        Back to Tasks
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Task Details */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center gap-4 mb-4">
-            <h1 className="text-3xl font-semibold text-white tracking-tight leading-tight">
+      {/* Grid: sidebar shows FIRST on mobile (order-1), content second (order-2) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+
+        {/* Left Column: Task Details — order-2 on mobile, order-1 on desktop */}
+        <div className="lg:col-span-2 order-2 lg:order-1 space-y-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight mb-4">
               {task.title}
             </h1>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-3 mb-8">
-            <Badge variant="outline" className={statusColors[task.status]}>
-              {statusLabels[task.status]}
-            </Badge>
-            <Badge variant="outline" className={CATEGORY_COLORS[task.category] ?? CATEGORY_COLORS.other}>
-              {CATEGORY_LABELS[task.category] ?? task.category}
-            </Badge>
-            <span className="text-zinc-400 text-sm">
-              Posted by {task.creatorName || "Anonymous"}
-            </span>
-            <span className="text-zinc-400 text-sm">
-              {new Date(task.createdAt).toLocaleDateString()}
-            </span>
-          </div>
-
-          <div className="prose prose-invert max-w-none">
-            <div className="bg-[#111217] border border-[#1F2228] rounded-2xl p-6 md:p-8 whitespace-pre-wrap text-zinc-300 leading-relaxed">
-              {task.description}
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              <Badge variant="outline" className={statusColors[task.status]}>
+                {statusLabels[task.status]}
+              </Badge>
+              <Badge variant="outline" className={CATEGORY_COLORS[task.category] ?? CATEGORY_COLORS.other}>
+                {CATEGORY_LABELS[task.category] ?? task.category}
+              </Badge>
+              <span className="text-zinc-500 text-sm">
+                by {task.creatorName || "Anonymous"}
+              </span>
+              <span className="text-zinc-600 text-sm">
+                {new Date(task.createdAt).toLocaleDateString()}
+              </span>
             </div>
+          </div>
+
+          <div className="card-lit bg-[#111217] border border-[#1F2228] rounded-2xl p-5 md:p-8 whitespace-pre-wrap text-zinc-300 leading-relaxed text-sm md:text-base">
+            {task.description}
           </div>
         </div>
 
-        {/* Right Column: Actions & Status */}
-        <div className="space-y-6">
+        {/* Right Column: Actions — order-1 on mobile (appears first!), order-2 on desktop */}
+        <div className="space-y-4 order-1 lg:order-2">
           {/* Budget Card */}
-          <Card className="bg-[#111217] border-[#1F2228]">
-            <CardContent className="p-6">
-              <div className="text-sm text-zinc-400 mb-1">Task Budget</div>
-              <div className="text-4xl font-semibold text-purple-500 mb-6">₹{task.budget}</div>
-              <div className="text-xs text-zinc-500 mb-4">
-                Worker earns ₹{Math.floor(task.budget * 0.9)} (10% platform fee)
+          <Card className="card-lit bg-[#111217] border-[#1F2228]">
+            <CardContent className="p-5 md:p-6">
+              <div className="text-xs text-zinc-500 uppercase tracking-wide font-medium mb-1">Task Budget</div>
+              <div className="text-3xl md:text-4xl font-bold text-purple-400 mb-1">
+                ₹{task.budget.toLocaleString()}
+              </div>
+              <div className="text-xs text-zinc-600 mb-5">
+                You earn ₹{Math.floor(task.budget * 0.9).toLocaleString()} after 10% fee
               </div>
 
               {task.status === "open" && (
                 <Button
                   onClick={handleAccept}
                   disabled={!canAccept || acceptTask.isPending}
-                  className="w-full bg-purple-600 hover:bg-purple-500 text-white rounded-xl py-6 text-lg font-medium"
+                  className={`w-full rounded-xl py-5 text-base font-semibold border-0 ${
+                    isCreator
+                      ? "bg-white/5 text-zinc-500 cursor-not-allowed"
+                      : "btn-gradient text-white"
+                  }`}
                 >
                   {isCreator ? "You posted this" : acceptTask.isPending ? "Accepting..." : "Accept Task"}
                 </Button>
@@ -206,21 +214,21 @@ export function TaskDetail() {
             </CardContent>
           </Card>
 
-          {/* Worker: submit work (in_progress) */}
+          {/* Worker: submit work */}
           {isWorker && task.status === "in_progress" && (
             <Card className="bg-[#111217] border-[#1F2228]">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-medium text-white mb-4">Submit Your Work</h3>
+              <CardContent className="p-5 md:p-6">
+                <h3 className="text-base font-semibold text-white mb-4">Submit Your Work</h3>
                 <Textarea
-                  placeholder="Paste link to your work (Google Drive, Figma, frame.io, etc) or provide details..."
-                  className="min-h-[120px] bg-background border-white/10 text-white focus-visible:ring-purple-500 resize-none mb-4"
+                  placeholder="Paste link (Google Drive, Figma, frame.io...) or describe your delivery"
+                  className="min-h-[110px] bg-background border-white/10 text-white focus-visible:ring-purple-500 resize-none mb-4 text-sm"
                   value={submissionContent}
                   onChange={(e) => setSubmissionContent(e.target.value)}
                 />
                 <Button
                   onClick={handleSubmitWork}
                   disabled={submitTask.isPending || !submissionContent.trim()}
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl"
+                  className="w-full btn-gradient text-white rounded-xl border-0 font-semibold"
                 >
                   {submitTask.isPending ? "Submitting..." : "Submit for Review"}
                 </Button>
@@ -231,8 +239,8 @@ export function TaskDetail() {
           {/* Worker: revision requested */}
           {isWorker && task.status === "revision_requested" && (
             <Card className="bg-[#111217] border border-amber-500/30">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-medium text-amber-400 mb-3">Revision Requested</h3>
+              <CardContent className="p-5 md:p-6">
+                <h3 className="text-base font-semibold text-amber-400 mb-3">Revision Requested</h3>
                 {task.revisionNote && (
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-4 text-sm text-amber-300">
                     <div className="text-xs text-amber-500 mb-1 font-medium">Creator's note:</div>
@@ -240,18 +248,18 @@ export function TaskDetail() {
                   </div>
                 )}
                 <p className="text-zinc-400 text-sm mb-4">
-                  The creator has asked for changes. Submit a revised version below.
+                  The creator asked for changes. Submit your revised version below.
                 </p>
                 <Textarea
                   placeholder="Paste revised work link..."
-                  className="min-h-[100px] bg-background border-white/10 text-white focus-visible:ring-purple-500 resize-none mb-4"
+                  className="min-h-[100px] bg-background border-white/10 text-white focus-visible:ring-purple-500 resize-none mb-4 text-sm"
                   value={submissionContent}
                   onChange={(e) => setSubmissionContent(e.target.value)}
                 />
                 <Button
                   onClick={handleSubmitWork}
                   disabled={submitTask.isPending || !submissionContent.trim()}
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl"
+                  className="w-full btn-gradient text-white rounded-xl border-0 font-semibold"
                 >
                   {submitTask.isPending ? "Submitting..." : "Submit Revision"}
                 </Button>
@@ -262,12 +270,12 @@ export function TaskDetail() {
           {/* Creator: review submission */}
           {isCreator && task.status === "submitted" && (
             <Card className="bg-[#111217] border border-blue-500/30">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+              <CardContent className="p-5 md:p-6">
+                <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
                   Review Submission
                 </h3>
-                <div className="bg-background border border-white/10 rounded-xl p-4 mb-6 text-sm text-zinc-300 break-words whitespace-pre-wrap">
+                <div className="bg-background border border-white/10 rounded-xl p-4 mb-5 text-sm text-zinc-300 break-words whitespace-pre-wrap">
                   {task.submissionContent}
                 </div>
 
@@ -276,7 +284,7 @@ export function TaskDetail() {
                     <label className="text-sm text-zinc-400 mb-2 block">Revision note (optional)</label>
                     <Textarea
                       placeholder="Describe what needs to change..."
-                      className="min-h-[80px] bg-background border-white/10 text-white focus-visible:ring-purple-500 resize-none mb-3"
+                      className="min-h-[80px] bg-background border-white/10 text-white focus-visible:ring-purple-500 resize-none mb-3 text-sm"
                       value={revisionNote}
                       onChange={(e) => setRevisionNote(e.target.value)}
                     />
@@ -284,7 +292,7 @@ export function TaskDetail() {
                       <Button
                         onClick={handleRequestRevision}
                         disabled={actionsPending}
-                        className="flex-1 bg-amber-600 hover:bg-amber-500 text-white rounded-xl"
+                        className="flex-1 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-semibold"
                       >
                         {requestRevision.isPending ? "Requesting..." : "Send Request"}
                       </Button>
@@ -302,16 +310,16 @@ export function TaskDetail() {
                     <Button
                       onClick={handleApprove}
                       disabled={actionsPending}
-                      className="w-full bg-green-600 hover:bg-green-500 text-white rounded-xl"
+                      className="w-full bg-green-600 hover:bg-green-500 text-white rounded-xl font-semibold"
                     >
-                      Approve & Pay
+                      Approve &amp; Pay
                     </Button>
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                       <Button
                         onClick={() => setShowRevisionForm(true)}
                         disabled={actionsPending}
                         variant="outline"
-                        className="flex-1 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 rounded-xl bg-transparent"
+                        className="flex-1 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 rounded-xl bg-transparent text-sm"
                       >
                         Request Revision
                       </Button>
@@ -319,7 +327,7 @@ export function TaskDetail() {
                         onClick={handleReject}
                         disabled={actionsPending}
                         variant="outline"
-                        className="flex-1 border-red-500/20 text-red-500 hover:bg-red-500/10 hover:text-red-400 rounded-xl bg-transparent"
+                        className="flex-1 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl bg-transparent text-sm"
                       >
                         Reject
                       </Button>
@@ -333,10 +341,10 @@ export function TaskDetail() {
           {/* Worker: pending review */}
           {isWorker && task.status === "submitted" && (
             <Card className="bg-[#111217] border border-blue-500/20">
-              <CardContent className="p-6 text-center">
-                <div className="text-blue-500 mb-2 text-lg font-medium">Pending Review</div>
-                <p className="text-zinc-400 text-sm">
-                  Your work has been submitted. You'll receive payment once approved.
+              <CardContent className="p-5 text-center">
+                <div className="text-blue-400 mb-2 font-semibold">Pending Review</div>
+                <p className="text-zinc-500 text-sm">
+                  Your work has been submitted. Payment arrives once approved.
                 </p>
               </CardContent>
             </Card>
@@ -345,22 +353,13 @@ export function TaskDetail() {
           {/* Completed */}
           {task.status === "completed" && (
             <Card className="bg-[#111217] border border-purple-500/20">
-              <CardContent className="p-6 text-center">
-                <div className="text-purple-500 mb-2 text-xl font-medium">Task Completed</div>
-                <p className="text-zinc-400 text-sm">
+              <CardContent className="p-5 text-center">
+                <div className="text-purple-400 mb-2 text-lg font-bold">Task Completed</div>
+                <p className="text-zinc-500 text-sm">
                   {isWorker
-                    ? `₹${Math.floor(task.budget * 0.9)} credited to your wallet.`
+                    ? `₹${Math.floor(task.budget * 0.9).toLocaleString()} credited to your wallet.`
                     : "You approved the submission and payment was sent."}
                 </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Rejected (task reopened for new takers) */}
-          {task.status === "open" && !isCreator && (
-            <Card className="bg-[#111217] border border-[#1F2228]">
-              <CardContent className="p-4 text-center">
-                <p className="text-zinc-500 text-sm">This task is open for applications.</p>
               </CardContent>
             </Card>
           )}

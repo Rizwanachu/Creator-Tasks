@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "wouter";
+import React, { useState } from "react";
+import { Link, useLocation } from "wouter";
 import { useUser, useClerk } from "@clerk/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,12 +10,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWallet } from "@/hooks/use-wallet";
+import { Menu, X, LayoutDashboard, ListTodo, PlusCircle } from "lucide-react";
 
 function NavWalletBadge() {
   const { data: wallet } = useWallet();
   if (wallet?.balance == null) return null;
   return (
-    <span className="text-xs font-semibold text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full">
+    <span className="text-xs font-semibold text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full tabular-nums">
       ₹{wallet.balance.toLocaleString()}
     </span>
   );
@@ -24,14 +25,26 @@ function NavWalletBadge() {
 export function Layout({ children }: { children: React.ReactNode }) {
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [location] = useLocation();
+
+  // Close mobile nav on route change
+  React.useEffect(() => { setMobileOpen(false); }, [location]);
+
+  const navLinks = [
+    { href: "/tasks", label: "Browse Tasks", icon: ListTodo },
+    { href: "/create", label: "Post a Task", icon: PlusCircle },
+    ...(isSignedIn ? [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
+  ];
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-black/60 border-b border-white/[0.06]">
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-black/70 border-b border-white/[0.06]">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-7 h-7 rounded-lg btn-gradient flex items-center justify-center shrink-0">
+          {/* Left: Logo + desktop nav */}
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-2 group shrink-0">
+              <div className="w-7 h-7 rounded-lg btn-gradient flex items-center justify-center">
                 <span className="text-white text-xs font-bold">CT</span>
               </div>
               <span className="text-base font-bold tracking-tight text-white group-hover:opacity-80 transition-opacity">
@@ -40,20 +53,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
 
             <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
-              <Link href="/tasks" className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-200">
-                Browse Tasks
-              </Link>
-              <Link href="/create" className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-200">
-                Post a Task
-              </Link>
-              {isSignedIn && (
-                <Link href="/dashboard" className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-200">
-                  Dashboard
+              {navLinks.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-200"
+                >
+                  {label}
                 </Link>
-              )}
+              ))}
             </nav>
           </div>
 
+          {/* Right: auth + hamburger */}
           <div className="flex items-center gap-3">
             {isSignedIn ? (
               <div className="flex items-center gap-3">
@@ -97,7 +109,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </DropdownMenu>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-3">
                 <Link href="/sign-in" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
                   Sign In
                 </Link>
@@ -106,9 +118,77 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </Button>
               </div>
             )}
+
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileOpen((v) => !v)}
+              className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
         </div>
       </header>
+
+      {/* Mobile nav drawer */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-40 top-16">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+          {/* Drawer panel */}
+          <div className="relative bg-[#111217] border-b border-[#1F2228] shadow-2xl animate-fade-up">
+            <nav className="container mx-auto px-4 py-4 flex flex-col gap-1">
+              {navLinks.map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-300 hover:text-white hover:bg-white/5 transition-all duration-200 text-[15px] font-medium"
+                >
+                  <Icon size={18} className="text-zinc-500" />
+                  {label}
+                </Link>
+              ))}
+              <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                {isSignedIn ? (
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 border border-white/10">
+                        <AvatarImage src={user?.imageUrl} />
+                        <AvatarFallback className="bg-purple-600 text-white text-xs">
+                          {user?.firstName?.charAt(0) || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-semibold text-white">{user?.firstName}</p>
+                        <NavWalletBadge />
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => signOut()}
+                      className="text-xs text-zinc-500 hover:text-red-400 transition-colors"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 px-2">
+                    <Button asChild variant="ghost" className="w-full justify-center text-zinc-300 hover:text-white">
+                      <Link href="/sign-in">Sign In</Link>
+                    </Button>
+                    <Button asChild className="w-full btn-gradient text-white rounded-xl font-semibold border-0">
+                      <Link href="/sign-up">Sign Up Free</Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </nav>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 flex flex-col">
         {children}
