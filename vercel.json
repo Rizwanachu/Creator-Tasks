@@ -2,7 +2,7 @@
   "version": 2,
   "framework": null,
   "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @workspace/creatortasks run build",
+  "buildCommand": "pnpm --filter @workspace/api-server run build:serverless && pnpm --filter @workspace/creatortasks run build",
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index" },

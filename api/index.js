@@ -1,5 +1,6 @@
-// Plain JS entry — Vercel sends this straight to esbuild (no TS type-checking).
-// esbuild resolves the .js extension to the .ts source file automatically.
-import app from "../artifacts/api-server/src/app.js";
+// Vercel serverless entry point.
+// Imports from the pre-compiled JS bundle produced by build:serverless,
+// so Vercel's TypeScript checker never touches the TypeScript source files.
+import app from "../artifacts/api-server/dist/app.mjs";
 
 export default app;
