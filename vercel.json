@@ -4,7 +4,7 @@
   "nodeVersion": "22.x",
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm --filter @workspace/creatortasks run build",
-  "outputDirectory": "public",
+  "outputDirectory": "artifacts/creatortasks/dist",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" }
   ]
