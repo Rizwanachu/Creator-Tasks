@@ -102,7 +102,7 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" forceTheme="dark">
+    <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
       <TooltipProvider>
         <WouterRouter base={basePath}>
           <ClerkProviderWithRoutes />

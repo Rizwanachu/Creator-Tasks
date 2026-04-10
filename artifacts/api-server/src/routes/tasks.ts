@@ -2,11 +2,8 @@ import { Router } from "express";
 import { db, tasks, users, submissions, transactions } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
-import { alias } from "drizzle-orm/pg-core";
 
 const router = Router();
-
-const workerUsers = alias(users, "worker_users");
 
 router.get("/tasks", async (req, res) => {
   try {
@@ -21,7 +18,6 @@ router.get("/tasks", async (req, res) => {
         workerId: tasks.workerId,
         createdAt: tasks.createdAt,
         creatorName: users.name,
-        creatorEmail: users.email,
         creatorClerkId: users.clerkId,
       })
       .from(tasks)
@@ -37,7 +33,7 @@ router.get("/tasks", async (req, res) => {
 
 router.get("/tasks/:id", async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
 
     const [task] = await db
       .select({
@@ -50,7 +46,6 @@ router.get("/tasks/:id", async (req, res) => {
         workerId: tasks.workerId,
         createdAt: tasks.createdAt,
         creatorName: users.name,
-        creatorEmail: users.email,
         creatorClerkId: users.clerkId,
       })
       .from(tasks)
@@ -66,12 +61,11 @@ router.get("/tasks/:id", async (req, res) => {
       where: eq(submissions.taskId, id),
     });
 
-    let worker = null;
     let workerClerkId: string | null = null;
     if (task.workerId) {
-      worker = await db.query.users.findFirst({
+      const worker = await db.query.users.findFirst({
         where: eq(users.id, task.workerId),
-        columns: { id: true, name: true, email: true, clerkId: true },
+        columns: { clerkId: true },
       });
       workerClerkId = worker?.clerkId ?? null;
     }
@@ -81,7 +75,6 @@ router.get("/tasks/:id", async (req, res) => {
       workerClerkId,
       submissionContent: submission?.content ?? null,
       submission: submission || null,
-      worker,
     });
   } catch (err) {
     req.log.error({ err }, "Error fetching task");
@@ -91,7 +84,11 @@ router.get("/tasks/:id", async (req, res) => {
 
 router.post("/tasks", requireAuth, async (req, res) => {
   try {
-    const { title, description, budget } = req.body;
+    const { title, description, budget } = req.body as {
+      title?: string;
+      description?: string;
+      budget?: unknown;
+    };
 
     if (!title || !description || !budget) {
       res.status(400).json({ error: "title, description, and budget are required" });
@@ -123,7 +120,7 @@ router.post("/tasks", requireAuth, async (req, res) => {
 
 router.post("/tasks/:id/accept", requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const currentUser = req.dbUser!;
 
     const task = await db.query.tasks.findFirst({ where: eq(tasks.id, id) });
@@ -157,8 +154,8 @@ router.post("/tasks/:id/accept", requireAuth, async (req, res) => {
 
 router.post("/tasks/:id/submit", requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
-    const { content } = req.body;
+    const id = String(req.params.id);
+    const { content } = req.body as { content?: string };
     const currentUser = req.dbUser!;
 
     if (!content) {
@@ -182,10 +179,7 @@ router.post("/tasks/:id/submit", requireAuth, async (req, res) => {
       return;
     }
 
-    await db.insert(submissions).values({
-      taskId: id,
-      content,
-    });
+    await db.insert(submissions).values({ taskId: id, content });
 
     const [updated] = await db
       .update(tasks)
@@ -202,7 +196,7 @@ router.post("/tasks/:id/submit", requireAuth, async (req, res) => {
 
 router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const currentUser = req.dbUser!;
 
     const task = await db.query.tasks.findFirst({ where: eq(tasks.id, id) });
@@ -258,7 +252,7 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
 
 router.post("/tasks/:id/reject", requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const currentUser = req.dbUser!;
 
     const task = await db.query.tasks.findFirst({ where: eq(tasks.id, id) });

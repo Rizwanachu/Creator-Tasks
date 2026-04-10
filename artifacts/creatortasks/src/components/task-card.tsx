@@ -64,14 +64,18 @@ export function TaskCard({ task }: { task: Task }) {
         </div>
 
         <div className="flex gap-2 shrink-0">
-          {task.status === "open" && !isCreator && userId && (
+          {task.status === "open" && userId && (
             <Button
               size="sm"
-              disabled={acceptTask.isPending}
-              onClick={handleAccept}
-              className="bg-purple-600 hover:bg-purple-500 text-white rounded-xl"
+              disabled={isCreator || acceptTask.isPending}
+              onClick={!isCreator ? handleAccept : undefined}
+              className={
+                isCreator
+                  ? "rounded-xl opacity-40 cursor-not-allowed bg-purple-600 text-white"
+                  : "bg-purple-600 hover:bg-purple-500 text-white rounded-xl"
+              }
             >
-              {acceptTask.isPending ? "..." : "Accept"}
+              {isCreator ? "Your task" : acceptTask.isPending ? "Accepting..." : "Accept"}
             </Button>
           )}
           <Button
