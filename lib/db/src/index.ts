@@ -13,11 +13,10 @@ if (!process.env.DATABASE_URL) {
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL ?? "",
   max: 1,
-  ssl: process.env.DATABASE_URL?.includes("sslmode=require")
-    ? undefined
-    : process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : undefined,
+  // Neon (and most managed Postgres providers) require SSL in production.
+  // rejectUnauthorized: false is needed in serverless environments where the
+  // full certificate chain may not be available for verification.
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 export const db = drizzle(pool, { schema });
 

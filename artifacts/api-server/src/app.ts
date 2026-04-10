@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
@@ -37,5 +37,16 @@ app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(clerkMiddleware());
 
 app.use("/api", router);
+
+// Global error handler — must have 4 args for Express to recognise it as an error handler.
+// Returns JSON so apiFetch can parse the error message correctly.
+app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
+  const message = err instanceof Error ? err.message : "Internal server error";
+  const status = (err as { status?: number; statusCode?: number })?.status
+    ?? (err as { status?: number; statusCode?: number })?.statusCode
+    ?? 500;
+  (req as any).log?.error({ err }, "Unhandled error");
+  res.status(status).json({ error: message });
+});
 
 export default app;
