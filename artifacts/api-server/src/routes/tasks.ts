@@ -246,6 +246,18 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
       return;
     }
 
+    // Check poster has enough wallet balance to pay
+    const poster = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
+    if (!poster || (poster.balance ?? 0) < task.budget) {
+      const shortfall = task.budget - (poster?.balance ?? 0);
+      res.status(402).json({
+        error: `Insufficient wallet balance. You need ₹${shortfall} more to approve this task. Please top up your wallet first.`,
+        required: task.budget,
+        available: poster?.balance ?? 0,
+      });
+      return;
+    }
+
     const result = await db.transaction(async (tx) => {
       const [updated] = await tx
         .update(tasks)
@@ -260,14 +272,21 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
       const workerEarning = Math.floor(task.budget * 0.9);
       const platformFee = task.budget - workerEarning;
 
+      // Deduct full budget from poster
+      await tx
+        .update(users)
+        .set({ balance: sql`${users.balance} - ${task.budget}` })
+        .where(eq(users.id, currentUser.id));
+
+      // Credit worker's 90% share
       await tx
         .update(users)
         .set({ balance: sql`${users.balance} + ${workerEarning}` })
         .where(eq(users.id, task.workerId!));
 
       await tx.insert(transactions).values([
+        { userId: currentUser.id, amount: -task.budget, type: "payment" },
         { userId: task.workerId!, amount: workerEarning, type: "earning" },
-        { userId: currentUser.id, amount: platformFee, type: "fee" },
       ]);
 
       await tx.update(submissions)

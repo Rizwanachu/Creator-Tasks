@@ -7,15 +7,30 @@ import {
   useRejectTask,
   useRequestRevision,
 } from "@/hooks/use-tasks";
+import { useCreateDepositOrder, useVerifyDeposit } from "@/hooks/use-wallet";
 import { useAuth } from "@clerk/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { WalletModal } from "@/components/wallet-modal";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Wallet } from "lucide-react";
+
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (document.getElementById("razorpay-script")) { resolve(true); return; }
+    const script = document.createElement("script");
+    script.id = "razorpay-script";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 const CATEGORY_COLORS: Record<string, string> = {
   reels: "bg-pink-500/10 text-pink-400 border-pink-500/20",
@@ -45,6 +60,55 @@ export function TaskDetail() {
   const [submissionContent, setSubmissionContent] = useState("");
   const [revisionNote, setRevisionNote] = useState("");
   const [showRevisionForm, setShowRevisionForm] = useState(false);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [topUpRequired, setTopUpRequired] = useState<number | null>(null);
+
+  const createOrder = useCreateDepositOrder();
+  const verifyDeposit = useVerifyDeposit();
+
+  const handleDeposit = async () => {
+    const amount = Number(depositAmount);
+    if (isNaN(amount) || amount < 100) {
+      toast.error("Minimum deposit is ₹100");
+      return;
+    }
+    const loaded = await loadRazorpayScript();
+    if (!loaded) {
+      toast.error("Failed to load payment system. Please try again.");
+      return;
+    }
+    createOrder.mutate(amount, {
+      onSuccess: (order) => {
+        setShowTopUpModal(false);
+        const rzp = new (window as any).Razorpay({
+          key: order.keyId,
+          amount: order.amount * 100,
+          currency: order.currency,
+          name: "CreatorTasks",
+          description: "Wallet Top-up",
+          order_id: order.orderId,
+          handler: (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+            verifyDeposit.mutate(
+              { razorpay_order_id: response.razorpay_order_id, razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature, amount },
+              {
+                onSuccess: () => {
+                  toast.success(`₹${amount} added to your wallet! You can now approve the task.`);
+                  setDepositAmount("");
+                  setTopUpRequired(null);
+                },
+                onError: (err) => toast.error(err instanceof Error ? err.message : "Payment verification failed"),
+              }
+            );
+          },
+          theme: { color: "#7C5CFF" },
+          modal: { escape: true },
+        });
+        rzp.open();
+      },
+      onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to initiate payment"),
+    });
+  };
 
   if (isLoading) {
     return (
@@ -123,7 +187,18 @@ export function TaskDetail() {
   const handleApprove = () => {
     approveTask.mutate(task.id, {
       onSuccess: () => toast.success("Submission approved! Payment transferred."),
-      onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to approve"),
+      onError: (err) => {
+        const msg = err instanceof Error ? err.message : "Failed to approve";
+        if (msg.toLowerCase().includes("insufficient")) {
+          // Extract the budget from task for pre-filling the modal
+          setTopUpRequired(task.budget);
+          setDepositAmount(String(task.budget));
+          setShowTopUpModal(true);
+          toast.error(msg);
+        } else {
+          toast.error(msg);
+        }
+      },
     });
   };
 
@@ -365,6 +440,52 @@ export function TaskDetail() {
           )}
         </div>
       </div>
+
+      {/* Wallet top-up modal — shown when approval fails due to insufficient balance */}
+      <WalletModal open={showTopUpModal} onClose={() => setShowTopUpModal(false)} title="Top Up Wallet to Approve">
+        <div className="space-y-4">
+          {topUpRequired && (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-sm text-amber-400">
+              You need at least <strong>₹{topUpRequired.toLocaleString()}</strong> in your wallet to approve this task.
+            </div>
+          )}
+          <div>
+            <label className="text-sm text-zinc-400 mb-2 block font-medium">Amount to Add (₹)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-zinc-500 text-sm">₹</span>
+              <Input
+                type="number"
+                placeholder="1000"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500 rounded-xl"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {[500, 1000, 2000, 5000].map((preset) => (
+              <button
+                key={preset}
+                onClick={() => setDepositAmount(String(preset))}
+                className="flex-1 py-2 rounded-xl border border-white/10 text-sm text-zinc-400 hover:border-purple-500/40 hover:text-white transition-all duration-200 font-medium"
+              >
+                ₹{preset >= 1000 ? `${preset / 1000}k` : preset}
+              </button>
+            ))}
+          </div>
+          <Button
+            onClick={handleDeposit}
+            disabled={createOrder.isPending}
+            className="w-full btn-gradient text-white rounded-xl border-0 font-semibold flex items-center justify-center gap-2"
+          >
+            <Wallet size={15} />
+            {createOrder.isPending ? "Loading..." : "Add Money with Razorpay"}
+          </Button>
+          <p className="text-xs text-zinc-700 text-center">
+            Once topped up, come back and approve the submission
+          </p>
+        </div>
+      </WalletModal>
     </div>
   );
 }
