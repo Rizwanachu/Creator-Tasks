@@ -210,40 +210,48 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
       return;
     }
 
-    if (task.status !== "submitted") {
-      res.status(400).json({ error: "Task has not been submitted yet" });
-      return;
-    }
-
     if (!task.workerId) {
       res.status(400).json({ error: "No worker assigned" });
       return;
     }
 
-    const workerEarning = Math.floor(task.budget * 0.9);
-    const platformFee = task.budget - workerEarning;
+    const result = await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(tasks)
+        .set({ status: "completed" })
+        .where(and(eq(tasks.id, id), eq(tasks.status, "submitted")))
+        .returning();
 
-    await db
-      .update(users)
-      .set({ balance: sql`${users.balance} + ${workerEarning}` })
-      .where(eq(users.id, task.workerId));
+      if (!updated) {
+        return null;
+      }
 
-    await db.insert(transactions).values([
-      { userId: task.workerId, amount: workerEarning, type: "earning" },
-      { userId: currentUser.id, amount: platformFee, type: "fee" },
-    ]);
+      const workerEarning = Math.floor(task.budget * 0.9);
+      const platformFee = task.budget - workerEarning;
 
-    await db.update(submissions)
-      .set({ status: "approved" })
-      .where(eq(submissions.taskId, id));
+      await tx
+        .update(users)
+        .set({ balance: sql`${users.balance} + ${workerEarning}` })
+        .where(eq(users.id, task.workerId!));
 
-    const [updated] = await db
-      .update(tasks)
-      .set({ status: "completed" })
-      .where(eq(tasks.id, id))
-      .returning();
+      await tx.insert(transactions).values([
+        { userId: task.workerId!, amount: workerEarning, type: "earning" },
+        { userId: currentUser.id, amount: platformFee, type: "fee" },
+      ]);
 
-    res.json(updated);
+      await tx.update(submissions)
+        .set({ status: "approved" })
+        .where(eq(submissions.taskId, id));
+
+      return updated;
+    });
+
+    if (!result) {
+      res.status(409).json({ error: "Task is not in submitted state" });
+      return;
+    }
+
+    res.json(result);
   } catch (err) {
     req.log.error({ err }, "Error approving task");
     res.status(500).json({ error: "Failed to approve task" });
