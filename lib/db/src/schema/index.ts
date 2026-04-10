@@ -1,20 +1,36 @@
-// Export your models here. Add one export per file
-// export * from "./posts";
-//
-// Each model/table should ideally be split into different files.
-// Each model/table should define a Drizzle table, insert schema, and types:
-//
-//   import { pgTable, text, serial } from "drizzle-orm/pg-core";
-//   import { createInsertSchema } from "drizzle-zod";
-//   import { z } from "zod/v4";
-//
-//   export const postsTable = pgTable("posts", {
-//     id: serial("id").primaryKey(),
-//     title: text("title").notNull(),
-//   });
-//
-//   export const insertPostSchema = createInsertSchema(postsTable).omit({ id: true });
-//   export type InsertPost = z.infer<typeof insertPostSchema>;
-//   export type Post = typeof postsTable.$inferSelect;
+import { pgTable, text, integer, uuid, timestamp } from "drizzle-orm/pg-core";
 
-export {}
+export const users = pgTable("users", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  clerkId: text("clerk_id").notNull().unique(),
+  email: text("email"),
+  name: text("name"),
+  balance: integer("balance").default(0),
+  pendingBalance: integer("pending_balance").default(0),
+});
+
+export const tasks = pgTable("tasks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  budget: integer("budget").notNull(),
+  status: text("status").default("open"),
+  creatorId: uuid("creator_id").notNull(),
+  workerId: uuid("worker_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const submissions = pgTable("submissions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  taskId: uuid("task_id").notNull(),
+  content: text("content").notNull(),
+  status: text("status").default("pending"),
+});
+
+export const transactions = pgTable("transactions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  amount: integer("amount").notNull(),
+  type: text("type").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});

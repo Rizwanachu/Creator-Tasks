@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "CreatorTasks"
+version = "1.0.0"
+id = "artifacts/creatortasks"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22649
+
+[services.development]
+run = "pnpm --filter @workspace/creatortasks run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/creatortasks", "run", "build" ]
+publicDir = "artifacts/creatortasks/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22649"
+BASE_PATH = "/"
