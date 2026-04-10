@@ -91,7 +91,7 @@ router.post("/wallet/deposit/create-order", requireAuth, async (req, res) => {
     const order = await razorpay.orders.create({
       amount: amountNum * 100,
       currency: "INR",
-      receipt: `dep_${req.dbUser!.id}_${Date.now()}`,
+      receipt: `dep_${Date.now()}`,
     });
 
     res.json({

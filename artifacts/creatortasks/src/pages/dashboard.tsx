@@ -4,10 +4,9 @@ import { TaskCard } from "@/components/task-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { WalletModal } from "@/components/wallet-modal";
 import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock } from "lucide-react";
 import { toast } from "sonner";
 
@@ -301,94 +300,84 @@ export function Dashboard() {
         </TabsContent>
       </Tabs>
 
-      {/* Deposit Dialog */}
-      <Dialog open={showDepositDialog} onOpenChange={setShowDepositDialog}>
-        <DialogContent className="bg-[#111217] border-[#1F2228] text-white max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-white">Add Money</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div>
-              <label className="text-sm text-zinc-400 mb-2 block">Amount (₹)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-zinc-500">₹</span>
-                <Input
-                  type="number"
-                  placeholder="500"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500"
-                />
-              </div>
-              <p className="text-xs text-zinc-500 mt-1">Minimum ₹100</p>
-            </div>
-            <div className="flex gap-3 pt-2">
-              {[500, 1000, 2000].map((preset) => (
-                <button
-                  key={preset}
-                  onClick={() => setDepositAmount(String(preset))}
-                  className="flex-1 py-1.5 rounded-lg border border-white/10 text-sm text-zinc-400 hover:border-purple-500/40 hover:text-white transition-colors"
-                >
-                  ₹{preset}
-                </button>
-              ))}
-            </div>
-            <Button
-              onClick={handleDeposit}
-              disabled={createOrder.isPending}
-              className="w-full bg-purple-600 hover:bg-purple-500 text-white rounded-xl"
-            >
-              {createOrder.isPending ? "Loading..." : "Pay with Razorpay"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Withdraw Dialog */}
-      <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
-        <DialogContent className="bg-[#111217] border-[#1F2228] text-white max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-white">Withdraw Money</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div>
-              <label className="text-sm text-zinc-400 mb-2 block">Amount (₹)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-zinc-500">₹</span>
-                <Input
-                  type="number"
-                  placeholder="500"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500"
-                />
-              </div>
-              <p className="text-xs text-zinc-500 mt-1">
-                Available: ₹{wallet?.balance?.toLocaleString() || "0"} &bull; Minimum ₹100
-              </p>
-            </div>
-            <div>
-              <label className="text-sm text-zinc-400 mb-2 block">UPI ID</label>
+      {/* Deposit Modal */}
+      <WalletModal open={showDepositDialog} onClose={() => setShowDepositDialog(false)} title="Add Money">
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm text-zinc-400 mb-2 block">Amount (₹)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-zinc-500">₹</span>
               <Input
-                placeholder="yourname@upi"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-                className="bg-background border-white/10 text-white focus-visible:ring-purple-500"
+                type="number"
+                placeholder="500"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500"
               />
             </div>
-            <p className="text-xs text-zinc-500">
-              Withdrawals are processed within 24 hours to your UPI account.
-            </p>
-            <Button
-              onClick={handleWithdraw}
-              disabled={withdraw.isPending}
-              className="w-full bg-purple-600 hover:bg-purple-500 text-white rounded-xl"
-            >
-              {withdraw.isPending ? "Processing..." : "Request Withdrawal"}
-            </Button>
+            <p className="text-xs text-zinc-500 mt-1">Minimum ₹100</p>
           </div>
-        </DialogContent>
-      </Dialog>
+          <div className="flex gap-3">
+            {[500, 1000, 2000].map((preset) => (
+              <button
+                key={preset}
+                onClick={() => setDepositAmount(String(preset))}
+                className="flex-1 py-1.5 rounded-lg border border-white/10 text-sm text-zinc-400 hover:border-purple-500/40 hover:text-white transition-colors"
+              >
+                ₹{preset}
+              </button>
+            ))}
+          </div>
+          <Button
+            onClick={handleDeposit}
+            disabled={createOrder.isPending}
+            className="w-full bg-purple-600 hover:bg-purple-500 text-white rounded-xl"
+          >
+            {createOrder.isPending ? "Loading..." : "Pay with Razorpay"}
+          </Button>
+        </div>
+      </WalletModal>
+
+      {/* Withdraw Modal */}
+      <WalletModal open={showWithdrawDialog} onClose={() => setShowWithdrawDialog(false)} title="Withdraw Money">
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm text-zinc-400 mb-2 block">Amount (₹)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-zinc-500">₹</span>
+              <Input
+                type="number"
+                placeholder="500"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                className="pl-8 bg-background border-white/10 text-white focus-visible:ring-purple-500"
+              />
+            </div>
+            <p className="text-xs text-zinc-500 mt-1">
+              Available: ₹{wallet?.balance?.toLocaleString() || "0"} &bull; Minimum ₹100
+            </p>
+          </div>
+          <div>
+            <label className="text-sm text-zinc-400 mb-2 block">UPI ID</label>
+            <Input
+              placeholder="yourname@upi"
+              value={upiId}
+              onChange={(e) => setUpiId(e.target.value)}
+              className="bg-background border-white/10 text-white focus-visible:ring-purple-500"
+            />
+          </div>
+          <p className="text-xs text-zinc-500">
+            Withdrawals are processed within 24 hours to your UPI account.
+          </p>
+          <Button
+            onClick={handleWithdraw}
+            disabled={withdraw.isPending}
+            className="w-full bg-purple-600 hover:bg-purple-500 text-white rounded-xl"
+          >
+            {withdraw.isPending ? "Processing..." : "Request Withdrawal"}
+          </Button>
+        </div>
+      </WalletModal>
     </div>
   );
 }
