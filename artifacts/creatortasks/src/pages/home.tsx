@@ -326,13 +326,6 @@ export function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-8 px-4">
-        <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-sm font-bold text-foreground">CreatorTasks</div>
-          <div className="text-xs text-muted-foreground">AI Content Marketplace · Secure payouts by Razorpay</div>
-        </div>
-      </footer>
     </div>
   );
 }
