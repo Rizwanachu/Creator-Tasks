@@ -2,7 +2,12 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+import { fileURLToPath } from "url";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+
+// import.meta.dirname is Node ≥21.2; fall back to URL-based approach for Node 20
+const __dirname =
+  import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(async ({ command }) => {
   const isServe = command === "serve";
@@ -37,7 +42,7 @@ export default defineConfig(async ({ command }) => {
       ? [
           await import("@replit/vite-plugin-cartographer").then((m) =>
             m.cartographer({
-              root: path.resolve(import.meta.dirname, ".."),
+              root: path.resolve(__dirname, ".."),
             }),
           ),
           await import("@replit/vite-plugin-dev-banner").then((m) =>
@@ -51,9 +56,9 @@ export default defineConfig(async ({ command }) => {
     plugins: [react(), tailwindcss(), runtimeErrorOverlay(), ...replitPlugins],
     resolve: {
       alias: {
-        "@": path.resolve(import.meta.dirname, "src"),
+        "@": path.resolve(__dirname, "src"),
         "@assets": path.resolve(
-          import.meta.dirname,
+          __dirname,
           "..",
           "..",
           "attached_assets",
@@ -61,9 +66,9 @@ export default defineConfig(async ({ command }) => {
       },
       dedupe: ["react", "react-dom"],
     },
-    root: path.resolve(import.meta.dirname),
+    root: path.resolve(__dirname),
     build: {
-      outDir: path.resolve(import.meta.dirname, "../../public"),
+      outDir: path.resolve(__dirname, "../../public"),
       emptyOutDir: true,
     },
     server: {
