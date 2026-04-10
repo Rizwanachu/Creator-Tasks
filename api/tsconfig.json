@@ -1,8 +1,0 @@
-{
-  "extends": "../tsconfig.base.json",
-  "compilerOptions": {
-    "noEmit": true,
-    "skipLibCheck": true
-  },
-  "include": ["./**/*.ts", "../artifacts/api-server/src/**/*.ts", "../lib/db/src/**/*.ts", "../lib/api-zod/src/**/*.ts"]
-}
