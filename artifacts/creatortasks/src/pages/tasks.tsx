@@ -89,6 +89,18 @@ export function Tasks() {
           {tasks?.map((task) => (
             <TaskCard key={task.id} task={task} />
           ))}
+          {/* Coming soon card — always shown at the end */}
+          <div className="relative bg-card border border-dashed border-purple-500/30 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[180px] overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 pointer-events-none" />
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-purple-500 bg-purple-500/10 border border-purple-500/20 rounded-full px-3 py-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+              Coming Soon
+            </span>
+            <p className="text-sm font-semibold text-foreground">More tasks dropping soon</p>
+            <p className="text-xs text-muted-foreground max-w-[180px]">
+              New opportunities are added daily. Check back often!
+            </p>
+          </div>
         </div>
       )}
     </div>
