@@ -67,10 +67,31 @@ open → cancelled (creator cancels, escrow refunded)
 - POST /api/wallet/withdraw
 - GET /api/dashboard
 
-## Environment Secrets Required
+## Environment Variables Required
 
+### Replit (Secrets panel)
 - `RAZORPAY_KEY_ID` — Razorpay public key (starts with `rzp_test_` or `rzp_live_`)
 - `RAZORPAY_KEY_SECRET` — Razorpay secret key for HMAC verification
+- `DATABASE_URL` — PostgreSQL connection string
+- `VITE_CLERK_PUBLISHABLE_KEY` — Clerk publishable key (pk_live_…)
+- `CLERK_SECRET_KEY` — Clerk secret key (sk_live_…)
+
+### Vercel (Environment Variables dashboard)
+Same vars as above, minus `VITE_CLERK_PROXY_URL` (not needed on Vercel).
+See `.env.example` for the full list.
+
+## Vercel Deployment
+
+The project is Vercel-ready:
+
+- **`vercel.json`** at the root: sets `buildCommand`, `outputDirectory`, and rewrites `/api/*` to a serverless function.
+- **`api/index.ts`** at the root: exports the Express app as a Vercel Node.js serverless handler. Vercel bundles this with all its workspace dependencies.
+- **`vite.config.ts`**: `PORT` is only validated in dev mode; `BASE_PATH` defaults to `/` for production builds — no env vars needed for `vercel build`.
+
+Steps to deploy on Vercel:
+1. Connect your GitHub repo on vercel.com
+2. Set environment variables in the Vercel dashboard (see `.env.example`)
+3. Deploy — Vercel runs `pnpm install` + builds the frontend, then compiles the API serverless function automatically
 
 ## Key Commands
 
