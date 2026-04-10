@@ -52,9 +52,9 @@ export function TaskDetail() {
     );
   }
 
-  const isCreator = userId === task.creatorId;
-  const isWorker = userId === task.workerId;
-  const canAccept = !isCreator && task.status === "open";
+  const isCreator = !!userId && userId === task.creatorClerkId;
+  const isWorker = !!userId && userId === task.workerClerkId;
+  const canAccept = !!userId && !isCreator && task.status === "open";
 
   const statusColors = {
     open: "bg-green-500/10 text-green-500 border-green-500/20",
@@ -73,10 +73,6 @@ export function TaskDetail() {
   };
 
   const handleAccept = () => {
-    if (!userId) {
-      toast.error("Please sign in to accept tasks");
-      return;
-    }
     acceptTask.mutate(task.id, {
       onSuccess: () => toast.success("Task accepted!"),
       onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to accept task")

@@ -10,9 +10,10 @@ export interface Task {
   status: "open" | "in_progress" | "submitted" | "completed" | "rejected";
   creatorId: string;
   workerId: string | null;
+  creatorClerkId: string | null;
+  workerClerkId: string | null;
   submissionContent: string | null;
   createdAt: string;
-  updatedAt: string;
   creatorName?: string;
 }
 

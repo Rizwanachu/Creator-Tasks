@@ -2,8 +2,11 @@ import { Router } from "express";
 import { db, tasks, users, submissions, transactions } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
+import { alias } from "drizzle-orm/pg-core";
 
 const router = Router();
+
+const workerUsers = alias(users, "worker_users");
 
 router.get("/tasks", async (req, res) => {
   try {
@@ -19,6 +22,7 @@ router.get("/tasks", async (req, res) => {
         createdAt: tasks.createdAt,
         creatorName: users.name,
         creatorEmail: users.email,
+        creatorClerkId: users.clerkId,
       })
       .from(tasks)
       .leftJoin(users, eq(tasks.creatorId, users.id))
@@ -47,6 +51,7 @@ router.get("/tasks/:id", async (req, res) => {
         createdAt: tasks.createdAt,
         creatorName: users.name,
         creatorEmail: users.email,
+        creatorClerkId: users.clerkId,
       })
       .from(tasks)
       .leftJoin(users, eq(tasks.creatorId, users.id))
@@ -62,14 +67,22 @@ router.get("/tasks/:id", async (req, res) => {
     });
 
     let worker = null;
+    let workerClerkId: string | null = null;
     if (task.workerId) {
       worker = await db.query.users.findFirst({
         where: eq(users.id, task.workerId),
-        columns: { id: true, name: true, email: true },
+        columns: { id: true, name: true, email: true, clerkId: true },
       });
+      workerClerkId = worker?.clerkId ?? null;
     }
 
-    res.json({ ...task, submission: submission || null, worker });
+    res.json({
+      ...task,
+      workerClerkId,
+      submissionContent: submission?.content ?? null,
+      submission: submission || null,
+      worker,
+    });
   } catch (err) {
     req.log.error({ err }, "Error fetching task");
     res.status(500).json({ error: "Failed to fetch task" });
@@ -222,8 +235,20 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
       .where(eq(users.id, task.workerId));
 
     await db.insert(transactions).values([
-      { userId: task.workerId, amount: workerEarning, type: "earning" },
-      { userId: currentUser.id, amount: platformFee, type: "fee" },
+      {
+        userId: task.workerId,
+        amount: workerEarning,
+        type: "payment",
+        description: `Payment for task: ${task.title}`,
+        status: "completed",
+      },
+      {
+        userId: currentUser.id,
+        amount: platformFee,
+        type: "fee",
+        description: `Platform fee for task: ${task.title}`,
+        status: "completed",
+      },
     ]);
 
     await db.update(submissions)

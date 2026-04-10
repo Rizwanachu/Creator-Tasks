@@ -19,10 +19,19 @@ router.get("/wallet", requireAuth, async (req, res) => {
       .where(eq(transactions.userId, currentUser.id))
       .orderBy(sql`${transactions.createdAt} DESC`);
 
+    const normalizedTransactions = userTransactions.map((tx) => ({
+      id: tx.id,
+      amount: tx.amount,
+      type: tx.type as "deposit" | "withdrawal" | "payment" | "fee",
+      status: (tx.status ?? "completed") as "pending" | "completed" | "failed",
+      description: tx.description ?? (tx.type === "payment" ? "Earnings received" : tx.type === "fee" ? "Platform fee" : "Transaction"),
+      createdAt: tx.createdAt,
+    }));
+
     res.json({
       balance: user?.balance ?? 0,
       pendingBalance: user?.pendingBalance ?? 0,
-      transactions: userTransactions,
+      transactions: normalizedTransactions,
     });
   } catch (err) {
     req.log.error({ err }, "Error fetching wallet");
