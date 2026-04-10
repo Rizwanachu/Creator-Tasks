@@ -1,6 +1,6 @@
 {
   "buildCommand": "pnpm run build",
-  "outputDirectory": "dist",
+  "outputDirectory": "artifacts/creatortasks/dist",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" }
   ]
