@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateTask } from "@/hooks/use-tasks";
+import { useWallet, useCreateDepositOrder, useVerifyDeposit } from "@/hooks/use-wallet";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,26 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Clock, Users, Lock, Sparkles } from "lucide-react";
+import { WalletModal } from "@/components/wallet-modal";
+import { Zap, Clock, Users, Lock, Sparkles, Wallet, AlertTriangle } from "lucide-react";
+
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (document.getElementById("razorpay-script")) { resolve(true); return; }
+    const script = document.createElement("script");
+    script.id = "razorpay-script";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
+declare global {
+  interface Window {
+    Razorpay: new (options: Record<string, unknown>) => { open: () => void };
+  }
+}
 
 const CATEGORIES = [
   {
@@ -244,6 +264,13 @@ function TaskPreview({
 export function CreateTask() {
   const [, setLocation] = useLocation();
   const createTask = useCreateTask();
+  const { data: wallet } = useWallet();
+  const createOrder = useCreateDepositOrder();
+  const verifyDeposit = useVerifyDeposit();
+
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [pendingSubmitData, setPendingSubmitData] = useState<TaskFormValues | null>(null);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -265,17 +292,71 @@ export function CreateTask() {
     toast.success("Example task loaded — edit it to make it yours!");
   }
 
-  function onSubmit(data: TaskFormValues) {
+  function submitTask(data: TaskFormValues) {
     createTask.mutate(data, {
       onSuccess: () => {
-        toast.success("Task posted! Creators will see it now.");
+        toast.success("Task posted! Budget locked in escrow.");
         setLocation("/dashboard");
       },
       onError: (err) => {
-        toast.error(err instanceof Error ? err.message : "Failed to create task");
+        const msg = err instanceof Error ? err.message : "Failed to create task";
+        toast.error(msg);
       },
     });
   }
+
+  function onSubmit(data: TaskFormValues) {
+    const available = wallet?.balance ?? 0;
+    if (available < data.budget) {
+      setPendingSubmitData(data);
+      setShowTopUpModal(true);
+      return;
+    }
+    submitTask(data);
+  }
+
+  const handleDeposit = async () => {
+    const amount = Number(depositAmount);
+    if (isNaN(amount) || amount < 100) {
+      toast.error("Minimum deposit is ₹100");
+      return;
+    }
+    const loaded = await loadRazorpayScript();
+    if (!loaded) { toast.error("Failed to load payment system."); return; }
+    createOrder.mutate(amount, {
+      onSuccess: (order) => {
+        setShowTopUpModal(false);
+        const rzp = new window.Razorpay({
+          key: order.keyId,
+          amount: order.amount * 100,
+          currency: order.currency,
+          name: "CreatorTasks",
+          description: "Wallet Top-up",
+          order_id: order.orderId,
+          handler: (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+            verifyDeposit.mutate(
+              { razorpay_order_id: response.razorpay_order_id, razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature, amount },
+              {
+                onSuccess: () => {
+                  toast.success(`₹${amount} added! You can now post your task.`);
+                  setDepositAmount("");
+                  if (pendingSubmitData) {
+                    setPendingSubmitData(null);
+                    submitTask(pendingSubmitData);
+                  }
+                },
+                onError: (err) => toast.error(err instanceof Error ? err.message : "Verification failed"),
+              }
+            );
+          },
+          theme: { color: "#7C5CFF" },
+          modal: { escape: true },
+        });
+        rzp.open();
+      },
+      onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to initiate payment"),
+    });
+  };
 
   // Derived feedback hints
   const titleLen = watched.title?.length ?? 0;
@@ -465,8 +546,36 @@ export function CreateTask() {
                   )}
                 />
 
+                {/* Escrow notice + balance indicator */}
+                {(() => {
+                  const budgetNum = Number(watched.budget);
+                  const available = wallet?.balance ?? 0;
+                  const locked = wallet?.pendingBalance ?? 0;
+                  const hasInsufficientFunds = budgetNum >= 100 && available < budgetNum;
+                  return (
+                    <div className={`rounded-xl border p-3 text-xs space-y-1.5 ${hasInsufficientFunds ? "border-amber-500/30 bg-amber-500/5" : "border-white/[0.06] bg-white/[0.02]"}`}>
+                      <div className="flex items-center justify-between text-zinc-500">
+                        <span className="flex items-center gap-1.5">
+                          <Lock size={10} className="text-purple-400" />
+                          Budget locked in escrow on post
+                        </span>
+                        <span className="text-zinc-400 font-medium">
+                          Wallet: ₹{available.toLocaleString()}
+                          {locked > 0 && <span className="text-zinc-600"> · ₹{locked.toLocaleString()} locked</span>}
+                        </span>
+                      </div>
+                      {hasInsufficientFunds && (
+                        <div className="flex items-center gap-1.5 text-amber-400">
+                          <AlertTriangle size={10} />
+                          You need ₹{(budgetNum - available).toLocaleString()} more — we'll prompt you to top up.
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* Footer */}
-                <div className="pt-6 border-t border-white/[0.06] space-y-4">
+                <div className="pt-4 border-t border-white/[0.06] space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <button
                       type="button"
@@ -480,7 +589,7 @@ export function CreateTask() {
                       disabled={createTask.isPending}
                       className="btn-gradient text-white rounded-xl px-8 border-0 font-semibold text-base h-11 min-w-[200px] active:scale-95"
                     >
-                      {createTask.isPending ? "Posting..." : "Post Task & Get Creators"}
+                      {createTask.isPending ? "Posting..." : "Post Task & Lock Funds"}
                     </Button>
                   </div>
                   {/* Trust line */}
@@ -508,6 +617,55 @@ export function CreateTask() {
           </div>
         </div>
       </div>
+
+      {/* Top-up modal — shown when balance is insufficient to post */}
+      <WalletModal open={showTopUpModal} onClose={() => { setShowTopUpModal(false); setPendingSubmitData(null); }} title="Top Up Wallet to Post">
+        <div className="space-y-4">
+          {pendingSubmitData && (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-sm text-amber-400">
+              You need <strong>₹{pendingSubmitData.budget.toLocaleString()}</strong> in your wallet.
+              You currently have ₹{(wallet?.balance ?? 0).toLocaleString()}.
+            </div>
+          )}
+          <div>
+            <label className="text-sm text-zinc-400 mb-2 block font-medium">Amount to Add (₹)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-zinc-500 text-sm">₹</span>
+              <input
+                type="number"
+                placeholder="1000"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                className="w-full pl-8 pr-4 py-2 bg-background border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {[500, 1000, 2000, 5000].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => setDepositAmount(String(preset))}
+                className="flex-1 py-2 rounded-xl border border-white/10 text-sm text-zinc-400 hover:border-purple-500/40 hover:text-white transition-all duration-200 font-medium"
+              >
+                ₹{preset >= 1000 ? `${preset / 1000}k` : preset}
+              </button>
+            ))}
+          </div>
+          <Button
+            type="button"
+            onClick={handleDeposit}
+            disabled={createOrder.isPending}
+            className="w-full btn-gradient text-white rounded-xl border-0 font-semibold flex items-center justify-center gap-2"
+          >
+            <Wallet size={15} />
+            {createOrder.isPending ? "Loading..." : "Add Money with Razorpay"}
+          </Button>
+          <p className="text-xs text-zinc-700 text-center">
+            Funds will be locked as escrow when the task is posted
+          </p>
+        </div>
+      </WalletModal>
     </>
   );
 }

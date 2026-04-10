@@ -10,8 +10,9 @@ export interface Task {
   description: string;
   budget: number;
   category: TaskCategory;
-  status: "open" | "in_progress" | "submitted" | "completed" | "rejected" | "revision_requested";
+  status: "open" | "in_progress" | "submitted" | "completed" | "rejected" | "revision_requested" | "cancelled";
   revisionNote: string | null;
+  revisionCount: number;
   creatorId: string;
   workerId: string | null;
   creatorClerkId: string | null;
@@ -127,6 +128,22 @@ export function useRequestRevision() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["tasks", id] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useCancelTask() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/api/tasks/${id}/cancel`, { method: "POST" }, getToken),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks", id] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
     },
   });
 }

@@ -25,6 +25,7 @@ router.get("/tasks", async (req, res) => {
         category: tasks.category,
         status: tasks.status,
         revisionNote: tasks.revisionNote,
+        revisionCount: tasks.revisionCount,
         creatorId: tasks.creatorId,
         workerId: tasks.workerId,
         createdAt: tasks.createdAt,
@@ -58,6 +59,7 @@ router.get("/tasks/:id", async (req, res) => {
         category: tasks.category,
         status: tasks.status,
         revisionNote: tasks.revisionNote,
+        revisionCount: tasks.revisionCount,
         creatorId: tasks.creatorId,
         workerId: tasks.workerId,
         createdAt: tasks.createdAt,
@@ -113,23 +115,48 @@ router.post("/tasks", requireAuth, async (req, res) => {
     }
 
     const budgetNum = Number(budget);
-    if (isNaN(budgetNum) || budgetNum <= 0) {
-      res.status(400).json({ error: "budget must be a positive number" });
+    if (isNaN(budgetNum) || budgetNum < 100) {
+      res.status(400).json({ error: "Minimum budget is ₹100" });
       return;
     }
 
     const categoryVal: Category = isValidCategory(category) ? category : "other";
+    const currentUser = req.dbUser!;
 
-    const [task] = await db
-      .insert(tasks)
-      .values({
-        title,
-        description,
-        budget: budgetNum,
-        category: categoryVal,
-        creatorId: req.dbUser!.id,
-      })
-      .returning();
+    // Escrow: ensure poster has enough available balance
+    const poster = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
+    const available = poster?.balance ?? 0;
+    if (available < budgetNum) {
+      const shortfall = budgetNum - available;
+      res.status(402).json({
+        error: `Insufficient wallet balance. You need ₹${shortfall} more to post this task. Please top up your wallet first.`,
+        required: budgetNum,
+        available,
+      });
+      return;
+    }
+
+    // Lock budget in escrow (deduct from balance, add to pendingBalance), create task atomically
+    const [task] = await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({
+          balance: sql`${users.balance} - ${budgetNum}`,
+          pendingBalance: sql`${users.pendingBalance} + ${budgetNum}`,
+        })
+        .where(and(eq(users.id, currentUser.id), sql`${users.balance} >= ${budgetNum}`));
+
+      return tx
+        .insert(tasks)
+        .values({
+          title,
+          description,
+          budget: budgetNum,
+          category: categoryVal,
+          creatorId: currentUser.id,
+        })
+        .returning();
+    });
 
     res.status(201).json(task);
   } catch (err) {
@@ -253,14 +280,13 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
       return;
     }
 
-    // Early UX balance check (non-atomic, fast feedback before any DB work)
+    // Early UX check: budget must be in escrow (pendingBalance) — fast feedback
     const posterPre = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
-    if (!posterPre || (posterPre.balance ?? 0) < task.budget) {
-      const shortfall = task.budget - (posterPre?.balance ?? 0);
+    if (!posterPre || (posterPre.pendingBalance ?? 0) < task.budget) {
       res.status(402).json({
-        error: `Insufficient wallet balance. You need ₹${shortfall} more to approve this task. Please top up your wallet first.`,
+        error: `Escrow funds missing. The task budget of ₹${task.budget} must be in your wallet before approving.`,
         required: task.budget,
-        available: posterPre?.balance ?? 0,
+        available: posterPre?.pendingBalance ?? 0,
       });
       return;
     }
@@ -295,21 +321,22 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
 
       if (!updated) throw new ApproveError("NOT_SUBMITTED");
 
-      // Guard 2: re-check balance atomically inside transaction
+      // Guard 2: re-check escrowed pendingBalance atomically inside transaction
       const [poster] = await tx
-        .select({ balance: users.balance })
+        .select({ pendingBalance: users.pendingBalance })
         .from(users)
         .where(eq(users.id, currentUser.id));
 
-      const available = poster?.balance ?? 0;
+      const available = poster?.pendingBalance ?? 0;
       if (available < task.budget) {
         throw new ApproveError("INSUFFICIENT_BALANCE", task.budget - available, available);
       }
 
       // Guard 3: all money moves together or not at all
+      // Release from escrow (pendingBalance), credit worker
       await tx
         .update(users)
-        .set({ balance: sql`${users.balance} - ${task.budget}` })
+        .set({ pendingBalance: sql`${users.pendingBalance} - ${task.budget}` })
         .where(eq(users.id, currentUser.id));
 
       await tx
@@ -372,16 +399,43 @@ router.post("/tasks/:id/reject", requireAuth, async (req, res) => {
       return;
     }
 
-    await db.update(submissions)
-      .set({ status: "rejected" })
-      .where(eq(submissions.taskId, id));
+    // Worker protection: must request at least 1 revision before rejecting outright
+    if ((task.revisionCount ?? 0) === 0) {
+      res.status(400).json({
+        error: "You must request at least one revision before rejecting. This protects workers from unfair rejections.",
+        code: "REVISION_REQUIRED",
+      });
+      return;
+    }
 
-    const [updated] = await db
-      .update(tasks)
-      .set({ status: "open", workerId: null })
-      .where(eq(tasks.id, id))
-      .returning();
+    // Reject: refund escrowed budget back to poster's available balance, reopen task
+    await db.transaction(async (tx) => {
+      await tx.update(submissions)
+        .set({ status: "rejected" })
+        .where(eq(submissions.taskId, id));
 
+      await tx
+        .update(tasks)
+        .set({ status: "open", workerId: null })
+        .where(eq(tasks.id, id));
+
+      // Refund escrow: move budget from pendingBalance back to balance
+      await tx
+        .update(users)
+        .set({
+          balance: sql`${users.balance} + ${task.budget}`,
+          pendingBalance: sql`${users.pendingBalance} - ${task.budget}`,
+        })
+        .where(eq(users.id, currentUser.id));
+
+      await tx.insert(transactions).values({
+        userId: currentUser.id,
+        amount: task.budget,
+        type: "refund",
+      });
+    });
+
+    const [updated] = await db.select().from(tasks).where(eq(tasks.id, id));
     res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Error rejecting task");
@@ -417,7 +471,11 @@ router.post("/tasks/:id/request-revision", requireAuth, async (req, res) => {
 
     const [updated] = await db
       .update(tasks)
-      .set({ status: "revision_requested", revisionNote: note || null })
+      .set({
+        status: "revision_requested",
+        revisionNote: note || null,
+        revisionCount: sql`${tasks.revisionCount} + 1`,
+      })
       .where(eq(tasks.id, id))
       .returning();
 
@@ -425,6 +483,59 @@ router.post("/tasks/:id/request-revision", requireAuth, async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Error requesting revision");
     res.status(500).json({ error: "Failed to request revision" });
+  }
+});
+
+// Cancel an open (unassigned) task — refunds escrow to poster
+router.post("/tasks/:id/cancel", requireAuth, async (req, res) => {
+  try {
+    const id = String(req.params.id);
+    const currentUser = req.dbUser!;
+
+    const task = await db.query.tasks.findFirst({ where: eq(tasks.id, id) });
+    if (!task) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+
+    if (task.creatorId !== currentUser.id) {
+      res.status(403).json({ error: "Only the creator can cancel" });
+      return;
+    }
+
+    if (task.status !== "open") {
+      res.status(400).json({
+        error: "Only open (unassigned) tasks can be cancelled. A task in progress cannot be cancelled.",
+      });
+      return;
+    }
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(tasks)
+        .set({ status: "cancelled" })
+        .where(eq(tasks.id, id));
+
+      // Refund escrow back to available balance
+      await tx
+        .update(users)
+        .set({
+          balance: sql`${users.balance} + ${task.budget}`,
+          pendingBalance: sql`${users.pendingBalance} - ${task.budget}`,
+        })
+        .where(eq(users.id, currentUser.id));
+
+      await tx.insert(transactions).values({
+        userId: currentUser.id,
+        amount: task.budget,
+        type: "refund",
+      });
+    });
+
+    res.json({ success: true, refunded: task.budget });
+  } catch (err) {
+    req.log.error({ err }, "Error cancelling task");
+    res.status(500).json({ error: "Failed to cancel task" });
   }
 });
 

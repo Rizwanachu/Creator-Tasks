@@ -6,6 +6,7 @@ import {
   useApproveTask,
   useRejectTask,
   useRequestRevision,
+  useCancelTask,
 } from "@/hooks/use-tasks";
 import { useCreateDepositOrder, useVerifyDeposit } from "@/hooks/use-wallet";
 import { useAuth } from "@clerk/react";
@@ -56,6 +57,7 @@ export function TaskDetail() {
   const approveTask = useApproveTask();
   const rejectTask = useRejectTask();
   const requestRevision = useRequestRevision();
+  const cancelTask = useCancelTask();
 
   const [submissionContent, setSubmissionContent] = useState("");
   const [revisionNote, setRevisionNote] = useState("");
@@ -152,6 +154,7 @@ export function TaskDetail() {
     completed: "bg-purple-500/10 text-purple-400 border-purple-500/20",
     rejected: "bg-red-500/10 text-red-400 border-red-500/20",
     revision_requested: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    cancelled: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
   };
 
   const statusLabels: Record<string, string> = {
@@ -161,6 +164,7 @@ export function TaskDetail() {
     completed: "Completed",
     rejected: "Rejected",
     revision_requested: "Revision Requested",
+    cancelled: "Cancelled",
   };
 
   const handleAccept = () => {
@@ -220,7 +224,16 @@ export function TaskDetail() {
     });
   };
 
-  const actionsPending = approveTask.isPending || rejectTask.isPending || requestRevision.isPending;
+  const handleCancel = () => {
+    cancelTask.mutate(task.id, {
+      onSuccess: (data: { refunded: number }) => {
+        toast.success(`Task cancelled. ₹${data.refunded.toLocaleString()} refunded to your wallet.`);
+      },
+      onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to cancel task"),
+    });
+  };
+
+  const actionsPending = approveTask.isPending || rejectTask.isPending || requestRevision.isPending || cancelTask.isPending;
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
@@ -288,6 +301,25 @@ export function TaskDetail() {
               )}
             </CardContent>
           </Card>
+
+          {/* Creator: cancel open task to reclaim escrow */}
+          {isCreator && task.status === "open" && (
+            <Card className="bg-[#111217] border border-zinc-800">
+              <CardContent className="p-4">
+                <Button
+                  onClick={handleCancel}
+                  disabled={actionsPending}
+                  variant="outline"
+                  className="w-full border-zinc-700 text-zinc-500 hover:border-red-500/30 hover:text-red-400 hover:bg-red-500/5 rounded-xl bg-transparent text-sm font-medium"
+                >
+                  {cancelTask.isPending ? "Cancelling..." : "Cancel & Refund Escrow"}
+                </Button>
+                <p className="text-xs text-zinc-700 text-center mt-2">
+                  Only available while no creator has accepted. Budget will be returned to your wallet.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Worker: submit work */}
           {isWorker && task.status === "in_progress" && (
@@ -398,15 +430,29 @@ export function TaskDetail() {
                       >
                         Request Revision
                       </Button>
-                      <Button
-                        onClick={handleReject}
-                        disabled={actionsPending}
-                        variant="outline"
-                        className="flex-1 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl bg-transparent text-sm"
-                      >
-                        Reject
-                      </Button>
+                      {(task.revisionCount ?? 0) > 0 ? (
+                        <Button
+                          onClick={handleReject}
+                          disabled={actionsPending}
+                          variant="outline"
+                          className="flex-1 border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl bg-transparent text-sm"
+                        >
+                          Reject
+                        </Button>
+                      ) : (
+                        <div
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-white/5 text-zinc-600 text-sm cursor-not-allowed"
+                          title="Request at least 1 revision before rejecting — protects workers"
+                        >
+                          🔒 Reject
+                        </div>
+                      )}
                     </div>
+                    {(task.revisionCount ?? 0) === 0 && (
+                      <p className="text-xs text-zinc-600 text-center">
+                        Request a revision first before you can reject — this protects creators from unfair rejections
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>

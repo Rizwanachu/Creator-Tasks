@@ -6,7 +6,7 @@ import { Task } from "./use-tasks";
 export interface Transaction {
   id: string;
   amount: number;
-  type: "deposit" | "withdrawal" | "payment" | "fee";
+  type: "deposit" | "withdrawal" | "payment" | "fee" | "refund";
   status: "pending" | "completed" | "failed";
   description: string;
   createdAt: string;

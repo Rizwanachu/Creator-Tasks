@@ -26,9 +26,9 @@ CreatorTasks is an AI Content Job Board — a full-stack marketplace where users
 ## Database Schema
 
 - **users** — id, clerkId, email, name, balance, pendingBalance
-- **tasks** — id, title, description, budget, category, status, revisionNote, creatorId, workerId, createdAt
+- **tasks** — id, title, description, budget, category, status, revisionNote, revisionCount (default 0), creatorId, workerId, createdAt
 - **submissions** — id, taskId, content, status (pending/approved/rejected)
-- **transactions** — id, userId, amount, type (earning/fee/deposit), createdAt
+- **transactions** — id, userId, amount, type (earning/fee/deposit/refund), createdAt
 - **withdrawals** — id, userId, amount, upiId, status (pending/completed), createdAt
 
 ## Task Status Flow
@@ -36,17 +36,20 @@ CreatorTasks is an AI Content Job Board — a full-stack marketplace where users
 ```
 open → in_progress → submitted → completed
                               ↘ revision_requested → submitted (resubmit)
-                              ↘ open (rejected, task reopens)
+                              ↘ open (rejected — only after revisionCount > 0)
+open → cancelled (creator cancels, escrow refunded)
 ```
 
 ## Core Business Logic
 
-- Budget is virtual escrow (no deduction at task creation)
-- On task approval: worker gets 90%, platform logs 10% fee (DB transaction, idempotent)
+- **Escrow on post**: when posting a task, budget is deducted from `balance` and added to `pendingBalance` atomically. Requires sufficient balance.
+- **Approve**: releases `pendingBalance` (not `balance`), credits 90% to worker, logs 10% fee. Triple-guarded against double-spend.
+- **Reject**: only allowed if `revisionCount > 0` (must request at least 1 revision first). Refunds escrow (`pendingBalance → balance`).
+- **Request revision**: increments `revisionCount`, sets status to `revision_requested`.
+- **Cancel**: creator can cancel open (unassigned) tasks, refunds escrow to available balance.
 - Accept race: atomic WHERE status='open', 409 if taken
 - Deposit: Razorpay order → webhook-free verify via HMAC signature → credit balance
 - Withdrawal: deduct balance atomically, create pending withdrawal row (manual payout)
-- Revision: status = `revision_requested`, worker re-submits, loops back to `submitted`
 
 ## API Routes
 
@@ -55,8 +58,9 @@ open → in_progress → submitted → completed
 - POST /api/tasks/:id/accept
 - POST /api/tasks/:id/submit
 - POST /api/tasks/:id/approve
-- POST /api/tasks/:id/reject
-- POST /api/tasks/:id/request-revision
+- POST /api/tasks/:id/reject (requires revisionCount > 0)
+- POST /api/tasks/:id/request-revision (increments revisionCount)
+- POST /api/tasks/:id/cancel (open tasks only — refunds escrow)
 - GET /api/wallet
 - POST /api/wallet/deposit/create-order
 - POST /api/wallet/deposit/verify

@@ -12,6 +12,7 @@ const TRANSACTION_DESCRIPTIONS: Record<string, string> = {
   fee: "Platform fee",
   deposit: "Wallet deposit",
   withdrawal: "Withdrawal requested",
+  refund: "Escrow refunded",
 };
 
 function getRazorpay() {

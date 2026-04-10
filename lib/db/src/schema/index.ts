@@ -17,6 +17,7 @@ export const tasks = pgTable("tasks", {
   category: text("category").notNull().default("other"),
   status: text("status").default("open"),
   revisionNote: text("revision_note"),
+  revisionCount: integer("revision_count").default(0),
   creatorId: uuid("creator_id").notNull(),
   workerId: uuid("worker_id"),
   createdAt: timestamp("created_at").defaultNow(),

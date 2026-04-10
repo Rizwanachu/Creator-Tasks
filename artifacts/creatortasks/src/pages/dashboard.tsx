@@ -268,11 +268,13 @@ export function Dashboard() {
                   <div key={tx.id} className="p-4 sm:p-5 flex items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                        tx.type === "deposit" || tx.type === "payment"
+                        tx.type === "deposit" || tx.type === "payment" || tx.type === "refund"
                           ? "bg-green-500/10 text-green-400"
-                          : "bg-red-500/10 text-red-400"
+                          : tx.type === "fee"
+                          ? "bg-zinc-500/10 text-zinc-500"
+                          : "bg-purple-500/10 text-purple-400"
                       }`}>
-                        {tx.type === "deposit" || tx.type === "payment" ? (
+                        {tx.type === "deposit" || tx.type === "payment" || tx.type === "refund" ? (
                           <ArrowDownLeft size={18} />
                         ) : (
                           <ArrowUpRight size={18} />
@@ -282,15 +284,21 @@ export function Dashboard() {
                         <div className="font-medium text-white text-sm line-clamp-1">{tx.description}</div>
                         <div className="text-xs text-zinc-600 mt-0.5">
                           {new Date(tx.createdAt).toLocaleDateString()}
-                          <span className="hidden sm:inline"> · <span className="capitalize">{tx.type}</span></span>
+                          <span className="hidden sm:inline"> · <span className="capitalize">
+                            {tx.type === "refund" ? "Escrow Refund" : tx.type === "fee" ? "Platform Fee" : tx.type}
+                          </span></span>
                         </div>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className={`font-semibold text-sm ${
-                        tx.type === "deposit" || tx.type === "payment" ? "text-green-400" : "text-white"
+                        tx.type === "deposit" || tx.type === "payment" || tx.type === "refund"
+                          ? "text-green-400"
+                          : tx.type === "fee"
+                          ? "text-zinc-500"
+                          : "text-white"
                       }`}>
-                        {tx.type === "deposit" || tx.type === "payment" ? "+" : "-"}₹{tx.amount.toLocaleString()}
+                        {tx.type === "deposit" || tx.type === "payment" || tx.type === "refund" ? "+" : "-"}₹{tx.amount.toLocaleString()}
                       </div>
                       <div className="text-xs mt-0.5 flex items-center justify-end gap-1">
                         {tx.status === "completed" ? (
