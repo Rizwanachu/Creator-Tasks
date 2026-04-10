@@ -3,8 +3,8 @@
   "framework": null,
   "installCommand": "pnpm install --frozen-lockfile",
   "buildCommand": "pnpm --filter @workspace/creatortasks run build",
-  "outputDirectory": "artifacts/creatortasks/dist",
+  "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/index" }
+    { "source": "/api/(.*)", "destination": "/api/index" }
   ]
 }
