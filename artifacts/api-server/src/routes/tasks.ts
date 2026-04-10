@@ -235,20 +235,8 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
       .where(eq(users.id, task.workerId));
 
     await db.insert(transactions).values([
-      {
-        userId: task.workerId,
-        amount: workerEarning,
-        type: "payment",
-        description: `Payment for task: ${task.title}`,
-        status: "completed",
-      },
-      {
-        userId: currentUser.id,
-        amount: platformFee,
-        type: "fee",
-        description: `Platform fee for task: ${task.title}`,
-        status: "completed",
-      },
+      { userId: task.workerId, amount: workerEarning, type: "earning" },
+      { userId: currentUser.id, amount: platformFee, type: "fee" },
     ]);
 
     await db.update(submissions)
@@ -261,7 +249,7 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
       .where(eq(tasks.id, id))
       .returning();
 
-    res.json({ task: updated, workerEarning, platformFee });
+    res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Error approving task");
     res.status(500).json({ error: "Failed to approve task" });

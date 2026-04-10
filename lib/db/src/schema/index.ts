@@ -32,7 +32,5 @@ export const transactions = pgTable("transactions", {
   userId: uuid("user_id").notNull(),
   amount: integer("amount").notNull(),
   type: text("type").notNull(),
-  status: text("status").default("completed"),
-  description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
 });

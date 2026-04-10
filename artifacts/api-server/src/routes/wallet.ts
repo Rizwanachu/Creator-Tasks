@@ -5,6 +5,13 @@ import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
+const TRANSACTION_DESCRIPTIONS: Record<string, string> = {
+  earning: "Earnings received",
+  fee: "Platform fee",
+  deposit: "Balance deposit",
+  withdrawal: "Balance withdrawal",
+};
+
 router.get("/wallet", requireAuth, async (req, res) => {
   try {
     const currentUser = req.dbUser!;
@@ -22,9 +29,9 @@ router.get("/wallet", requireAuth, async (req, res) => {
     const normalizedTransactions = userTransactions.map((tx) => ({
       id: tx.id,
       amount: tx.amount,
-      type: tx.type as "deposit" | "withdrawal" | "payment" | "fee",
-      status: (tx.status ?? "completed") as "pending" | "completed" | "failed",
-      description: tx.description ?? (tx.type === "payment" ? "Earnings received" : tx.type === "fee" ? "Platform fee" : "Transaction"),
+      type: tx.type === "earning" ? "payment" : tx.type,
+      status: "completed",
+      description: TRANSACTION_DESCRIPTIONS[tx.type] ?? "Transaction",
       createdAt: tx.createdAt,
     }));
 

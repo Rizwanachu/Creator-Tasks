@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { ClerkProvider, Show, useClerk, useAuth } from '@clerk/react';
 import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wouter';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
@@ -54,7 +54,7 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
-function ProtectedRoute({ component: Component }: { component: any }) {
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isLoaded, isSignedIn } = useAuth();
   
   if (!isLoaded) return null;

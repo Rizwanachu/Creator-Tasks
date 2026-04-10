@@ -1,10 +1,11 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { TaskCard } from "@/components/task-card";
+import { Task } from "@/hooks/use-tasks";
 import { useAuth } from "@clerk/react";
 import { Redirect } from "wouter";
 
-const FAKE_TASKS = [
+const FAKE_TASKS: Task[] = [
   {
     id: "fake-1",
     title: "Edit 30s TikTok Reel from podcast clip",
@@ -13,10 +14,11 @@ const FAKE_TASKS = [
     status: "open",
     creatorId: "user_fake",
     workerId: null,
+    creatorClerkId: null,
+    workerClerkId: null,
     submissionContent: null,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    creatorName: "Alex M."
+    creatorName: "Alex M.",
   },
   {
     id: "fake-2",
@@ -26,10 +28,11 @@ const FAKE_TASKS = [
     status: "open",
     creatorId: "user_fake",
     workerId: null,
+    creatorClerkId: null,
+    workerClerkId: null,
     submissionContent: null,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    creatorName: "Sarah K."
+    creatorName: "Sarah K.",
   },
   {
     id: "fake-3",
@@ -39,12 +42,13 @@ const FAKE_TASKS = [
     status: "open",
     creatorId: "user_fake",
     workerId: null,
+    creatorClerkId: null,
+    workerClerkId: null,
     submissionContent: null,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    creatorName: "DevTips"
-  }
-] as any[];
+    creatorName: "DevTips",
+  },
+];
 
 export function Home() {
   const { isSignedIn } = useAuth();
