@@ -19,7 +19,7 @@ run = "pnpm --filter @workspace/creatortasks run dev"
 
 [services.production]
 build = [ "pnpm", "--filter", "@workspace/creatortasks", "run", "build" ]
-publicDir = "artifacts/creatortasks/dist/public"
+publicDir = "public"
 serve = "static"
 
 [[services.production.rewrites]]
