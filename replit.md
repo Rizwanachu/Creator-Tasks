@@ -30,15 +30,25 @@ CreatorTasks is an AI Content Job Board — a full-stack marketplace where users
 - **submissions** — id, taskId, content, status (pending/approved/rejected)
 - **transactions** — id, userId, amount, type (earning/fee/deposit/refund), createdAt
 - **withdrawals** — id, userId, amount, upiId, status (pending/completed), createdAt
+- **applications** — id, taskId, workerId, message, portfolioUrl, status (pending/accepted/rejected), createdAt
+- **invites** — id, taskId, workerId, creatorId, status (pending/accepted/declined), createdAt
 
 ## Task Status Flow
 
 ```
-open → in_progress → submitted → completed
-                              ↘ revision_requested → submitted (resubmit)
-                              ↘ open (rejected — only after revisionCount > 0)
+open → (workers apply / creators invite) → creator selects worker → in_progress → submitted → completed
+                                                                                           ↘ revision_requested → submitted (resubmit)
+                                                                                           ↘ open (rejected — only after revisionCount > 0)
 open → cancelled (creator cancels, escrow refunded)
 ```
+
+## Hiring System (Application + Invite)
+
+- Workers apply to open tasks with a proposal message and optional portfolio link
+- Creators review applicants (see profile, earnings, completed tasks, rating) and assign the best one
+- Creators can also directly invite workers to tasks via search
+- When a worker is assigned (via application accept or invite accept), all other pending applications/invites are auto-rejected
+- Only the assigned worker can submit work
 
 ## Core Business Logic
 
@@ -47,7 +57,9 @@ open → cancelled (creator cancels, escrow refunded)
 - **Reject**: only allowed if `revisionCount > 0` (must request at least 1 revision first). Refunds escrow (`pendingBalance → balance`).
 - **Request revision**: increments `revisionCount`, sets status to `revision_requested`.
 - **Cancel**: creator can cancel open (unassigned) tasks, refunds escrow to available balance.
-- Accept race: atomic WHERE status='open', 409 if taken
+- **Application system**: workers apply with message + portfolio, creator reviews and assigns
+- **Direct invite**: creator searches workers and sends task invites, worker accepts/declines
+- **Assignment atomicity**: accepting an application or invite atomically assigns worker, rejects all other pending apps/invites
 - Deposit: Razorpay order → webhook-free verify via HMAC signature → credit balance
 - Withdrawal: deduct balance atomically, create pending withdrawal row (manual payout)
 
@@ -55,7 +67,17 @@ open → cancelled (creator cancels, escrow refunded)
 
 - GET/POST /api/tasks (supports ?category= filter)
 - GET /api/tasks/:id
-- POST /api/tasks/:id/accept
+- POST /api/tasks/:id/apply (worker submits application)
+- GET /api/tasks/:id/applications (creator views applicants)
+- GET /api/tasks/:id/my-application (worker checks own application)
+- POST /api/applications/:id/accept (creator assigns worker)
+- POST /api/applications/:id/reject (creator rejects applicant)
+- POST /api/tasks/:id/invite (creator invites worker)
+- GET /api/tasks/:id/invites (creator views sent invites)
+- GET /api/invites (worker views received invites)
+- POST /api/invites/:id/accept (worker accepts invite)
+- POST /api/invites/:id/decline (worker declines invite)
+- GET /api/users/search?q= (search users by name)
 - POST /api/tasks/:id/submit
 - POST /api/tasks/:id/approve
 - POST /api/tasks/:id/reject (requires revisionCount > 0)

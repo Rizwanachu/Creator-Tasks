@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { useDashboard, useWallet, useCreateDepositOrder, useVerifyDeposit, useWithdraw } from "@/hooks/use-wallet";
 import { useProfile, useReferral } from "@/hooks/use-profile";
+import { useMyInvites, useAcceptInvite, useDeclineInvite } from "@/hooks/use-invites";
 import { TaskCard } from "@/components/task-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { WalletModal } from "@/components/wallet-modal";
-import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, Copy, Gift, Users, TrendingUp } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, Copy, Gift, Users, TrendingUp, Mail, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@clerk/react";
+import { Link } from "wouter";
 
 declare global {
   interface Window {
@@ -40,11 +43,16 @@ export function Dashboard() {
   const { data: profile } = useProfile(userId ?? undefined);
   const { data: referralData } = useReferral();
 
+  const { data: myInvites } = useMyInvites();
+  const acceptInvite = useAcceptInvite();
+  const declineInvite = useDeclineInvite();
+
   const createOrder = useCreateDepositOrder();
   const verifyDeposit = useVerifyDeposit();
   const withdraw = useWithdraw();
 
   const isLoading = loadingDash || loadingWallet;
+  const pendingInvites = myInvites?.filter((inv) => inv.status === "pending") ?? [];
 
   const [showDepositDialog, setShowDepositDialog] = useState(false);
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
@@ -202,6 +210,17 @@ export function Dashboard() {
               Transactions
             </TabsTrigger>
             <TabsTrigger
+              value="invitations"
+              className="flex-1 md:flex-none rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground text-sm whitespace-nowrap relative"
+            >
+              Invitations
+              {pendingInvites.length > 0 && (
+                <span className="ml-1.5 w-5 h-5 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {pendingInvites.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger
               value="referral"
               className="flex-1 md:flex-none rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground text-sm whitespace-nowrap"
             >
@@ -324,6 +343,98 @@ export function Dashboard() {
               )}
             </div>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="invitations" className="focus-visible:outline-none">
+          {!myInvites || myInvites.length === 0 ? (
+            <div className="text-center py-16 bg-card border border-border rounded-2xl px-4">
+              <Mail size={32} className="mx-auto text-muted-foreground/40 mb-3" />
+              <p className="text-muted-foreground mb-2">No invitations yet</p>
+              <p className="text-xs text-zinc-600">When a creator invites you to work on a task, it will show up here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {myInvites.map((inv) => (
+                <Card key={inv.id} className={`bg-card border ${
+                  inv.status === "accepted"
+                    ? "border-green-500/20"
+                    : inv.status === "declined"
+                    ? "border-zinc-700 opacity-60"
+                    : "border-border"
+                }`}>
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Link
+                            href={`/tasks/${inv.taskId}`}
+                            className="font-semibold text-foreground text-sm hover:text-purple-400 transition-colors"
+                          >
+                            {inv.taskTitle}
+                          </Link>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${
+                              inv.status === "accepted"
+                                ? "bg-green-500/10 text-green-400 border-green-500/20"
+                                : inv.status === "declined"
+                                ? "bg-red-500/10 text-red-400 border-red-500/20"
+                                : "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
+                            }`}
+                          >
+                            {inv.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="font-medium text-purple-400">₹{inv.taskBudget?.toLocaleString()}</span>
+                          <span>from {inv.creatorName || "Anonymous"}</span>
+                          <span>{new Date(inv.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+
+                      {inv.status === "pending" && inv.taskStatus === "open" && (
+                        <div className="flex gap-2 shrink-0">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              acceptInvite.mutate(inv.id, {
+                                onSuccess: () => toast.success("Invite accepted! You've been assigned to the task."),
+                                onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to accept"),
+                              });
+                            }}
+                            disabled={acceptInvite.isPending}
+                            className="btn-gradient text-white rounded-lg text-xs border-0"
+                          >
+                            <CheckCircle2 size={12} className="mr-1" />
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              declineInvite.mutate(inv.id, {
+                                onSuccess: () => toast.success("Invite declined."),
+                                onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to decline"),
+                              });
+                            }}
+                            disabled={declineInvite.isPending}
+                            className="rounded-lg text-xs border-zinc-700 text-zinc-400 hover:border-red-500/30 hover:text-red-400"
+                          >
+                            <XCircle size={12} className="mr-1" />
+                            Decline
+                          </Button>
+                        </div>
+                      )}
+
+                      {inv.status === "pending" && inv.taskStatus !== "open" && (
+                        <span className="text-xs text-zinc-500 shrink-0">Task no longer open</span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="referral" className="focus-visible:outline-none">

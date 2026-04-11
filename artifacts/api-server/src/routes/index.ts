@@ -9,6 +9,8 @@ import profilesRouter from "./profiles";
 import statsRouter from "./stats";
 import disputesRouter from "./disputes";
 import referralsRouter from "./referrals";
+import applicationsRouter from "./applications";
+import userInvitesRouter from "./user-invites";
 
 const router: IRouter = Router();
 
@@ -19,6 +21,8 @@ router.use(ratingsRouter);
 router.use(profilesRouter);
 router.use(disputesRouter);
 router.use(referralsRouter);
+router.use(applicationsRouter);
+router.use(userInvitesRouter);
 router.use(tasksRouter);
 router.use(walletRouter);
 router.use(dashboardRouter);

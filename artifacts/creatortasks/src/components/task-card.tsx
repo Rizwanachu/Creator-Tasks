@@ -1,9 +1,8 @@
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Task, useAcceptTask } from "@/hooks/use-tasks";
+import { Task } from "@/hooks/use-tasks";
 import { useAuth } from "@clerk/react";
-import { toast } from "sonner";
 import { Clock, Eye, Flame, AlertCircle, Timer } from "lucide-react";
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -69,26 +68,12 @@ function viewerCount(id: string): number {
 
 export function TaskCard({ task }: { task: Task }) {
   const { userId } = useAuth();
-  const acceptTask = useAcceptTask();
 
   const isCreator = !!userId && userId === task.creatorClerkId;
   const isWorker = !!userId && userId === task.workerClerkId;
   const isTrending = task.budget >= 1800;
   const viewers = viewerCount(task.id);
   const dl = deadlineLabel(task.deadline);
-
-  const handleAccept = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!userId) {
-      toast.error("Please sign in to accept tasks");
-      return;
-    }
-    acceptTask.mutate(task.id, {
-      onSuccess: () => toast.success("Task accepted!"),
-      onError: (err) => toast.error(err instanceof Error ? err.message : "Task no longer available"),
-    });
-  };
 
   return (
     <div className="group card-lit bg-card border border-border rounded-2xl p-6 card-glow transition-all duration-300 flex flex-col h-full relative">
@@ -171,18 +156,13 @@ export function TaskCard({ task }: { task: Task }) {
           </div>
 
           <div className="flex gap-2 shrink-0">
-            {task.status === "open" && userId && (
+            {task.status === "open" && userId && !isCreator && (
               <Button
+                asChild
                 size="sm"
-                disabled={isCreator || acceptTask.isPending}
-                onClick={!isCreator ? handleAccept : undefined}
-                className={
-                  isCreator
-                    ? "rounded-xl opacity-40 cursor-not-allowed btn-gradient text-white text-xs px-3 border-0"
-                    : "btn-gradient text-white rounded-xl text-xs px-3 border-0"
-                }
+                className="btn-gradient text-white rounded-xl text-xs px-3 border-0"
               >
-                {isCreator ? "Yours" : acceptTask.isPending ? "..." : "Accept"}
+                <Link href={`/tasks/${task.id}`}>Apply Now</Link>
               </Button>
             )}
             <Button

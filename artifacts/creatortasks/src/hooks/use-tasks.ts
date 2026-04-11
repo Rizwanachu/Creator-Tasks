@@ -82,17 +82,80 @@ export function useCreateTask() {
   });
 }
 
-export function useAcceptTask() {
+export interface Application {
+  id: string;
+  taskId: string;
+  workerId: string;
+  message: string;
+  portfolioUrl: string | null;
+  status: "pending" | "accepted" | "rejected";
+  createdAt: string;
+  workerName: string | null;
+  workerClerkId: string | null;
+  workerBio: string | null;
+  workerTotalEarnings: number;
+  workerCompletedTasks: number;
+  workerRating: number;
+}
+
+export function useApplyToTask() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      apiFetch(`/api/tasks/${id}/accept`, { method: "POST" }, getToken),
-    onSuccess: (_, id) => {
+    mutationFn: ({ id, message, portfolioUrl }: { id: string; message: string; portfolioUrl?: string }) =>
+      apiFetch(`/api/tasks/${id}/apply`, { method: "POST", data: { message, portfolioUrl } }, getToken),
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["tasks", id] });
+      queryClient.invalidateQueries({ queryKey: ["my-application", id] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useMyApplication(taskId: string) {
+  const { getToken, userId } = useAuth();
+  return useQuery<Application | null>({
+    queryKey: ["my-application", taskId],
+    queryFn: () => apiFetch(`/api/tasks/${taskId}/my-application`, {}, getToken),
+    enabled: !!taskId && !!userId,
+  });
+}
+
+export function useTaskApplications(taskId: string) {
+  const { getToken } = useAuth();
+  return useQuery<Application[]>({
+    queryKey: ["applications", taskId],
+    queryFn: () => apiFetch(`/api/tasks/${taskId}/applications`, {}, getToken),
+    enabled: !!taskId,
+  });
+}
+
+export function useAcceptApplication() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (applicationId: string) =>
+      apiFetch(`/api/applications/${applicationId}/accept`, { method: "POST" }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useRejectApplication() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (applicationId: string) =>
+      apiFetch(`/api/applications/${applicationId}/reject`, { method: "POST" }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
     },
   });
 }

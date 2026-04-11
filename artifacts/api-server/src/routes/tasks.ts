@@ -236,53 +236,7 @@ router.post("/tasks", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/tasks/:id/accept", requireAuth, async (req, res) => {
-  try {
-    const id = String(req.params.id);
-    const currentUser = req.dbUser!;
-
-    const task = await db.query.tasks.findFirst({ where: eq(tasks.id, id) });
-    if (!task) {
-      res.status(404).json({ error: "Task not found" });
-      return;
-    }
-
-    if (task.creatorId === currentUser.id) {
-      res.status(400).json({ error: "You cannot accept your own task" });
-      return;
-    }
-
-    const result = await db
-      .update(tasks)
-      .set({ workerId: currentUser.id, status: "in_progress" })
-      .where(and(eq(tasks.id, id), eq(tasks.status, "open")))
-      .returning();
-
-    if (result.length === 0) {
-      res.status(409).json({ error: "Task already taken or not available" });
-      return;
-    }
-
-    // Notify creator
-    await createNotification(
-      task.creatorId,
-      "task_accepted",
-      `${currentUser.name || "Someone"} accepted your task: "${task.title}"`,
-      id,
-    );
-
-    // Email creator
-    const creator = await db.query.users.findFirst({ where: eq(users.id, task.creatorId) });
-    if (creator?.email) {
-      emailTaskAccepted(creator.email, currentUser.name || "A creator", task.title, id);
-    }
-
-    res.json(result[0]);
-  } catch (err) {
-    req.log.error({ err }, "Error accepting task");
-    res.status(500).json({ error: "Failed to accept task" });
-  }
-});
+// Old instant-accept route removed — replaced by application/invite system
 
 router.post("/tasks/:id/submit", requireAuth, async (req, res) => {
   try {

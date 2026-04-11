@@ -94,3 +94,22 @@ export const referrals = pgTable("referrals", {
   paidOut: boolean("paid_out").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const applications = pgTable("applications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  taskId: uuid("task_id").notNull(),
+  workerId: uuid("worker_id").notNull(),
+  message: text("message").notNull(),
+  portfolioUrl: text("portfolio_url"),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const invites = pgTable("invites", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  taskId: uuid("task_id").notNull(),
+  workerId: uuid("worker_id").notNull(),
+  creatorId: uuid("creator_id").notNull(),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
