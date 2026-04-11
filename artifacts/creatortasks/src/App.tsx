@@ -1,4 +1,13 @@
 import React, { useEffect, useRef } from "react";
+
+// Patch history API once so query-string changes fire a custom 'urlchange' event
+// that components can listen to (wouter only tracks pathname, not search params)
+(function patchHistory() {
+  const fire = () => window.dispatchEvent(new Event("urlchange"));
+  const orig = { push: history.pushState, replace: history.replaceState };
+  history.pushState = function (...args) { orig.push.apply(history, args); fire(); };
+  history.replaceState = function (...args) { orig.replace.apply(history, args); fire(); };
+}());
 import { ClerkProvider, Show, useClerk, useAuth } from '@clerk/react';
 import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wouter';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";

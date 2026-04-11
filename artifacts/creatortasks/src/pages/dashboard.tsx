@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { useSearchParam } from "@/hooks/use-search-param";
 import { useDashboard, useWallet, useCreateDepositOrder, useVerifyDeposit, useWithdraw } from "@/hooks/use-wallet";
 import { useProfile, useReferral } from "@/hooks/use-profile";
 import { useMyInvites, useAcceptInvite, useDeclineInvite } from "@/hooks/use-invites";
@@ -40,12 +40,8 @@ function loadRazorpayScript(): Promise<boolean> {
 const VALID_TABS = ["posted", "accepted", "transactions", "invitations", "referral"];
 
 export function Dashboard() {
-  const [location] = useLocation();
-  const tabFromUrl = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
-    const t = params.get("tab");
-    return t && VALID_TABS.includes(t) ? t : "posted";
-  }, [location]);
+  const tabParam = useSearchParam("tab");
+  const tabFromUrl = tabParam && VALID_TABS.includes(tabParam) ? tabParam : "posted";
 
   const [activeTab, setActiveTab] = useState(tabFromUrl);
 

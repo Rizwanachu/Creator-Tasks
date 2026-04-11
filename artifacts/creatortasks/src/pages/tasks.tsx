@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { useSearchParam } from "@/hooks/use-search-param";
 import { useTasks, TaskFilters } from "@/hooks/use-tasks";
 import type { TaskCategory } from "@/hooks/use-tasks";
 import { TaskCard } from "@/components/task-card";
@@ -27,18 +27,16 @@ const SORT_OPTIONS = [
 const VALID_CATEGORIES = ["reels", "hooks", "thumbnails", "other"];
 
 export function Tasks() {
-  const [location] = useLocation();
-  const initialCategory = useMemo<TaskCategory | undefined>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const c = params.get("category");
-    return c && VALID_CATEGORIES.includes(c) ? (c as TaskCategory) : undefined;
-  }, [location]);
+  const categoryParam = useSearchParam("category");
+  const categoryFromUrl = categoryParam && VALID_CATEGORIES.includes(categoryParam)
+    ? (categoryParam as TaskCategory)
+    : undefined;
 
-  const [activeCategory, setActiveCategory] = useState<TaskCategory | undefined>(initialCategory);
+  const [activeCategory, setActiveCategory] = useState<TaskCategory | undefined>(categoryFromUrl);
 
   useEffect(() => {
-    setActiveCategory(initialCategory);
-  }, [initialCategory]);
+    setActiveCategory(categoryFromUrl);
+  }, [categoryFromUrl]);
 
   const [searchQ, setSearchQ] = useState("");
   const [minBudget, setMinBudget] = useState("");
