@@ -315,11 +315,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <ul className="flex flex-col gap-2">
                 {[
                   { href: "/tasks", label: "Apply to Tasks" },
-                  { href: "/dashboard", label: "My Invitations" },
-                  { href: "/dashboard", label: "Wallet & Earnings" },
-                  { href: "/dashboard", label: "Referral Program" },
-                ].map(({ href, label }, i) => (
-                  <li key={`${href}-${i}`}>
+                  { href: "/dashboard?tab=invitations", label: "My Invitations" },
+                  { href: "/dashboard?tab=transactions", label: "Wallet & Earnings" },
+                  { href: "/dashboard?tab=referral", label: "Referral Program" },
+                ].map(({ href, label }) => (
+                  <li key={href}>
                     <Link href={href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                       {label}
                     </Link>
