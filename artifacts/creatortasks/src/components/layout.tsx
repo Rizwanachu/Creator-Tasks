@@ -251,8 +251,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <footer className="border-t border-border bg-card/50 mt-auto">
         <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-            <div className="md:col-span-2 flex flex-col gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
+            <div className="col-span-2 flex flex-col gap-4">
               <Link href="/" className="flex items-center gap-2.5 group w-fit">
                 <Logo className="w-9 h-9" />
                 <span className="text-lg font-bold tracking-tight text-foreground group-hover:opacity-80 transition-opacity">
@@ -260,15 +260,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </span>
               </Link>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
-                The marketplace for AI content creators. Post tasks, earn money, and grow your skills — all with instant Razorpay payouts.
+                The curated marketplace for AI content creators. Apply to tasks, get hired by top creators, and earn with secure Razorpay payouts.
               </p>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 flex-wrap mt-1">
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full px-3 py-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
                   Powered by Razorpay
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-400 bg-zinc-500/10 border border-zinc-500/20 rounded-full px-3 py-1">
-                  10% platform fee
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-400 bg-green-500/10 border border-green-500/20 rounded-full px-3 py-1">
+                  Escrow protected
                 </span>
               </div>
             </div>
@@ -280,6 +280,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   { href: "/tasks", label: "Browse Tasks" },
                   { href: "/create", label: "Post a Task" },
                   { href: "/dashboard", label: "Dashboard" },
+                  { href: "/notifications", label: "Notifications" },
                   { href: "/sign-up", label: "Sign Up Free" },
                 ].map(({ href, label }) => (
                   <li key={href}>
@@ -308,16 +309,36 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 ))}
               </ul>
             </div>
+
+            <div className="flex flex-col gap-3">
+              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">For Creators</h4>
+              <ul className="flex flex-col gap-2">
+                {[
+                  { href: "/tasks", label: "Apply to Tasks" },
+                  { href: "/dashboard", label: "My Invitations" },
+                  { href: "/dashboard", label: "Wallet & Earnings" },
+                  { href: "/dashboard", label: "Referral Program" },
+                ].map(({ href, label }, i) => (
+                  <li key={`${href}-${i}`}>
+                    <Link href={href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-3">
             <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} CreatorTasks. All rights reserved.
             </p>
-            <div className="flex items-center gap-4">
-              <span className="text-xs text-muted-foreground">Secure payments via Razorpay</span>
+            <div className="flex items-center gap-4 flex-wrap justify-center">
+              <span className="text-xs text-muted-foreground">Secure escrow payments</span>
               <span className="text-muted-foreground/30">·</span>
-              <span className="text-xs text-muted-foreground">Built for AI content creators</span>
+              <span className="text-xs text-muted-foreground">Application-based hiring</span>
+              <span className="text-muted-foreground/30">·</span>
+              <span className="text-xs text-muted-foreground">Direct invite system</span>
             </div>
           </div>
         </div>
