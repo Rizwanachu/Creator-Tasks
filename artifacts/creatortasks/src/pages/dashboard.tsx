@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useDashboard, useWallet, useCreateDepositOrder, useVerifyDeposit, useWithdraw } from "@/hooks/use-wallet";
 import { useProfile, useReferral } from "@/hooks/use-profile";
@@ -46,6 +46,12 @@ export function Dashboard() {
     const t = params.get("tab");
     return t && VALID_TABS.includes(t) ? t : "posted";
   }, [location]);
+
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
+
+  useEffect(() => {
+    setActiveTab(tabFromUrl);
+  }, [tabFromUrl]);
 
   const { userId } = useAuth();
   const { data: dashboard, isLoading: loadingDash } = useDashboard();
@@ -198,7 +204,7 @@ export function Dashboard() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue={tabFromUrl} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 mb-6 md:mb-8">
           <TabsList className="bg-muted border border-border p-1 h-auto rounded-xl inline-flex min-w-full md:min-w-0 w-full md:w-auto">
             <TabsTrigger

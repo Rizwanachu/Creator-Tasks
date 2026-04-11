@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useTasks, TaskFilters } from "@/hooks/use-tasks";
 import type { TaskCategory } from "@/hooks/use-tasks";
 import { TaskCard } from "@/components/task-card";
@@ -23,8 +24,22 @@ const SORT_OPTIONS = [
   { label: "Oldest first", value: "oldest" },
 ];
 
+const VALID_CATEGORIES = ["reels", "hooks", "thumbnails", "other"];
+
 export function Tasks() {
-  const [activeCategory, setActiveCategory] = useState<TaskCategory | undefined>(undefined);
+  const [location] = useLocation();
+  const initialCategory = useMemo<TaskCategory | undefined>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get("category");
+    return c && VALID_CATEGORIES.includes(c) ? (c as TaskCategory) : undefined;
+  }, [location]);
+
+  const [activeCategory, setActiveCategory] = useState<TaskCategory | undefined>(initialCategory);
+
+  useEffect(() => {
+    setActiveCategory(initialCategory);
+  }, [initialCategory]);
+
   const [searchQ, setSearchQ] = useState("");
   const [minBudget, setMinBudget] = useState("");
   const [maxBudget, setMaxBudget] = useState("");
