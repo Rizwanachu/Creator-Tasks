@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWallet } from "@/hooks/use-wallet";
-import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon } from "lucide-react";
+import { useNotifications } from "@/hooks/use-notifications";
+import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell } from "lucide-react";
 
 function NavWalletBadge() {
   const { data: wallet } = useWallet();
@@ -20,6 +21,27 @@ function NavWalletBadge() {
     <span className="text-xs font-semibold text-purple-600 dark:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full tabular-nums">
       ₹{wallet.balance.toLocaleString()}
     </span>
+  );
+}
+
+function NotificationBell() {
+  const { data } = useNotifications();
+  const unread = data?.unreadCount ?? 0;
+
+  return (
+    <Link href="/notifications">
+      <button
+        className="relative w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        aria-label="Notifications"
+      >
+        <Bell size={16} />
+        {unread > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+            {unread > 9 ? "9+" : unread}
+          </span>
+        )}
+      </button>
+    </Link>
   );
 }
 
@@ -65,7 +87,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          {/* Left: Logo + desktop nav */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2.5 group shrink-0">
               <Logo className="w-8 h-8" />
@@ -87,13 +108,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
 
-          {/* Right: auth + theme toggle + hamburger */}
           <div className="flex items-center gap-2">
             <ThemeToggle />
 
             {isSignedIn ? (
               <div className="flex items-center gap-2">
                 <NavWalletBadge />
+                <NotificationBell />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
@@ -123,6 +144,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         Dashboard
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/profile/${user?.id}`} className="w-full cursor-pointer text-foreground/80 focus:text-foreground focus:bg-muted">
+                        My Profile
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       className="cursor-pointer text-red-500 focus:text-red-400 focus:bg-red-500/10"
                       onSelect={() => signOut()}
@@ -143,7 +169,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen((v) => !v)}
               className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -155,7 +180,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {/* Mobile nav drawer */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-40 top-16">
           <div
@@ -174,6 +198,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   {label}
                 </Link>
               ))}
+              {isSignedIn && (
+                <Link
+                  href="/notifications"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-foreground/80 hover:text-foreground hover:bg-muted transition-all duration-200 text-[15px] font-medium"
+                >
+                  <Bell size={18} className="text-muted-foreground" />
+                  Notifications
+                </Link>
+              )}
               <div className="mt-3 pt-3 border-t border-border">
                 {isSignedIn ? (
                   <div className="flex items-center justify-between px-4 py-3">
@@ -219,8 +252,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <footer className="border-t border-border bg-card/50 mt-auto">
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-
-            {/* Brand column */}
             <div className="md:col-span-2 flex flex-col gap-4">
               <Link href="/" className="flex items-center gap-2.5 group w-fit">
                 <Logo className="w-9 h-9" />
@@ -242,7 +273,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            {/* Platform links */}
             <div className="flex flex-col gap-3">
               <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Platform</h4>
               <ul className="flex flex-col gap-2">
@@ -253,10 +283,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   { href: "/sign-up", label: "Sign Up Free" },
                 ].map(({ href, label }) => (
                   <li key={href}>
-                    <Link
-                      href={href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
+                    <Link href={href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                       {label}
                     </Link>
                   </li>
@@ -264,7 +291,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </ul>
             </div>
 
-            {/* Categories */}
             <div className="flex flex-col gap-3">
               <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Categories</h4>
               <ul className="flex flex-col gap-2">
@@ -275,10 +301,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   { href: "/tasks?category=other", label: "Other Content" },
                 ].map(({ href, label }) => (
                   <li key={href}>
-                    <Link
-                      href={href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
+                    <Link href={href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                       {label}
                     </Link>
                   </li>
@@ -287,19 +310,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Bottom bar */}
           <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-3">
             <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} CreatorTasks. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
-              <span className="text-xs text-muted-foreground">
-                Secure payments via Razorpay
-              </span>
+              <span className="text-xs text-muted-foreground">Secure payments via Razorpay</span>
               <span className="text-muted-foreground/30">·</span>
-              <span className="text-xs text-muted-foreground">
-                Built for AI content creators
-              </span>
+              <span className="text-xs text-muted-foreground">Built for AI content creators</span>
             </div>
           </div>
         </div>

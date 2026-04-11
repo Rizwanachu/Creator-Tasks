@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { ThemeProvider, useTheme } from "next-themes";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { HelmetProvider } from "react-helmet-async";
 import { Layout } from "@/components/layout";
 
 // Pages
@@ -15,6 +16,9 @@ import { CreateTask } from "@/pages/create";
 import { TaskDetail } from "@/pages/task-detail";
 import { Dashboard } from "@/pages/dashboard";
 import { SignInPage, SignUpPage } from "@/pages/auth";
+import { NotificationsPage } from "@/pages/notifications";
+import { ProfilePage } from "@/pages/profile";
+import { AdminPage } from "@/pages/admin";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +95,16 @@ function ClerkProviderWithRoutes() {
             <Route path="/dashboard">
               <ProtectedRoute component={Dashboard} />
             </Route>
+
+            <Route path="/notifications">
+              <ProtectedRoute component={NotificationsPage} />
+            </Route>
+
+            <Route path="/profile/:clerkId" component={ProfilePage} />
+
+            <Route path="/admin">
+              <ProtectedRoute component={AdminPage} />
+            </Route>
             
             <Route component={NotFound} />
           </Switch>
@@ -107,14 +121,16 @@ function ThemedToaster() {
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      <TooltipProvider>
-        <WouterRouter base={basePath}>
-          <ClerkProviderWithRoutes />
-        </WouterRouter>
-        <ThemedToaster />
-      </TooltipProvider>
-    </ThemeProvider>
+    <HelmetProvider>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+        <TooltipProvider>
+          <WouterRouter base={basePath}>
+            <ClerkProviderWithRoutes />
+          </WouterRouter>
+          <ThemedToaster />
+        </TooltipProvider>
+      </ThemeProvider>
+    </HelmetProvider>
   );
 }
 

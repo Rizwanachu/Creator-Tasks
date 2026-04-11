@@ -18,17 +18,37 @@ export interface Task {
   creatorClerkId: string | null;
   workerClerkId: string | null;
   submissionContent: string | null;
+  submissionUrl: string | null;
+  attachmentUrl: string | null;
+  deadline: string | null;
+  flagged: boolean;
   createdAt: string;
   creatorName?: string;
 }
 
-export function useTasks(category?: TaskCategory) {
+export interface TaskFilters {
+  category?: TaskCategory;
+  q?: string;
+  minBudget?: number;
+  maxBudget?: number;
+  sort?: "newest" | "oldest" | "highest" | "lowest";
+  status?: string;
+}
+
+export function useTasks(filters: TaskFilters = {}) {
   const { getToken } = useAuth();
   return useQuery<Task[]>({
-    queryKey: ["tasks", { category }],
+    queryKey: ["tasks", filters],
     queryFn: () => {
-      const url = category ? `/api/tasks?category=${category}` : "/api/tasks";
-      return apiFetch(url, {}, getToken);
+      const params = new URLSearchParams();
+      if (filters.category) params.set("category", filters.category);
+      if (filters.q) params.set("q", filters.q);
+      if (filters.minBudget !== undefined) params.set("minBudget", String(filters.minBudget));
+      if (filters.maxBudget !== undefined) params.set("maxBudget", String(filters.maxBudget));
+      if (filters.sort) params.set("sort", filters.sort);
+      if (filters.status) params.set("status", filters.status);
+      const qs = params.toString();
+      return apiFetch(`/api/tasks${qs ? `?${qs}` : ""}`, {}, getToken);
     },
   });
 }
@@ -47,8 +67,14 @@ export function useCreateTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { title: string; description: string; budget: number; category: TaskCategory }) =>
-      apiFetch("/api/tasks", { method: "POST", data }, getToken),
+    mutationFn: (data: {
+      title: string;
+      description: string;
+      budget: number;
+      category: TaskCategory;
+      deadline?: string;
+      attachmentUrl?: string;
+    }) => apiFetch("/api/tasks", { method: "POST", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -76,8 +102,8 @@ export function useSubmitTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, content }: { id: string; content: string }) =>
-      apiFetch(`/api/tasks/${id}/submit`, { method: "POST", data: { content } }, getToken),
+    mutationFn: ({ id, content, submissionUrl }: { id: string; content: string; submissionUrl?: string }) =>
+      apiFetch(`/api/tasks/${id}/submit`, { method: "POST", data: { content, submissionUrl } }, getToken),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["tasks", id] });
@@ -98,6 +124,7 @@ export function useApproveTask() {
       queryClient.invalidateQueries({ queryKey: ["tasks", id] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 }
@@ -144,6 +171,32 @@ export function useCancelTask() {
       queryClient.invalidateQueries({ queryKey: ["tasks", id] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
+    },
+  });
+}
+
+export function useRateTask() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, score, comment }: { id: string; score: number; comment?: string }) =>
+      apiFetch(`/api/tasks/${id}/rate`, { method: "POST", data: { score, comment } }, getToken),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks", id] });
+    },
+  });
+}
+
+export function useDisputeTask() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      apiFetch(`/api/tasks/${id}/dispute`, { method: "POST", data: { reason } }, getToken),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks", id] });
     },
   });
 }

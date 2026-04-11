@@ -6,3 +6,9 @@ id = "E3VsqR4MM-3j2SRyNexbU"
 uri = "file://artifacts/creatortasks/public/logo.png"
 type = "image"
 title = "creatortasks logo icon"
+
+[[generated]]
+id = "J_0BeyFrcype9xAyi-2SH"
+uri = "file://artifacts/creatortasks-mobile/assets/images/icon.png"
+type = "image"
+title = "creatortasks app icon"

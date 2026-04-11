@@ -100,6 +100,8 @@ const taskSchema = z.object({
     .min(100, "Minimum budget is ₹100")
     .max(100000, "Maximum budget is ₹100,000"),
   category: z.enum(["reels", "hooks", "thumbnails", "other"]),
+  deadline: z.string().optional(),
+  attachmentUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
@@ -274,6 +276,8 @@ export function CreateTask() {
       description: "",
       budget: undefined,
       category: "reels",
+      deadline: "",
+      attachmentUrl: "",
     },
   });
 
@@ -288,7 +292,14 @@ export function CreateTask() {
   }
 
   function submitTask(data: TaskFormValues) {
-    createTask.mutate(data, {
+    createTask.mutate({
+      title: data.title,
+      description: data.description,
+      budget: data.budget,
+      category: data.category,
+      deadline: data.deadline || undefined,
+      attachmentUrl: data.attachmentUrl || undefined,
+    }, {
       onSuccess: () => {
         toast.success("Task posted! Budget locked in escrow.");
         setLocation("/dashboard");
@@ -537,6 +548,45 @@ export function CreateTask() {
                           Higher budgets attract more experienced creators
                         </p>
                       )}
+                    </FormItem>
+                  )}
+                />
+
+                {/* Deadline (optional) */}
+                <FormField
+                  control={form.control}
+                  name="deadline"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground text-sm font-semibold">Deadline (optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          min={new Date(Date.now() + 86400000).toISOString().split("T")[0]}
+                          className="focus-visible:ring-ring rounded-xl h-11 text-foreground"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Attachment URL (optional) */}
+                <FormField
+                  control={form.control}
+                  name="attachmentUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-foreground text-sm font-semibold">Reference / Attachment URL (optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://drive.google.com/... or Figma link"
+                          className="focus-visible:ring-ring rounded-xl h-11"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
                   )}
                 />

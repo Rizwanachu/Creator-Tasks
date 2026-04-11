@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Task, useAcceptTask } from "@/hooks/use-tasks";
 import { useAuth } from "@clerk/react";
 import { toast } from "sonner";
-import { Clock, Eye, Flame } from "lucide-react";
+import { Clock, Eye, Flame, AlertCircle, Timer } from "lucide-react";
 
 const CATEGORY_COLORS: Record<string, string> = {
   reels: "bg-pink-500/10 text-pink-500 border-pink-500/20",
@@ -27,6 +27,7 @@ const STATUS_COLORS: Record<string, string> = {
   completed: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
   rejected: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
   revision_requested: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  cancelled: "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -36,6 +37,7 @@ const STATUS_LABELS: Record<string, string> = {
   completed: "Completed",
   rejected: "Rejected",
   revision_requested: "Revision Needed",
+  cancelled: "Cancelled",
 };
 
 function timeAgo(dateStr: string): string {
@@ -47,6 +49,16 @@ function timeAgo(dateStr: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   return `${days}d ago`;
+}
+
+function deadlineLabel(deadline: string | null): { label: string; urgent: boolean; expired: boolean } | null {
+  if (!deadline) return null;
+  const diff = new Date(deadline).getTime() - Date.now();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hrs = Math.floor(diff / (1000 * 60 * 60));
+  if (diff < 0) return { label: "Expired", urgent: false, expired: true };
+  if (hrs < 24) return { label: `${hrs}h left`, urgent: true, expired: false };
+  return { label: `${days}d left`, urgent: days <= 2, expired: false };
 }
 
 function viewerCount(id: string): number {
@@ -63,6 +75,7 @@ export function TaskCard({ task }: { task: Task }) {
   const isWorker = !!userId && userId === task.workerClerkId;
   const isTrending = task.budget >= 1800;
   const viewers = viewerCount(task.id);
+  const dl = deadlineLabel(task.deadline);
 
   const handleAccept = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -78,9 +91,15 @@ export function TaskCard({ task }: { task: Task }) {
   };
 
   return (
-    <div className="group card-lit bg-card border border-border rounded-2xl p-6 card-glow transition-all duration-300 flex flex-col h-full">
+    <div className="group card-lit bg-card border border-border rounded-2xl p-6 card-glow transition-all duration-300 flex flex-col h-full relative">
+      {task.flagged && (
+        <div className="absolute top-3 right-3 text-orange-500" title="This task has been flagged">
+          <AlertCircle size={14} />
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge
             variant="outline"
             className={`text-xs font-medium ${CATEGORY_COLORS[task.category] ?? CATEGORY_COLORS.other}`}
@@ -93,8 +112,23 @@ export function TaskCard({ task }: { task: Task }) {
               Trending
             </Badge>
           )}
+          {dl && (
+            <Badge
+              variant="outline"
+              className={`text-xs font-medium flex items-center gap-1 ${
+                dl.expired
+                  ? "bg-red-500/10 text-red-500 border-red-500/20"
+                  : dl.urgent
+                  ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                  : "bg-blue-500/10 text-blue-500 border-blue-500/20"
+              }`}
+            >
+              <Timer size={10} />
+              {dl.label}
+            </Badge>
+          )}
         </div>
-        <span className="font-bold text-purple-600 dark:text-purple-400 text-sm tabular-nums">₹{task.budget.toLocaleString()}</span>
+        <span className="font-bold text-purple-600 dark:text-purple-400 text-sm tabular-nums shrink-0">₹{task.budget.toLocaleString()}</span>
       </div>
 
       <h3 className="font-semibold text-[15px] text-foreground line-clamp-2 mb-2 leading-snug group-hover:text-primary transition-colors duration-200">

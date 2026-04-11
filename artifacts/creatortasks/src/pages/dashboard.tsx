@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDashboard, useWallet, useCreateDepositOrder, useVerifyDeposit, useWithdraw } from "@/hooks/use-wallet";
+import { useProfile, useReferral } from "@/hooks/use-profile";
 import { TaskCard } from "@/components/task-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,8 +8,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { WalletModal } from "@/components/wallet-modal";
-import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, Copy, Gift, Users, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@clerk/react";
 
 declare global {
   interface Window {
@@ -32,8 +34,11 @@ function loadRazorpayScript(): Promise<boolean> {
 }
 
 export function Dashboard() {
+  const { userId } = useAuth();
   const { data: dashboard, isLoading: loadingDash } = useDashboard();
   const { data: wallet, isLoading: loadingWallet } = useWallet();
+  const { data: profile } = useProfile(userId ?? undefined);
+  const { data: referralData } = useReferral();
 
   const createOrder = useCreateDepositOrder();
   const verifyDeposit = useVerifyDeposit();
@@ -196,6 +201,12 @@ export function Dashboard() {
             >
               Transactions
             </TabsTrigger>
+            <TabsTrigger
+              value="referral"
+              className="flex-1 md:flex-none rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground text-sm whitespace-nowrap"
+            >
+              Referral
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -312,6 +323,97 @@ export function Dashboard() {
                 ))
               )}
             </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="referral" className="focus-visible:outline-none">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <Card className="bg-card border-border card-lit">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Gift size={16} className="text-purple-400" />
+                  </div>
+                  <span className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Referral Bonus</span>
+                </div>
+                <div className="text-2xl font-bold text-foreground">₹50</div>
+                <p className="text-xs text-zinc-500 mt-1">per friend who joins</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border card-lit">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <TrendingUp size={16} className="text-green-400" />
+                  </div>
+                  <span className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Total Earned</span>
+                </div>
+                <div className="text-2xl font-bold text-foreground">₹{(profile?.totalEarnings ?? 0).toLocaleString()}</div>
+                <p className="text-xs text-zinc-500 mt-1">from referrals & tasks</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border card-lit">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center">
+                    <Users size={16} className="text-pink-400" />
+                  </div>
+                  <span className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Friends Referred</span>
+                </div>
+                <div className="text-2xl font-bold text-foreground">{referralData?.referrals?.length ?? 0}</div>
+                <p className="text-xs text-zinc-500 mt-1">creators joined via your link</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="bg-card border-border">
+            <CardContent className="p-6 space-y-6">
+              <div>
+                <h3 className="font-semibold text-foreground mb-1">Your Referral Link</h3>
+                <p className="text-xs text-zinc-500 mb-4">Share this link. When someone signs up and completes their first task, you both earn ₹50.</p>
+                {profile?.referralCode ? (
+                  <div className="flex gap-2">
+                    <div className="flex-1 bg-muted border border-border rounded-xl px-4 py-3 text-sm font-mono text-zinc-300 truncate">
+                      {typeof window !== "undefined" ? `${window.location.origin}/?ref=${profile.referralCode}` : `/?ref=${profile.referralCode}`}
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="rounded-xl shrink-0"
+                      onClick={() => {
+                        const link = `${window.location.origin}/?ref=${profile.referralCode}`;
+                        navigator.clipboard.writeText(link);
+                        toast.success("Referral link copied!");
+                      }}
+                    >
+                      <Copy size={15} className="mr-2" />
+                      Copy
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="bg-muted border border-border rounded-xl px-4 py-3 text-sm text-zinc-500 animate-pulse">
+                    Generating your referral code...
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-border pt-5">
+                <h3 className="font-semibold text-foreground mb-3 text-sm">How it works</h3>
+                <div className="space-y-3">
+                  {[
+                    { step: "1", text: "Share your unique referral link with a friend" },
+                    { step: "2", text: "They sign up and apply your code on the referral page" },
+                    { step: "3", text: "Both of you earn ₹50 added to your wallet" },
+                  ].map(({ step, text }) => (
+                    <div key={step} className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-purple-500/15 border border-purple-500/20 text-purple-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        {step}
+                      </div>
+                      <p className="text-sm text-zinc-400">{text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

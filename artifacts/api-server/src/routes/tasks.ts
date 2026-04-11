@@ -1,7 +1,14 @@
 import { Router } from "express";
-import { db, tasks, users, submissions, transactions } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { db, tasks, users, submissions, transactions, notifications } from "@workspace/db";
+import { eq, and, sql, ilike, gte, lte, or } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
+import { createNotification } from "../lib/notify";
+import {
+  emailTaskAccepted,
+  emailWorkSubmitted,
+  emailTaskApproved,
+  emailRevisionRequested,
+} from "../lib/email";
 
 const router = Router();
 
@@ -14,9 +21,23 @@ function isValidCategory(v: unknown): v is Category {
 
 router.get("/tasks", async (req, res) => {
   try {
-    const { category } = req.query as { category?: string };
+    const {
+      category,
+      q,
+      minBudget,
+      maxBudget,
+      sort = "newest",
+      status,
+    } = req.query as {
+      category?: string;
+      q?: string;
+      minBudget?: string;
+      maxBudget?: string;
+      sort?: string;
+      status?: string;
+    };
 
-    const baseQuery = db
+    let query = db
       .select({
         id: tasks.id,
         title: tasks.title,
@@ -28,17 +49,56 @@ router.get("/tasks", async (req, res) => {
         revisionCount: tasks.revisionCount,
         creatorId: tasks.creatorId,
         workerId: tasks.workerId,
+        deadline: tasks.deadline,
+        attachmentUrl: tasks.attachmentUrl,
+        flagged: tasks.flagged,
         createdAt: tasks.createdAt,
         creatorName: users.name,
         creatorClerkId: users.clerkId,
       })
       .from(tasks)
-      .leftJoin(users, eq(tasks.creatorId, users.id));
+      .leftJoin(users, eq(tasks.creatorId, users.id))
+      .$dynamic();
 
-    const allTasks = category && isValidCategory(category)
-      ? await baseQuery.where(eq(tasks.category, category)).orderBy(sql`${tasks.createdAt} DESC`)
-      : await baseQuery.orderBy(sql`${tasks.createdAt} DESC`);
+    const conditions: ReturnType<typeof eq>[] = [];
 
+    if (category && isValidCategory(category)) {
+      conditions.push(eq(tasks.category, category) as any);
+    }
+
+    if (status) {
+      conditions.push(eq(tasks.status, status) as any);
+    }
+
+    if (q && q.trim()) {
+      const search = `%${q.trim()}%`;
+      conditions.push(or(ilike(tasks.title, search), ilike(tasks.description, search)) as any);
+    }
+
+    if (minBudget) {
+      const min = parseInt(minBudget);
+      if (!isNaN(min)) conditions.push(gte(tasks.budget, min) as any);
+    }
+
+    if (maxBudget) {
+      const max = parseInt(maxBudget);
+      if (!isNaN(max)) conditions.push(lte(tasks.budget, max) as any);
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...(conditions as any[]))) as any;
+    }
+
+    const orderMap: Record<string, any> = {
+      newest: sql`${tasks.createdAt} DESC`,
+      oldest: sql`${tasks.createdAt} ASC`,
+      highest: sql`${tasks.budget} DESC`,
+      lowest: sql`${tasks.budget} ASC`,
+    };
+
+    query = query.orderBy(orderMap[sort] ?? orderMap.newest) as any;
+
+    const allTasks = await query;
     res.json(allTasks);
   } catch (err) {
     req.log.error({ err }, "Error listing tasks");
@@ -62,6 +122,9 @@ router.get("/tasks/:id", async (req, res) => {
         revisionCount: tasks.revisionCount,
         creatorId: tasks.creatorId,
         workerId: tasks.workerId,
+        deadline: tasks.deadline,
+        attachmentUrl: tasks.attachmentUrl,
+        flagged: tasks.flagged,
         createdAt: tasks.createdAt,
         creatorName: users.name,
         creatorClerkId: users.clerkId,
@@ -80,18 +143,22 @@ router.get("/tasks/:id", async (req, res) => {
     });
 
     let workerClerkId: string | null = null;
+    let workerName: string | null = null;
     if (task.workerId) {
       const worker = await db.query.users.findFirst({
         where: eq(users.id, task.workerId),
-        columns: { clerkId: true },
+        columns: { clerkId: true, name: true },
       });
       workerClerkId = worker?.clerkId ?? null;
+      workerName = worker?.name ?? null;
     }
 
     res.json({
       ...task,
       workerClerkId,
+      workerName,
       submissionContent: submission?.content ?? null,
+      submissionUrl: submission?.submissionUrl ?? null,
       submission: submission || null,
     });
   } catch (err) {
@@ -102,11 +169,13 @@ router.get("/tasks/:id", async (req, res) => {
 
 router.post("/tasks", requireAuth, async (req, res) => {
   try {
-    const { title, description, budget, category } = req.body as {
+    const { title, description, budget, category, deadline, attachmentUrl } = req.body as {
       title?: string;
       description?: string;
       budget?: unknown;
       category?: unknown;
+      deadline?: string;
+      attachmentUrl?: string;
     };
 
     if (!title || !description || !budget) {
@@ -123,7 +192,6 @@ router.post("/tasks", requireAuth, async (req, res) => {
     const categoryVal: Category = isValidCategory(category) ? category : "other";
     const currentUser = req.dbUser!;
 
-    // Escrow: ensure poster has enough available balance
     const poster = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
     const available = poster?.balance ?? 0;
     if (available < budgetNum) {
@@ -136,7 +204,8 @@ router.post("/tasks", requireAuth, async (req, res) => {
       return;
     }
 
-    // Lock budget in escrow (deduct from balance, add to pendingBalance), create task atomically
+    const deadlineDate = deadline ? new Date(deadline) : null;
+
     const [task] = await db.transaction(async (tx) => {
       await tx
         .update(users)
@@ -154,6 +223,8 @@ router.post("/tasks", requireAuth, async (req, res) => {
           budget: budgetNum,
           category: categoryVal,
           creatorId: currentUser.id,
+          deadline: deadlineDate,
+          attachmentUrl: attachmentUrl?.trim() || null,
         })
         .returning();
     });
@@ -192,6 +263,20 @@ router.post("/tasks/:id/accept", requireAuth, async (req, res) => {
       return;
     }
 
+    // Notify creator
+    await createNotification(
+      task.creatorId,
+      "task_accepted",
+      `${currentUser.name || "Someone"} accepted your task: "${task.title}"`,
+      id,
+    );
+
+    // Email creator
+    const creator = await db.query.users.findFirst({ where: eq(users.id, task.creatorId) });
+    if (creator?.email) {
+      emailTaskAccepted(creator.email, currentUser.name || "A creator", task.title, id);
+    }
+
     res.json(result[0]);
   } catch (err) {
     req.log.error({ err }, "Error accepting task");
@@ -202,7 +287,7 @@ router.post("/tasks/:id/accept", requireAuth, async (req, res) => {
 router.post("/tasks/:id/submit", requireAuth, async (req, res) => {
   try {
     const id = String(req.params.id);
-    const { content } = req.body as { content?: string };
+    const { content, submissionUrl } = req.body as { content?: string; submissionUrl?: string };
     const currentUser = req.dbUser!;
 
     if (!content) {
@@ -233,10 +318,10 @@ router.post("/tasks/:id/submit", requireAuth, async (req, res) => {
     if (existing) {
       await db
         .update(submissions)
-        .set({ content, status: "pending" })
+        .set({ content, submissionUrl: submissionUrl?.trim() || null, status: "pending" })
         .where(eq(submissions.taskId, id));
     } else {
-      await db.insert(submissions).values({ taskId: id, content });
+      await db.insert(submissions).values({ taskId: id, content, submissionUrl: submissionUrl?.trim() || null });
     }
 
     const [updated] = await db
@@ -245,6 +330,20 @@ router.post("/tasks/:id/submit", requireAuth, async (req, res) => {
       .where(eq(tasks.id, id))
       .returning();
 
+    // Notify creator
+    await createNotification(
+      task.creatorId,
+      "work_submitted",
+      `Work submitted for your task: "${task.title}" — review it now`,
+      id,
+    );
+
+    // Email creator
+    const creator = await db.query.users.findFirst({ where: eq(users.id, task.creatorId) });
+    if (creator?.email) {
+      emailWorkSubmitted(creator.email, task.title, id);
+    }
+
     res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Error submitting task");
@@ -252,9 +351,12 @@ router.post("/tasks/:id/submit", requireAuth, async (req, res) => {
   }
 });
 
-// Sentinel — thrown inside transaction to force rollback with structured data
 class ApproveError extends Error {
-  constructor(public code: "INSUFFICIENT_BALANCE" | "NOT_SUBMITTED", public shortfall?: number, public available?: number) {
+  constructor(
+    public code: "INSUFFICIENT_BALANCE" | "NOT_SUBMITTED",
+    public shortfall?: number,
+    public available?: number,
+  ) {
     super(code);
     this.name = "ApproveError";
   }
@@ -265,7 +367,6 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
     const id = String(req.params.id);
     const currentUser = req.dbUser!;
 
-    // Fast pre-checks (no money moves yet)
     const task = await db.query.tasks.findFirst({ where: eq(tasks.id, id) });
     if (!task) {
       res.status(404).json({ error: "Task not found" });
@@ -280,7 +381,6 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
       return;
     }
 
-    // Early UX check: budget must be in escrow (pendingBalance) — fast feedback
     const posterPre = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
     if (!posterPre || (posterPre.pendingBalance ?? 0) < task.budget) {
       res.status(402).json({
@@ -291,28 +391,9 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
       return;
     }
 
-    // ── Atomic transaction: all three guards inside ────────────────────────
-    //
-    //  GUARD 1 — Double-spend / idempotency:
-    //    The WHERE status='submitted' conditional update is a PostgreSQL-level
-    //    row lock. Only one concurrent request can flip 'submitted' → 'completed'.
-    //    Any racing second request gets 0 rows back → throws ApproveError →
-    //    rolls back, nothing deducted.
-    //
-    //  GUARD 2 — Balance atomicity:
-    //    We re-read the poster's balance INSIDE the transaction AFTER the status
-    //    lock is acquired. This eliminates the race window between the early
-    //    check and the actual deduction.
-    //
-    //  GUARD 3 — Transaction integrity:
-    //    status change + poster debit + worker credit + transaction log all
-    //    happen in one atomic block. If any step throws, Drizzle rolls
-    //    everything back — no partial state ever hits the DB.
-    //
     const workerEarning = Math.floor(task.budget * 0.9);
 
     const approved = await db.transaction(async (tx) => {
-      // Guard 1: atomic status lock
       const [updated] = await tx
         .update(tasks)
         .set({ status: "completed" })
@@ -321,7 +402,6 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
 
       if (!updated) throw new ApproveError("NOT_SUBMITTED");
 
-      // Guard 2: re-check escrowed pendingBalance atomically inside transaction
       const [poster] = await tx
         .select({ pendingBalance: users.pendingBalance })
         .from(users)
@@ -332,8 +412,6 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
         throw new ApproveError("INSUFFICIENT_BALANCE", task.budget - available, available);
       }
 
-      // Guard 3: all money moves together or not at all
-      // Release from escrow (pendingBalance), credit worker
       await tx
         .update(users)
         .set({ pendingBalance: sql`${users.pendingBalance} - ${task.budget}` })
@@ -341,7 +419,10 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
 
       await tx
         .update(users)
-        .set({ balance: sql`${users.balance} + ${workerEarning}` })
+        .set({
+          balance: sql`${users.balance} + ${workerEarning}`,
+          totalEarnings: sql`${users.totalEarnings} + ${workerEarning}`,
+        })
         .where(eq(users.id, task.workerId!));
 
       await tx.insert(transactions).values([
@@ -356,6 +437,20 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
 
       return updated;
     });
+
+    // Notify worker
+    await createNotification(
+      task.workerId!,
+      "task_approved",
+      `Your work was approved for "${task.title}"! ₹${workerEarning} added to your wallet.`,
+      id,
+    );
+
+    // Email worker
+    const worker = await db.query.users.findFirst({ where: eq(users.id, task.workerId!) });
+    if (worker?.email) {
+      emailTaskApproved(worker.email, task.title, workerEarning, id);
+    }
 
     res.json(approved);
   } catch (err) {
@@ -399,7 +494,6 @@ router.post("/tasks/:id/reject", requireAuth, async (req, res) => {
       return;
     }
 
-    // Worker protection: must request at least 1 revision before rejecting outright
     if ((task.revisionCount ?? 0) === 0) {
       res.status(400).json({
         error: "You must request at least one revision before rejecting. This protects workers from unfair rejections.",
@@ -408,18 +502,9 @@ router.post("/tasks/:id/reject", requireAuth, async (req, res) => {
       return;
     }
 
-    // Reject: refund escrowed budget back to poster's available balance, reopen task
     await db.transaction(async (tx) => {
-      await tx.update(submissions)
-        .set({ status: "rejected" })
-        .where(eq(submissions.taskId, id));
-
-      await tx
-        .update(tasks)
-        .set({ status: "open", workerId: null })
-        .where(eq(tasks.id, id));
-
-      // Refund escrow: move budget from pendingBalance back to balance
+      await tx.update(submissions).set({ status: "rejected" }).where(eq(submissions.taskId, id));
+      await tx.update(tasks).set({ status: "open", workerId: null }).where(eq(tasks.id, id));
       await tx
         .update(users)
         .set({
@@ -427,13 +512,12 @@ router.post("/tasks/:id/reject", requireAuth, async (req, res) => {
           pendingBalance: sql`${users.pendingBalance} - ${task.budget}`,
         })
         .where(eq(users.id, currentUser.id));
-
-      await tx.insert(transactions).values({
-        userId: currentUser.id,
-        amount: task.budget,
-        type: "refund",
-      });
+      await tx.insert(transactions).values({ userId: currentUser.id, amount: task.budget, type: "refund" });
     });
+
+    if (task.workerId) {
+      await createNotification(task.workerId, "task_rejected", `Your submission for "${task.title}" was rejected.`, id);
+    }
 
     const [updated] = await db.select().from(tasks).where(eq(tasks.id, id));
     res.json(updated);
@@ -465,9 +549,7 @@ router.post("/tasks/:id/request-revision", requireAuth, async (req, res) => {
       return;
     }
 
-    await db.update(submissions)
-      .set({ status: "rejected" })
-      .where(eq(submissions.taskId, id));
+    await db.update(submissions).set({ status: "rejected" }).where(eq(submissions.taskId, id));
 
     const [updated] = await db
       .update(tasks)
@@ -479,6 +561,20 @@ router.post("/tasks/:id/request-revision", requireAuth, async (req, res) => {
       .where(eq(tasks.id, id))
       .returning();
 
+    if (task.workerId) {
+      await createNotification(
+        task.workerId,
+        "revision_requested",
+        `Revision requested for "${task.title}"${note ? `: ${note.slice(0, 80)}` : ""}`,
+        id,
+      );
+
+      const worker = await db.query.users.findFirst({ where: eq(users.id, task.workerId) });
+      if (worker?.email) {
+        emailRevisionRequested(worker.email, task.title, note || null, id);
+      }
+    }
+
     res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Error requesting revision");
@@ -486,7 +582,6 @@ router.post("/tasks/:id/request-revision", requireAuth, async (req, res) => {
   }
 });
 
-// Cancel an open (unassigned) task — refunds escrow to poster
 router.post("/tasks/:id/cancel", requireAuth, async (req, res) => {
   try {
     const id = String(req.params.id);
@@ -511,12 +606,7 @@ router.post("/tasks/:id/cancel", requireAuth, async (req, res) => {
     }
 
     await db.transaction(async (tx) => {
-      await tx
-        .update(tasks)
-        .set({ status: "cancelled" })
-        .where(eq(tasks.id, id));
-
-      // Refund escrow back to available balance
+      await tx.update(tasks).set({ status: "cancelled" }).where(eq(tasks.id, id));
       await tx
         .update(users)
         .set({
@@ -524,12 +614,7 @@ router.post("/tasks/:id/cancel", requireAuth, async (req, res) => {
           pendingBalance: sql`${users.pendingBalance} - ${task.budget}`,
         })
         .where(eq(users.id, currentUser.id));
-
-      await tx.insert(transactions).values({
-        userId: currentUser.id,
-        amount: task.budget,
-        type: "refund",
-      });
+      await tx.insert(transactions).values({ userId: currentUser.id, amount: task.budget, type: "refund" });
     });
 
     res.json({ success: true, refunded: task.budget });

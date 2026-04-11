@@ -3,10 +3,22 @@ import healthRouter from "./health";
 import tasksRouter from "./tasks";
 import walletRouter from "./wallet";
 import dashboardRouter from "./dashboard";
+import notificationsRouter from "./notifications";
+import ratingsRouter from "./ratings";
+import profilesRouter from "./profiles";
+import statsRouter from "./stats";
+import disputesRouter from "./disputes";
+import referralsRouter from "./referrals";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(statsRouter);
+router.use(notificationsRouter);
+router.use(ratingsRouter);
+router.use(profilesRouter);
+router.use(disputesRouter);
+router.use(referralsRouter);
 router.use(tasksRouter);
 router.use(walletRouter);
 router.use(dashboardRouter);
