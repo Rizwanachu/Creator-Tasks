@@ -76,6 +76,47 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return <Component />;
 }
 
+const REF_STORAGE_KEY = "pending_ref_code";
+
+function RefCapture() {
+  const { isSignedIn, getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      localStorage.setItem(REF_STORAGE_KEY, ref.toUpperCase());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const code = localStorage.getItem(REF_STORAGE_KEY);
+    if (!code) return;
+
+    const apply = async () => {
+      try {
+        const token = await getToken();
+        const apiBase = import.meta.env.VITE_API_BASE_URL ?? "";
+        await fetch(`${apiBase}/api/referral/apply`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ code }),
+        });
+        localStorage.removeItem(REF_STORAGE_KEY);
+        queryClient.invalidateQueries({ queryKey: ["wallet"] });
+        queryClient.invalidateQueries({ queryKey: ["referral"] });
+      } catch {
+        localStorage.removeItem(REF_STORAGE_KEY);
+      }
+    };
+    apply();
+  }, [isSignedIn, getToken, queryClient]);
+
+  return null;
+}
+
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
 
@@ -88,6 +129,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <RefCapture />
         <Layout>
           <Switch>
             <Route path="/" component={Home} />

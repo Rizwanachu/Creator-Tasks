@@ -25,7 +25,7 @@ CreatorTasks is an AI Content Job Board — a full-stack marketplace where users
 
 ## Database Schema
 
-- **users** — id, clerkId, email, name, balance, pendingBalance
+- **users** — id, clerkId, email, name, balance, pendingBalance, referrerId (uuid, nullable)
 - **tasks** — id, title, description, budget, category, status, revisionNote, revisionCount (default 0), creatorId, workerId, createdAt
 - **submissions** — id, taskId, content, status (pending/approved/rejected)
 - **transactions** — id, userId, amount, type (earning/fee/deposit/refund), createdAt

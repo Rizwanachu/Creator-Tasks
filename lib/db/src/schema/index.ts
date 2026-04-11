@@ -7,6 +7,7 @@ export const users = pgTable("users", {
   name: text("name"),
   bio: text("bio"),
   referralCode: text("referral_code").unique(),
+  referrerId: uuid("referrer_id"),
   totalEarnings: integer("total_earnings").default(0),
   balance: integer("balance").default(0),
   pendingBalance: integer("pending_balance").default(0),
@@ -91,6 +92,9 @@ export const referrals = pgTable("referrals", {
   referrerId: uuid("referrer_id").notNull(),
   referredUserId: uuid("referred_user_id").notNull(),
   commissionEarned: integer("commission_earned").default(0),
+  completedTaskCount: integer("completed_task_count").default(0),
+  milestone3Paid: boolean("milestone_3_paid").default(false),
+  milestone5Paid: boolean("milestone_5_paid").default(false),
   paidOut: boolean("paid_out").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });

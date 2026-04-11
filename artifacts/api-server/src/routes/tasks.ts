@@ -3,6 +3,7 @@ import { db, tasks, users, submissions, transactions, notifications } from "@wor
 import { eq, and, sql, ilike, gte, lte, or } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { createNotification } from "../lib/notify";
+import { processReferralRewards } from "../lib/referral-rewards";
 import {
   emailTaskAccepted,
   emailWorkSubmitted,
@@ -405,6 +406,11 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
     if (worker?.email) {
       emailTaskApproved(worker.email, task.title, workerEarning, id);
     }
+
+    // Fire referral rewards (non-blocking — failures don't affect approval)
+    processReferralRewards(task.workerId!, id, task.budget).catch((err) => {
+      req.log.error({ err }, "Referral rewards failed (non-critical)");
+    });
 
     res.json(approved);
   } catch (err) {

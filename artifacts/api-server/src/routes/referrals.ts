@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { db, users, referrals, transactions } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { createNotification } from "../lib/notify";
 
 const router = Router();
+
+const SIGNUP_BONUS = 50;
 
 function generateCode(name: string): string {
   const base = (name || "user").replace(/\s+/g, "").slice(0, 6).toUpperCase();
@@ -12,34 +14,58 @@ function generateCode(name: string): string {
   return `${base}${suffix}`;
 }
 
-// GET /referral — get or create my referral code + stats
+async function ensureUniqueCode(name: string): Promise<string> {
+  let code = generateCode(name);
+  let attempts = 0;
+  while (attempts < 10) {
+    const existing = await db.query.users.findFirst({ where: eq(users.referralCode, code) });
+    if (!existing) break;
+    code = generateCode(name) + Math.random().toString(36).slice(2, 4).toUpperCase();
+    attempts++;
+  }
+  return code;
+}
+
 router.get("/referral", requireAuth, async (req, res) => {
   try {
     const currentUser = req.dbUser!;
     let user = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
 
     if (!user?.referralCode) {
-      let code = generateCode(user?.name ?? "");
-      // Ensure uniqueness
-      let attempts = 0;
-      while (attempts < 10) {
-        const existing = await db.query.users.findFirst({ where: eq(users.referralCode, code) });
-        if (!existing) break;
-        code = generateCode(user?.name ?? "") + Math.random().toString(36).slice(2, 4).toUpperCase();
-        attempts++;
-      }
+      const code = await ensureUniqueCode(user?.name ?? "");
       [user] = await db.update(users).set({ referralCode: code }).where(eq(users.id, currentUser.id)).returning();
     }
 
     const myReferrals = await db.select().from(referrals).where(eq(referrals.referrerId, currentUser.id));
+
     const totalCommission = myReferrals.reduce((sum, r) => sum + (r.commissionEarned ?? 0), 0);
+    const milestonesEarned = myReferrals.filter(r => r.milestone3Paid).length * 30 + myReferrals.filter(r => r.milestone5Paid).length * 50;
+
+    const referralTxns = await db.select().from(transactions)
+      .where(and(
+        eq(transactions.userId, currentUser.id),
+        eq(transactions.type, "referral_commission"),
+      ));
+    const lifetimeCommission = referralTxns.reduce((sum, t) => sum + t.amount, 0);
+
+    const myRecord = await db.query.referrals.findFirst({
+      where: eq(referrals.referredUserId, currentUser.id),
+    });
 
     res.json({
       code: user?.referralCode,
       referralLink: `${process.env["FRONTEND_URL"] ?? "https://creatortasks.in"}?ref=${user?.referralCode}`,
       totalReferrals: myReferrals.length,
       totalCommissionEarned: totalCommission,
-      referrals: myReferrals,
+      lifetimeCommission,
+      milestonesEarned,
+      signupBonusPerFriend: SIGNUP_BONUS,
+      referrals: myReferrals.map(r => ({
+        ...r,
+        nextMilestone: !r.milestone3Paid ? 3 : !r.milestone5Paid ? 5 : null,
+      })),
+      isReferred: !!myRecord,
+      referredCompletedTasks: myRecord?.completedTaskCount ?? 0,
     });
   } catch (err) {
     req.log.error({ err }, "Error fetching referral info");
@@ -47,7 +73,6 @@ router.get("/referral", requireAuth, async (req, res) => {
   }
 });
 
-// POST /referral/apply — apply a referral code (call once after signup)
 router.post("/referral/apply", requireAuth, async (req, res) => {
   try {
     const { code } = req.body as { code?: string };
@@ -68,7 +93,6 @@ router.post("/referral/apply", requireAuth, async (req, res) => {
       return;
     }
 
-    // Check if this user was already referred
     const alreadyReferred = await db.query.referrals.findFirst({
       where: eq(referrals.referredUserId, currentUser.id),
     });
@@ -77,24 +101,41 @@ router.post("/referral/apply", requireAuth, async (req, res) => {
       return;
     }
 
-    // Credit ₹50 bonus to referrer (in rupees, stored as integer)
-    const REFERRAL_BONUS = 50;
-
     await db.transaction(async (tx) => {
       await tx.insert(referrals).values({
         referrerId: referrer.id,
         referredUserId: currentUser.id,
-        commissionEarned: REFERRAL_BONUS,
+        commissionEarned: SIGNUP_BONUS,
       });
 
-      await tx.update(users).set({ balance: sql`${users.balance} + ${REFERRAL_BONUS}` }).where(eq(users.id, referrer.id));
+      await tx.update(users)
+        .set({ referrerId: referrer.id, balance: sql`${users.balance} + ${SIGNUP_BONUS}` })
+        .where(eq(users.id, currentUser.id));
 
-      await tx.insert(transactions).values({ userId: referrer.id, amount: REFERRAL_BONUS, type: "referral" });
+      await tx.update(users)
+        .set({ balance: sql`${users.balance} + ${SIGNUP_BONUS}` })
+        .where(eq(users.id, referrer.id));
+
+      await tx.insert(transactions).values([
+        { userId: referrer.id, amount: SIGNUP_BONUS, type: "referral" },
+        { userId: currentUser.id, amount: SIGNUP_BONUS, type: "referral" },
+      ]);
     });
 
-    await createNotification(referrer.id, "referral_commission", `Someone joined using your referral code! ₹${REFERRAL_BONUS} added to your wallet.`);
+    await Promise.all([
+      createNotification(
+        referrer.id,
+        "referral_commission",
+        `Someone joined using your referral code! ₹${SIGNUP_BONUS} added to your wallet.`,
+      ),
+      createNotification(
+        currentUser.id,
+        "referral_bonus",
+        `Referral code applied! ₹${SIGNUP_BONUS} welcome bonus added to your wallet.`,
+      ),
+    ]);
 
-    res.json({ success: true, message: `Referral applied. ₹${REFERRAL_BONUS} credited to referrer.` });
+    res.json({ success: true, message: `Referral applied. ₹${SIGNUP_BONUS} credited to both wallets.` });
   } catch (err) {
     req.log.error({ err }, "Error applying referral");
     res.status(500).json({ error: "Failed to apply referral" });

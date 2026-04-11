@@ -45,11 +45,28 @@ export function useUpdateProfile() {
   });
 }
 
+export interface ReferralEntry {
+  id: string;
+  referredUserId: string;
+  commissionEarned: number;
+  completedTaskCount: number;
+  milestone3Paid: boolean;
+  milestone5Paid: boolean;
+  nextMilestone: number | null;
+  createdAt: string;
+}
+
 export interface ReferralData {
   code: string | null;
   referralLink: string;
-  totalEarnings: number;
-  referrals: Array<{ id: number; referredUserId: string; commissionEarned: number; createdAt: string }>;
+  totalReferrals: number;
+  totalCommissionEarned: number;
+  lifetimeCommission: number;
+  milestonesEarned: number;
+  signupBonusPerFriend: number;
+  referrals: ReferralEntry[];
+  isReferred: boolean;
+  referredCompletedTasks: number;
 }
 
 export function useReferral() {
