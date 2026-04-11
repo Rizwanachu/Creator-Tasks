@@ -1,31 +1,32 @@
 kind = "web"
-previewPath = "/"
-title = "CreatorTasks"
-version = "1.0.0"
-id = "artifacts/creatortasks"
-router = "path"
+  previewPath = "/"
+  title = "CreatorTasks"
+  version = "1.0.0"
+  id = "artifacts/creatortasks"
+  router = "path"
 
-[[integratedSkills]]
-name = "react-vite"
-version = "1.0.0"
+  [[integratedSkills]]
+  name = "react-vite"
+  version = "1.0.0"
 
-[[services]]
-name = "web"
-paths = [ "/" ]
-localPort = 22649
+  [[services]]
+  name = "web"
+  paths = [ "/" ]
+  localPort = 22651
 
-[services.development]
-run = "pnpm --filter @workspace/creatortasks run dev"
+  [services.development]
+  run = "pnpm --filter @workspace/creatortasks run dev"
 
-[services.production]
-build = [ "pnpm", "--filter", "@workspace/creatortasks", "run", "build" ]
-publicDir = "dist"
-serve = "static"
+  [services.production]
+  build = [ "pnpm", "--filter", "@workspace/creatortasks", "run", "build" ]
+  publicDir = "dist"
+  serve = "static"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+  [[services.production.rewrites]]
+  from = "/*"
+  to = "/index.html"
 
-[services.env]
-PORT = "22649"
-BASE_PATH = "/"
+  [services.env]
+  PORT = "22651"
+  BASE_PATH = "/"
+  
