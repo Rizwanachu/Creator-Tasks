@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWallet } from "@/hooks/use-wallet";
 import { useNotifications } from "@/hooks/use-notifications";
-import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare } from "lucide-react";
+import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram, Twitter, Youtube, Linkedin } from "lucide-react";
 import { useUnreadMessageCount } from "@/hooks/use-chat";
 
 function NavWalletBadge() {
@@ -278,7 +278,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <footer className="border-t border-border bg-card/50 mt-auto">
         <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-10">
             <div className="col-span-2 flex flex-col gap-4">
               <Link href="/" className="flex items-center gap-2.5 group w-fit">
                 <Logo className="w-9 h-9" />
@@ -287,7 +287,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </span>
               </Link>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
-                The curated marketplace for AI content creators. Apply to tasks, get hired by top creators, and earn with secure Razorpay payouts.
+                The curated marketplace for AI content creators. Apply to tasks, get hired by top clients, and earn with secure Razorpay payouts.
               </p>
               <div className="flex items-center gap-2 flex-wrap mt-1">
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full px-3 py-1">
@@ -298,6 +298,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   Escrow protected
                 </span>
               </div>
+              <div className="flex items-center gap-3 mt-1">
+                <a href="https://instagram.com/creatortasks" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  <Instagram size={16} />
+                </a>
+                <a href="https://twitter.com/creatortasks" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  <Twitter size={16} />
+                </a>
+                <a href="https://youtube.com/@creatortasks" target="_blank" rel="noopener noreferrer" aria-label="YouTube"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  <Youtube size={16} />
+                </a>
+                <a href="https://linkedin.com/company/creatortasks" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  <Linkedin size={16} />
+                </a>
+              </div>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -306,7 +324,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {[
                   { href: "/tasks", label: "Browse Tasks" },
                   { href: "/leaderboard", label: "Leaderboard" },
-                  { href: "/create", label: "Post a Task" },
                   { href: "/dashboard", label: "Dashboard" },
                   { href: "/notifications", label: "Notifications" },
                   { href: "/sign-up", label: "Sign Up Free" },
@@ -321,13 +338,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex flex-col gap-3">
-              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Categories</h4>
+              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">For Clients</h4>
               <ul className="flex flex-col gap-2">
                 {[
-                  { href: "/tasks?category=reels", label: "Reels" },
-                  { href: "/tasks?category=hooks", label: "Hooks" },
-                  { href: "/tasks?category=thumbnails", label: "Thumbnails" },
-                  { href: "/tasks?category=other", label: "Other Content" },
+                  { href: "/create", label: "Post a Task" },
+                  { href: "/dashboard?tab=my-tasks", label: "Manage Tasks" },
+                  { href: "/dashboard?tab=transactions", label: "Payments & Escrow" },
+                  { href: "/tasks", label: "How It Works" },
+                  { href: "/contact", label: "Get Support" },
                 ].map(({ href, label }) => (
                   <li key={href}>
                     <Link href={href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -346,6 +364,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   { href: "/dashboard?tab=invitations", label: "My Invitations" },
                   { href: "/dashboard?tab=transactions", label: "Wallet & Earnings" },
                   { href: "/dashboard?tab=referral", label: "Referral Program" },
+                  { href: "/leaderboard", label: "Top Creators" },
+                ].map(({ href, label }) => (
+                  <li key={href}>
+                    <Link href={href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Categories</h4>
+              <ul className="flex flex-col gap-2">
+                {[
+                  { href: "/tasks?category=reels", label: "Reels" },
+                  { href: "/tasks?category=hooks", label: "Hooks" },
+                  { href: "/tasks?category=thumbnails", label: "Thumbnails" },
+                  { href: "/tasks?category=scripts", label: "Scripts" },
+                  { href: "/tasks?category=other", label: "Other Content" },
                 ].map(({ href, label }) => (
                   <li key={href}>
                     <Link href={href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
