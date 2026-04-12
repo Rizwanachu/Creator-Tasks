@@ -57,6 +57,7 @@ export const transactions = pgTable("transactions", {
   userId: uuid("user_id").notNull(),
   amount: integer("amount").notNull(),
   type: text("type").notNull(),
+  paymentId: text("payment_id").unique(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

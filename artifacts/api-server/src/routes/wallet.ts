@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, transactions, users, withdrawals } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import Razorpay from "razorpay";
 import crypto from "crypto";
@@ -113,12 +113,11 @@ router.post("/wallet/deposit/create-order", requireAuth, async (req, res) => {
 
 router.post("/wallet/deposit/verify", requireAuth, async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } =
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
       req.body as {
         razorpay_order_id?: string;
         razorpay_payment_id?: string;
         razorpay_signature?: string;
-        amount?: unknown;
       };
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -132,6 +131,7 @@ router.post("/wallet/deposit/verify", requireAuth, async (req, res) => {
       return;
     }
 
+    // Step 1: Verify the HMAC signature — proves the payment came from Razorpay
     const expectedSignature = crypto
       .createHmac("sha256", keySecret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -142,13 +142,31 @@ router.post("/wallet/deposit/verify", requireAuth, async (req, res) => {
       return;
     }
 
-    const amountNum = Number(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      res.status(400).json({ error: "Invalid amount" });
+    const currentUser = req.dbUser!;
+
+    // Step 2: Idempotency guard — reject replayed payment IDs to prevent double-crediting
+    const existing = await db.query.transactions.findFirst({
+      where: eq(transactions.paymentId, razorpay_payment_id),
+    });
+    if (existing) {
+      const updatedUser = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
+      res.json({ success: true, balance: updatedUser?.balance ?? 0 });
       return;
     }
 
-    const currentUser = req.dbUser!;
+    // Step 3: Fetch the actual charged amount from Razorpay — never trust client-provided amount
+    const razorpay = getRazorpay();
+    const payment = await razorpay.payments.fetch(razorpay_payment_id);
+    if (payment.status !== "captured" && payment.status !== "authorized") {
+      res.status(400).json({ error: "Payment not completed" });
+      return;
+    }
+    // Razorpay stores amount in paise; convert to rupees
+    const amountNum = Math.floor(Number(payment.amount) / 100);
+    if (amountNum <= 0) {
+      res.status(400).json({ error: "Invalid payment amount" });
+      return;
+    }
 
     await db.transaction(async (tx) => {
       await tx
@@ -160,6 +178,7 @@ router.post("/wallet/deposit/verify", requireAuth, async (req, res) => {
         userId: currentUser.id,
         amount: amountNum,
         type: "deposit",
+        paymentId: razorpay_payment_id,
       });
     });
 
@@ -199,11 +218,16 @@ router.post("/wallet/withdraw", requireAuth, async (req, res) => {
       return;
     }
 
-    await db.transaction(async (tx) => {
-      await tx
+    const [updatedWallet] = await db.transaction(async (tx) => {
+      const result = await tx
         .update(users)
         .set({ balance: sql`${users.balance} - ${amountNum}` })
-        .where(eq(users.id, currentUser.id));
+        .where(and(eq(users.id, currentUser.id), sql`${users.balance} >= ${amountNum}`))
+        .returning({ balance: users.balance });
+
+      if (!result.length) {
+        throw new Error("INSUFFICIENT_BALANCE");
+      }
 
       await tx.insert(withdrawals).values({
         userId: currentUser.id,
@@ -211,10 +235,16 @@ router.post("/wallet/withdraw", requireAuth, async (req, res) => {
         upiId: upiId.trim(),
         status: "pending",
       });
+
+      return result;
     });
 
-    res.json({ success: true });
+    res.json({ success: true, balance: updatedWallet.balance });
   } catch (err) {
+    if ((err as Error).message === "INSUFFICIENT_BALANCE") {
+      res.status(400).json({ error: "Insufficient balance" });
+      return;
+    }
     req.log.error({ err }, "Error processing withdrawal");
     res.status(500).json({ error: "Failed to process withdrawal" });
   }

@@ -397,10 +397,13 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
         })
         .where(eq(users.id, task.workerId!));
 
-      await tx.insert(transactions).values([
-        { userId: currentUser.id, amount: -task.budget, type: "payment" },
+      const txValues: { userId: string; amount: number; type: string }[] = [
         { userId: task.workerId!, amount: workerEarning, type: "earning" },
-      ]);
+      ];
+      if (!ownerFree) {
+        txValues.unshift({ userId: currentUser.id, amount: -task.budget, type: "payment" });
+      }
+      await tx.insert(transactions).values(txValues);
 
       await tx
         .update(submissions)
@@ -479,17 +482,22 @@ router.post("/tasks/:id/reject", requireAuth, async (req, res) => {
       return;
     }
 
+    const rejectPoster = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
+    const rejectOwnerFree = isOwner(rejectPoster?.email);
+
     await db.transaction(async (tx) => {
       await tx.update(submissions).set({ status: "rejected" }).where(eq(submissions.taskId, id));
       await tx.update(tasks).set({ status: "open", workerId: null }).where(eq(tasks.id, id));
-      await tx
-        .update(users)
-        .set({
-          balance: sql`${users.balance} + ${task.budget}`,
-          pendingBalance: sql`${users.pendingBalance} - ${task.budget}`,
-        })
-        .where(eq(users.id, currentUser.id));
-      await tx.insert(transactions).values({ userId: currentUser.id, amount: task.budget, type: "refund" });
+      if (!rejectOwnerFree) {
+        await tx
+          .update(users)
+          .set({
+            balance: sql`${users.balance} + ${task.budget}`,
+            pendingBalance: sql`${users.pendingBalance} - ${task.budget}`,
+          })
+          .where(eq(users.id, currentUser.id));
+        await tx.insert(transactions).values({ userId: currentUser.id, amount: task.budget, type: "refund" });
+      }
     });
 
     const { reason } = req.body as { reason?: string };
@@ -586,19 +594,24 @@ router.post("/tasks/:id/cancel", requireAuth, async (req, res) => {
       return;
     }
 
+    const cancelPoster = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
+    const cancelOwnerFree = isOwner(cancelPoster?.email);
+
     await db.transaction(async (tx) => {
       await tx.update(tasks).set({ status: "cancelled" }).where(eq(tasks.id, id));
-      await tx
-        .update(users)
-        .set({
-          balance: sql`${users.balance} + ${task.budget}`,
-          pendingBalance: sql`${users.pendingBalance} - ${task.budget}`,
-        })
-        .where(eq(users.id, currentUser.id));
-      await tx.insert(transactions).values({ userId: currentUser.id, amount: task.budget, type: "refund" });
+      if (!cancelOwnerFree) {
+        await tx
+          .update(users)
+          .set({
+            balance: sql`${users.balance} + ${task.budget}`,
+            pendingBalance: sql`${users.pendingBalance} - ${task.budget}`,
+          })
+          .where(eq(users.id, currentUser.id));
+        await tx.insert(transactions).values({ userId: currentUser.id, amount: task.budget, type: "refund" });
+      }
     });
 
-    res.json({ success: true, refunded: task.budget });
+    res.json({ success: true, refunded: cancelOwnerFree ? 0 : task.budget });
   } catch (err) {
     req.log.error({ err }, "Error cancelling task");
     res.status(500).json({ error: "Failed to cancel task" });
