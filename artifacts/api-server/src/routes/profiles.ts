@@ -52,42 +52,42 @@ router.get("/users/:clerkId", async (req, res) => {
   }
 });
 
-// GET /leaderboard — top workers by earnings + ratings
+// GET /leaderboard — top active creators (1+ completed tasks), sorted by earnings
 router.get("/leaderboard", async (req, res) => {
   try {
-    const topWorkers = await db
+    const rows = await db
       .select({
         id: users.id,
         clerkId: users.clerkId,
         name: users.name,
-        bio: users.bio,
         totalEarnings: users.totalEarnings,
         avgRating: avg(ratings.score),
         ratingCount: count(ratings.id),
+        completedTasksCount: sql<number>`count(distinct case when ${tasks.status} = 'completed' then ${tasks.id} end)`,
+        lastCompletedAt: sql<string | null>`max(case when ${tasks.status} = 'completed' then ${tasks.createdAt} end)`,
       })
       .from(users)
       .leftJoin(ratings, eq(ratings.ratingFor, users.id))
+      .leftJoin(tasks, eq(tasks.workerId, users.id))
       .groupBy(users.id)
+      .having(sql`count(distinct case when ${tasks.status} = 'completed' then ${tasks.id} end) >= 1`)
       .orderBy(sql`${users.totalEarnings} DESC NULLS LAST`)
       .limit(20);
 
-    const withCounts = await Promise.all(
-      topWorkers.map(async (w) => {
-        const [{ completedCount }] = await db
-          .select({ completedCount: count(tasks.id) })
-          .from(tasks)
-          .where(and(eq(tasks.workerId, w.id), eq(tasks.status, "completed")));
-        return {
-          ...w,
-          completedTasksCount: completedCount,
-          rating: {
-            average: w.avgRating ? parseFloat(String(w.avgRating)).toFixed(1) : null,
-            total: w.ratingCount,
-          },
-        };
-      })
+    res.json(
+      rows.map((w) => ({
+        id: w.id,
+        clerkId: w.clerkId,
+        name: w.name,
+        totalEarnings: w.totalEarnings ?? 0,
+        completedTasksCount: Number(w.completedTasksCount),
+        lastCompletedAt: w.lastCompletedAt ?? null,
+        rating: {
+          average: w.avgRating ? parseFloat(String(w.avgRating)).toFixed(1) : null,
+          total: w.ratingCount,
+        },
+      }))
     );
-    res.json(withCounts);
   } catch (err) {
     req.log.error({ err }, "Error fetching leaderboard");
     res.status(500).json({ error: "Failed to fetch leaderboard" });
