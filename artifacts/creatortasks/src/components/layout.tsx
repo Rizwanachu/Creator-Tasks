@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWallet } from "@/hooks/use-wallet";
 import { useNotifications } from "@/hooks/use-notifications";
-import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram, Twitter, Youtube, Linkedin } from "lucide-react";
+import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram } from "lucide-react";
 import { useUnreadMessageCount } from "@/hooks/use-chat";
 
 function NavWalletBadge() {
@@ -302,18 +302,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <a href="https://instagram.com/creatortasks" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
                   className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                   <Instagram size={16} />
-                </a>
-                <a href="https://twitter.com/creatortasks" target="_blank" rel="noopener noreferrer" aria-label="Twitter / X"
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                  <Twitter size={16} />
-                </a>
-                <a href="https://youtube.com/@creatortasks" target="_blank" rel="noopener noreferrer" aria-label="YouTube"
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                  <Youtube size={16} />
-                </a>
-                <a href="https://linkedin.com/company/creatortasks" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                  <Linkedin size={16} />
                 </a>
               </div>
             </div>
