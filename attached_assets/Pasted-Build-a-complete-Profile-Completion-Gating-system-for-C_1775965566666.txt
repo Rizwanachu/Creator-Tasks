@@ -1,0 +1,114 @@
+Build a complete Profile Completion & Gating system for CreatorTasks to improve trust and prevent anonymous low-quality users.
+
+Backend:
+
+1. Schema:
+- Update users table with:
+  skills TEXT
+  portfolioUrl TEXT
+  instagramHandle TEXT
+  youtubeHandle TEXT
+  upiId TEXT
+
+2. API:
+- Extend PUT /users/me:
+  - Accept:
+    name
+    bio
+    skills (comma-separated)
+    portfolioUrl
+    instagramHandle
+    youtubeHandle
+    upiId
+  - Validate:
+    - portfolioUrl must be valid URL (if provided)
+    - upiId basic format check (contains @)
+
+- Update GET /api/users/:clerkId:
+  - Return all public fields:
+    name, bio, skills, portfolioUrl, instagramHandle, youtubeHandle
+  - NEVER return upiId
+
+3. Profile Guard (Server-side):
+- In POST /tasks:
+- In POST /tasks/:id/apply:
+  - If name OR bio is empty:
+    return 400:
+    "Complete your profile (name + bio) before continuing"
+
+Frontend:
+
+1. Hook:
+- Create useProfileComplete:
+  returns:
+    isComplete (name && bio)
+    completionPercent:
+      name (40%)
+      bio (40%)
+      skills/portfolio present (+20%)
+
+2. Profile Edit Page (/profile/edit):
+- Full-page form (not modal)
+- Fields:
+  - Name
+  - Bio (textarea)
+  - Skills (multi-select pills):
+    Reels, Hooks, Thumbnails, Video Editing, Graphic Design, Copywriting, Other
+  - Portfolio URL
+  - Instagram handle
+  - YouTube handle
+  - UPI ID (private field with lock icon)
+
+- Pre-fill existing values
+- Save → PUT /users/me
+- After save:
+  - Redirect to ?next= OR /profile
+
+3. Public Profile Page:
+- Show:
+  - Name + bio
+  - Skills as pill badges
+  - Portfolio (clickable link)
+  - Instagram / YouTube (icon links)
+
+- NEVER show UPI ID
+
+- If viewing own profile:
+  - Show "Edit Profile" button
+
+- If incomplete:
+  - Show banner:
+    "Complete your profile to start posting and applying"
+
+4. Route Gating:
+
+- Create ProfileGatedRoute:
+  - If profile incomplete:
+    redirect to /profile/edit?next=currentPath
+
+- Apply to:
+  /create
+
+5. Task Apply Gating:
+- If profile incomplete:
+  Replace apply form with:
+  "Add your name and bio before applying"
+  Button → /profile/edit
+
+6. Dashboard Indicator:
+- Add banner:
+  "Profile incomplete"
+  Show progress bar using completionPercent
+  Button → Complete Profile
+
+7. UI Details:
+- Skills = colored pill badges
+- Clean dark theme
+- Subtle lock icon for UPI
+- Smooth transitions
+
+Ensure:
+- No anonymous task posting
+- No anonymous applications
+- No exposure of private data
+- Minimal friction but strong trust
