@@ -135,13 +135,15 @@ router.post("/users/me/portfolio", requireAuth, async (req, res) => {
       return;
     }
 
-    if (url.startsWith("http://") || url.startsWith("https://")) {
+    const isStoragePath = url.startsWith("/objects/portfolio/");
+    const isExternalUrl = url.startsWith("http://") || url.startsWith("https://");
+    if (!isStoragePath && !isExternalUrl) {
+      res.status(400).json({ error: "Portfolio url must be a storage path (/objects/portfolio/...) or an http(s) URL" });
+      return;
+    }
+    if (isExternalUrl) {
       try {
-        const parsed = new URL(url);
-        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-          res.status(400).json({ error: "External portfolio URLs must use http or https" });
-          return;
-        }
+        new URL(url);
       } catch {
         res.status(400).json({ error: "Invalid portfolio item URL" });
         return;

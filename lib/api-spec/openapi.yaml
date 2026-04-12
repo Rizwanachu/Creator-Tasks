@@ -154,6 +154,10 @@ components:
           type: string
           minLength: 1
           description: MIME type of the file (e.g. `image/jpeg`).
+        purpose:
+          type: string
+          enum: [avatar, portfolio]
+          description: Upload purpose — determines storage path prefix.
     UploadUrlResponse:
       type: object
       required: [uploadURL, objectPath]

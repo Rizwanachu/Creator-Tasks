@@ -25,6 +25,8 @@ export interface UploadUrlRequest {
    * @minLength 1
    */
   contentType: string;
+  /** Upload purpose — determines storage path prefix. */
+  purpose?: "avatar" | "portfolio";
 }
 
 export interface UploadUrlResponse {
