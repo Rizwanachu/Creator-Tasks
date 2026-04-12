@@ -113,6 +113,43 @@ router.get("/leaderboard", async (req, res) => {
   }
 });
 
+// GET /users/me — return authenticated user's full private profile (including upiId)
+router.get("/users/me", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const user = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    const portfolio = await db.select().from(portfolioItems)
+      .where(eq(portfolioItems.ownerClerkId, user.clerkId))
+      .orderBy(portfolioItems.createdAt);
+
+    res.json({
+      id: user.id,
+      clerkId: user.clerkId,
+      name: user.name,
+      bio: user.bio,
+      skills: user.skills ?? [],
+      portfolioUrl: user.portfolioUrl,
+      instagramHandle: user.instagramHandle,
+      youtubeHandle: user.youtubeHandle,
+      upiId: user.upiId,
+      avatarObjectPath: user.avatarObjectPath,
+      portfolioItems: portfolio.map((p) => ({
+        id: p.id,
+        imageObjectPath: p.imageObjectPath,
+        caption: p.caption,
+        createdAt: p.createdAt,
+      })),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching own profile");
+    res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
+
 // PUT /users/me — update own profile
 router.put("/users/me", requireAuth, async (req, res) => {
   try {

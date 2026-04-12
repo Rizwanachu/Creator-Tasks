@@ -50,6 +50,15 @@ export function useProfile(clerkId: string | undefined) {
   });
 }
 
+export function useMyProfile() {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery<MyProfile>({
+    queryKey: ["my-profile"],
+    queryFn: () => apiFetch("/api/users/me", {}, getToken),
+    enabled: !!isSignedIn,
+  });
+}
+
 export function useProfileComplete(clerkId: string | undefined) {
   const { data: profile, isLoading } = useProfile(clerkId);
 

@@ -97,6 +97,12 @@ router.get("/storage/objects/*path", async (req: Request, res: Response) => {
   try {
     const raw = req.params.path;
     const wildcardPath = Array.isArray(raw) ? raw.join("/") : raw;
+
+    if (!wildcardPath.startsWith("avatars/") && !wildcardPath.startsWith("portfolio/")) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+
     const objectPath = `/objects/${wildcardPath}`;
     const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
 

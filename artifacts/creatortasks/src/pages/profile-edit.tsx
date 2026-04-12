@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfile, useUpdateProfile, useAddPortfolioItem, useDeletePortfolioItem } from "@/hooks/use-profile";
+import { useMyProfile, useUpdateProfile, useAddPortfolioItem, useDeletePortfolioItem } from "@/hooks/use-profile";
 import { ArrowLeft, Camera, Plus, Instagram, Youtube, Link as LinkIcon, CreditCard, Upload, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 import { Link } from "wouter";
 
@@ -62,7 +62,7 @@ export function ProfileEditPage() {
   const search = useSearch();
   const nextParam = new URLSearchParams(search).get("next");
 
-  const { data: profile, isLoading } = useProfile(userId ?? undefined);
+  const { data: profile, isLoading } = useMyProfile();
   const updateProfile = useUpdateProfile();
   const addPortfolioItem = useAddPortfolioItem();
   const deletePortfolioItem = useDeletePortfolioItem();
@@ -97,6 +97,7 @@ export function ProfileEditPage() {
       setPortfolioUrl(profile.portfolioUrl ?? "");
       setInstagramHandle(profile.instagramHandle ?? "");
       setYoutubeHandle(profile.youtubeHandle ?? "");
+      setUpiId(profile.upiId ?? "");
       setAvatarObjectPath(profile.avatarObjectPath ?? null);
       setInitialized(true);
     }
