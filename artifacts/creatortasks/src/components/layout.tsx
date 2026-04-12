@@ -12,7 +12,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWallet } from "@/hooks/use-wallet";
 import { useNotifications } from "@/hooks/use-notifications";
-import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy } from "lucide-react";
+import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare } from "lucide-react";
+import { useUnreadMessageCount } from "@/hooks/use-chat";
 
 function NavWalletBadge() {
   const { data: wallet } = useWallet();
@@ -37,6 +38,25 @@ function NotificationBell() {
         <Bell size={16} />
         {unread > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+            {unread > 9 ? "9+" : unread}
+          </span>
+        )}
+      </button>
+    </Link>
+  );
+}
+
+function MessagesNavButton() {
+  const unread = useUnreadMessageCount();
+  return (
+    <Link href="/messages">
+      <button
+        className="relative w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        aria-label="Messages"
+      >
+        <MessageSquare size={16} />
+        {unread > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-purple-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
@@ -115,6 +135,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {isSignedIn ? (
               <div className="flex items-center gap-2">
                 <NavWalletBadge />
+                <MessagesNavButton />
                 <NotificationBell />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

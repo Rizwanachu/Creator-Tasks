@@ -1,4 +1,4 @@
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import {
   useTask,
   useSubmitTask,
@@ -32,7 +32,8 @@ import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Wallet, Star, ExternalLink, AlertCircle, Timer, Send, UserPlus, Search, CheckCircle2, XCircle, Clock, Trophy, FileText } from "lucide-react";
+import { ArrowLeft, Wallet, Star, ExternalLink, AlertCircle, Timer, Send, UserPlus, Search, CheckCircle2, XCircle, Clock, Trophy, FileText, MessageSquare } from "lucide-react";
+import { useStartConversation } from "@/hooks/use-chat";
 
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -139,6 +140,12 @@ export function TaskDetail() {
 
   const createOrder = useCreateDepositOrder();
   const verifyDeposit = useVerifyDeposit();
+  const startConversation = useStartConversation();
+  const [, setLocation] = useLocation();
+
+  const canMessage = !!userId && (
+    (isCreator && !!task?.workerId) || isWorker
+  ) && task?.status !== "cancelled";
 
   const handleDeposit = async () => {
     const amount = Number(depositAmount);
@@ -821,6 +828,32 @@ export function TaskDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {canMessage && (
+              <Card className="bg-card border border-purple-500/20">
+                <CardContent className="p-4">
+                  <Button
+                    onClick={() => {
+                      const otherUserId = isCreator ? task.workerId! : task.creatorId;
+                      startConversation.mutate(
+                        { taskId: task.id, otherUserId },
+                        {
+                          onSuccess: (result) => {
+                            setLocation(`/messages#${result.conversation.id}`);
+                          },
+                          onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to open chat"),
+                        }
+                      );
+                    }}
+                    disabled={startConversation.isPending}
+                    className="w-full rounded-xl text-sm font-semibold border-0 btn-gradient text-white"
+                  >
+                    <MessageSquare size={15} className="mr-2" />
+                    {startConversation.isPending ? "Opening..." : `Message ${isCreator ? "Worker" : "Creator"}`}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             {isCreator && task.status === "open" && (
               <Card className="bg-card border border-border">

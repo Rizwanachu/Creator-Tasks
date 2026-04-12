@@ -13,6 +13,7 @@ import applicationsRouter from "./applications";
 import userInvitesRouter from "./user-invites";
 import bookmarksRouter from "./bookmarks";
 import storageRouter from "./storage";
+import conversationsRouter from "./conversations";
 
 const router: IRouter = Router();
 
@@ -27,6 +28,7 @@ router.use(referralsRouter);
 router.use(applicationsRouter);
 router.use(userInvitesRouter);
 router.use(bookmarksRouter);
+router.use(conversationsRouter);
 router.use(tasksRouter);
 router.use(walletRouter);
 router.use(dashboardRouter);
