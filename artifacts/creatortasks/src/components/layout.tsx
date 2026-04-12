@@ -336,16 +336,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-3">
+          <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} CreatorTasks. All rights reserved.
             </p>
             <div className="flex items-center gap-4 flex-wrap justify-center">
-              <span className="text-xs text-muted-foreground">Secure escrow payments</span>
+              <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
               <span className="text-muted-foreground/30">·</span>
-              <span className="text-xs text-muted-foreground">Application-based hiring</span>
+              <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
               <span className="text-muted-foreground/30">·</span>
-              <span className="text-xs text-muted-foreground">Direct invite system</span>
+              <Link href="/refund-policy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Refund Policy</Link>
+              <span className="text-muted-foreground/30">·</span>
+              <Link href="/contact" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Contact Us</Link>
             </div>
           </div>
         </div>

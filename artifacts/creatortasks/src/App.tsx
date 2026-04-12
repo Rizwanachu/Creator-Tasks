@@ -31,6 +31,10 @@ import { ProfilePage } from "@/pages/profile";
 import { ProfileEditPage } from "@/pages/profile-edit";
 import { AdminPage } from "@/pages/admin";
 import { LeaderboardPage } from "@/pages/leaderboard";
+import { TermsPage } from "@/pages/terms";
+import { PrivacyPage } from "@/pages/privacy";
+import { RefundPolicyPage } from "@/pages/refund-policy";
+import { ContactPage } from "@/pages/contact";
 
 const queryClient = new QueryClient();
 
@@ -177,6 +181,11 @@ function ClerkProviderWithRoutes() {
             </Route>
 
             <Route path="/leaderboard" component={LeaderboardPage} />
+
+            <Route path="/terms" component={TermsPage} />
+            <Route path="/privacy" component={PrivacyPage} />
+            <Route path="/refund-policy" component={RefundPolicyPage} />
+            <Route path="/contact" component={ContactPage} />
             
             <Route component={NotFound} />
           </Switch>
