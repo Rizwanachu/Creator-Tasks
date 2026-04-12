@@ -80,6 +80,8 @@ export function ProfileEditPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const [uploadingPortfolio, setUploadingPortfolio] = useState(false);
+  const [pendingPortfolioFile, setPendingPortfolioFile] = useState<File | null>(null);
+  const [pendingPortfolioCaption, setPendingPortfolioCaption] = useState("");
   const [portfolioUrlInput, setPortfolioUrlInput] = useState("");
   const [portfolioCaptionInput, setPortfolioCaptionInput] = useState("");
   const [addingByUrl, setAddingByUrl] = useState(false);
@@ -126,7 +128,7 @@ export function ProfileEditPage() {
     }
   };
 
-  const handlePortfolioUpload = async (file: File) => {
+  const handlePortfolioFileSelect = (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
@@ -139,10 +141,18 @@ export function ProfileEditPage() {
       toast.error("Portfolio limit reached (max 12 items)");
       return;
     }
+    setPendingPortfolioFile(file);
+    setPendingPortfolioCaption("");
+  };
+
+  const handlePortfolioUpload = async () => {
+    if (!pendingPortfolioFile) return;
     setUploadingPortfolio(true);
     try {
-      const objectPath = await uploadFileToStorage(file, getToken, "portfolio");
-      await addPortfolioItem.mutateAsync({ url: objectPath });
+      const objectPath = await uploadFileToStorage(pendingPortfolioFile, getToken, "portfolio");
+      await addPortfolioItem.mutateAsync({ url: objectPath, caption: pendingPortfolioCaption.trim() || undefined });
+      setPendingPortfolioFile(null);
+      setPendingPortfolioCaption("");
       toast.success("Portfolio item added!");
     } catch {
       toast.error("Failed to upload portfolio item");
@@ -458,6 +468,42 @@ export function ProfileEditPage() {
             </Button>
           </div>
 
+          {/* Pending file confirmation (caption + upload) */}
+          {pendingPortfolioFile && (
+            <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-3 space-y-2">
+              <p className="text-xs font-medium text-purple-300">Selected: {pendingPortfolioFile.name}</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Caption (optional)"
+                  value={pendingPortfolioCaption}
+                  onChange={(e) => setPendingPortfolioCaption(e.target.value)}
+                  className="flex-1 focus-visible:ring-ring rounded-xl h-9 text-sm"
+                  maxLength={200}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePortfolioUpload(); } }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  className="btn-gradient border-0 text-white rounded-xl shrink-0"
+                  onClick={handlePortfolioUpload}
+                  disabled={uploadingPortfolio}
+                >
+                  {uploadingPortfolio ? "Uploading..." : "Add"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl shrink-0"
+                  onClick={() => { setPendingPortfolioFile(null); setPendingPortfolioCaption(""); }}
+                  disabled={uploadingPortfolio}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Add by URL */}
           {(profile?.portfolioItems?.length ?? 0) < 12 && (
             <div className="space-y-2">
@@ -553,7 +599,7 @@ export function ProfileEditPage() {
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) handlePortfolioUpload(file);
+              if (file) handlePortfolioFileSelect(file);
               e.target.value = "";
             }}
           />
