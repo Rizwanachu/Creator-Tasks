@@ -1,13 +1,33 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Readable } from "stream";
 import multer from "multer";
-import sharp from "sharp";
 import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 import { requireAuth } from "../middlewares/requireAuth";
+import { logger } from "../lib/logger";
+
+// sharp is a native C++ addon — NOT imported at module level so the serverless
+// bundle never tries to load the platform binary at startup.
+// compressImage() does a lazy require and falls back gracefully when sharp is
+// unavailable (e.g. Vercel serverless where the linux binary isn't present).
+async function compressImage(buffer: Buffer, maxDimension: number): Promise<Buffer> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const sharp = require("sharp") as typeof import("sharp").default;
+    return await (sharp(buffer) as any)
+      .rotate()
+      .resize(maxDimension, maxDimension, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 80, progressive: true })
+      .toBuffer() as Buffer;
+  } catch {
+    // sharp native binary not available — return the original buffer as-is.
+    // Images will still upload correctly, just without server-side resize/compression.
+    return buffer;
+  }
+}
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -53,7 +73,7 @@ router.post("/storage/uploads/request-url", requireAuth, async (req: Request, re
       }),
     );
   } catch (error) {
-    req.log.error({ err: error }, "Error generating upload URL");
+    logger.error({ err: error }, "Error generating upload URL");
     res.status(500).json({ error: "Failed to generate upload URL" });
   }
 });
@@ -84,16 +104,11 @@ router.post(
       const purpose = (req.body as Record<string, string>)["purpose"] as string | undefined;
       const maxDimension = purpose === "avatar" ? 400 : 1200;
 
-      const compressed = await sharp(req.file.buffer)
-        .rotate()
-        .resize(maxDimension, maxDimension, { fit: "inside", withoutEnlargement: true })
-        .jpeg({ quality: 80, progressive: true })
-        .toBuffer();
-
+      const compressed = await compressImage(req.file.buffer, maxDimension);
       const dataUrl = `data:image/jpeg;base64,${compressed.toString("base64")}`;
       res.json({ objectPath: dataUrl });
     } catch (error) {
-      req.log.error({ err: error }, "Error processing image");
+      logger.error({ err: error }, "Error processing image");
       res.status(500).json({ error: "Failed to process image" });
     }
   }
@@ -128,7 +143,7 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
       res.end();
     }
   } catch (error) {
-    req.log.error({ err: error }, "Error serving public object");
+    logger.error({ err: error }, "Error serving public object");
     res.status(500).json({ error: "Failed to serve public object" });
   }
 });
@@ -166,11 +181,11 @@ router.get("/storage/objects/*path", async (req: Request, res: Response) => {
     }
   } catch (error) {
     if (error instanceof ObjectNotFoundError) {
-      req.log.warn({ err: error }, "Object not found");
+      logger.warn({ err: error }, "Object not found");
       res.status(404).json({ error: "Object not found" });
       return;
     }
-    req.log.error({ err: error }, "Error serving object");
+    logger.error({ err: error }, "Error serving object");
     res.status(500).json({ error: "Failed to serve object" });
   }
 });

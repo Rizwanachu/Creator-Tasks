@@ -30,5 +30,7 @@ await build({
   define: {
     "process.env.NODE_ENV": '"production"',
   },
-  external: ["*.node", "pg-native"],
+  // sharp uses a native C++ binary — mark external so the lazy require() in
+  // storage.ts falls into its catch block instead of crashing the bundle.
+  external: ["*.node", "pg-native", "sharp"],
 });
