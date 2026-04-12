@@ -48,3 +48,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Vercel build output (created by build-vercel.mjs)
+.vercel/output
