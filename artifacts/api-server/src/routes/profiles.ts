@@ -70,7 +70,12 @@ router.put("/users/me", requireAuth, async (req, res) => {
     const validationErrors: string[] = [];
 
     if (portfolioUrl !== undefined && portfolioUrl.trim()) {
-      try { new URL(portfolioUrl.trim()); } catch {
+      try {
+        const parsed = new URL(portfolioUrl.trim());
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          validationErrors.push("portfolioUrl must use http or https");
+        }
+      } catch {
         validationErrors.push("portfolioUrl must be a valid URL");
       }
     }
@@ -125,6 +130,19 @@ router.post("/users/me/portfolio", requireAuth, async (req, res) => {
     if (!url) {
       res.status(400).json({ error: "url is required" });
       return;
+    }
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          res.status(400).json({ error: "External portfolio URLs must use http or https" });
+          return;
+        }
+      } catch {
+        res.status(400).json({ error: "Invalid portfolio item URL" });
+        return;
+      }
     }
 
     const existing = await db.select({ count: count(portfolioItems.id) })
