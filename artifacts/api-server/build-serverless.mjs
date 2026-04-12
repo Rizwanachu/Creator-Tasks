@@ -1,7 +1,7 @@
 /**
- * Builds src/app.ts into ../../api/index.js (project root) for the Vercel
- * serverless function. Using CJS format so Vercel's @vercel/node runtime
- * picks it up without any ESM/extension issues.
+ * Builds src/app.ts into ../../api/index.mjs (project root) for the Vercel
+ * serverless function. ESM format so Vercel's @vercel/node runtime runs it
+ * without TypeScript recompilation — bypasses the node16 extension requirement.
  */
 import { build } from "esbuild";
 import path from "node:path";
@@ -14,9 +14,18 @@ await build({
   entryPoints: [path.resolve(artifactDir, "src/app.ts")],
   platform: "node",
   bundle: true,
-  format: "cjs",
-  outfile: path.resolve(projectRoot, "api/index.js"),
+  format: "esm",
+  outfile: path.resolve(projectRoot, "api/index.mjs"),
+  banner: {
+    js: [
+      "import { createRequire } from 'module';",
+      "import { fileURLToPath } from 'url';",
+      "import { dirname } from 'path';",
+      "const require = createRequire(import.meta.url);",
+      "const __filename = fileURLToPath(import.meta.url);",
+      "const __dirname = dirname(__filename);",
+    ].join("\n"),
+  },
   logLevel: "info",
-  // Externalize native addons that can't be bundled.
   external: ["*.node", "pg-native"],
 });
