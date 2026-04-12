@@ -47,7 +47,7 @@ router.get("/referral", requireAuth, async (req, res) => {
 
     res.json({
       code: user?.referralCode,
-      referralLink: `${process.env["FRONTEND_URL"] ?? "https://creatortasks.in"}?ref=${user?.referralCode}`,
+      referralLink: `${process.env["FRONTEND_URL"] ?? "https://creatortasks.vercel.app"}?ref=${user?.referralCode}`,
       totalReferrals: myReferrals.length,
       totalCommissionEarned: totalCommission,
       totalTasksCompleted: totalTasks,
