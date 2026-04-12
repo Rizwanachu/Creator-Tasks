@@ -30,24 +30,22 @@ async function uploadFileToStorage(
   purpose?: "avatar" | "portfolio",
 ): Promise<string> {
   const token = await getToken();
-  const metaRes = await fetch(`${API_BASE}/api/storage/uploads/request-url`, {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (purpose) formData.append("purpose", purpose);
+
+  const res = await fetch(`${API_BASE}/api/storage/uploads/file`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type, purpose }),
+    body: formData,
   });
-  if (!metaRes.ok) throw new Error("Failed to get upload URL");
-  const { uploadURL, objectPath } = await metaRes.json();
-
-  const putRes = await fetch(uploadURL, {
-    method: "PUT",
-    body: file,
-    headers: { "Content-Type": file.type },
-  });
-  if (!putRes.ok) throw new Error("Failed to upload file");
-
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error ?? "Failed to upload file");
+  }
+  const { objectPath } = await res.json();
   return objectPath as string;
 }
 

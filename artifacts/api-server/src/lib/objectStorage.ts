@@ -144,6 +144,41 @@ export class ObjectStorageService {
     });
   }
 
+  async uploadObjectBuffer(opts: {
+    buffer: Buffer;
+    contentType: string;
+    purpose?: string;
+    clerkId?: string;
+    filename?: string;
+  }): Promise<string> {
+    const privateObjectDir = this.getPrivateObjectDir();
+
+    const { buffer, contentType, purpose, clerkId, filename } = opts;
+    const ext = filename
+      ? (filename.split(".").pop()?.toLowerCase() ?? "bin")
+      : (contentType.split("/").pop() ?? "bin");
+
+    let subPath: string;
+    if (purpose === "avatar" && clerkId) {
+      subPath = `avatars/${clerkId}.${ext}`;
+    } else if (purpose === "portfolio" && clerkId) {
+      subPath = `portfolio/${clerkId}/${randomUUID()}.${ext}`;
+    } else {
+      subPath = `uploads/${randomUUID()}`;
+    }
+
+    const fullPath = `${privateObjectDir}/${subPath}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+
+    await file.save(buffer, { contentType, resumable: false });
+
+    return this.normalizeObjectEntityPath(
+      `https://storage.googleapis.com/${bucketName}/${objectName}`
+    );
+  }
+
   async getObjectEntityFile(objectPath: string): Promise<File> {
     if (!objectPath.startsWith("/objects/")) {
       throw new ObjectNotFoundError();

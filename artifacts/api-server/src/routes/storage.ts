@@ -1,11 +1,17 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Readable } from "stream";
+import multer from "multer";
 import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 import { requireAuth } from "../middlewares/requireAuth";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 },
+});
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -50,6 +56,45 @@ router.post("/storage/uploads/request-url", requireAuth, async (req: Request, re
     res.status(500).json({ error: "Failed to generate upload URL" });
   }
 });
+
+/**
+ * POST /storage/uploads/file
+ *
+ * Direct server-side file upload (multipart/form-data).
+ * Used as fallback when presigned URL signing is unavailable.
+ * Accepts: file (required), purpose (optional), filename (optional)
+ */
+router.post(
+  "/storage/uploads/file",
+  requireAuth,
+  upload.single("file"),
+  async (req: Request, res: Response) => {
+    if (!req.file) {
+      res.status(400).json({ error: "No file uploaded" });
+      return;
+    }
+
+    const purpose = (req.body as Record<string, string>)["purpose"] as string | undefined;
+    const filename = req.file.originalname;
+    const contentType = req.file.mimetype;
+    const clerkId = req.dbUser?.clerkId;
+
+    try {
+      const objectPath = await objectStorageService.uploadObjectBuffer({
+        buffer: req.file.buffer,
+        contentType,
+        purpose,
+        clerkId,
+        filename,
+      });
+
+      res.json({ objectPath });
+    } catch (error) {
+      req.log.error({ err: error }, "Error uploading file");
+      res.status(500).json({ error: "Failed to upload file" });
+    }
+  }
+);
 
 /**
  * GET /storage/public-objects/*
