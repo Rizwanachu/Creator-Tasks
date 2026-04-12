@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile, useUpdateProfile, useAddPortfolioItem, useDeletePortfolioItem } from "@/hooks/use-profile";
-import { ArrowLeft, Camera, X, Plus, Instagram, Youtube, Link as LinkIcon, CreditCard, Upload, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Camera, Plus, Instagram, Youtube, Link as LinkIcon, CreditCard, Upload, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 import { Link } from "wouter";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -51,10 +51,9 @@ async function uploadFileToStorage(
   return objectPath as string;
 }
 
-const SKILL_SUGGESTIONS = [
-  "Video Editing", "Motion Graphics", "Thumbnail Design", "Copywriting",
-  "Hook Writing", "Caption Writing", "Color Grading", "After Effects",
-  "Premiere Pro", "Canva", "Photoshop", "CapCut", "DaVinci Resolve",
+const FIXED_SKILLS = [
+  "Reels", "Hooks", "Thumbnails", "Video Editing",
+  "Graphic Design", "Copywriting", "Other",
 ];
 
 export function ProfileEditPage() {
@@ -71,7 +70,6 @@ export function ProfileEditPage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
-  const [skillInput, setSkillInput] = useState("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
   const [instagramHandle, setInstagramHandle] = useState("");
   const [youtubeHandle, setYoutubeHandle] = useState("");
@@ -179,15 +177,10 @@ export function ProfileEditPage() {
     }
   };
 
-  const handleAddSkill = (skill: string) => {
-    const trimmed = skill.trim();
-    if (!trimmed || skills.includes(trimmed) || skills.length >= 10) return;
-    setSkills([...skills, trimmed]);
-    setSkillInput("");
-  };
-
-  const handleRemoveSkill = (skill: string) => {
-    setSkills(skills.filter((s) => s !== skill));
+  const toggleSkill = (skill: string) => {
+    setSkills((prev) =>
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
+    );
   };
 
   const handleSave = () => {
@@ -353,65 +346,26 @@ export function ProfileEditPage() {
         {/* Skills */}
         <div className="bg-card border border-border rounded-2xl p-5 md:p-6 space-y-4">
           <h2 className="text-sm font-semibold text-foreground">Skills</h2>
-          <p className="text-xs text-muted-foreground -mt-2">Add up to 10 skills that describe your expertise.</p>
-
-          <div className="flex gap-2">
-            <Input
-              placeholder="e.g., Video Editing"
-              value={skillInput}
-              onChange={(e) => setSkillInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") { e.preventDefault(); handleAddSkill(skillInput); }
-                if (e.key === "," ) { e.preventDefault(); handleAddSkill(skillInput); }
-              }}
-              className="focus-visible:ring-ring rounded-xl h-10 text-sm flex-1"
-              maxLength={40}
-              disabled={skills.length >= 10}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="rounded-xl shrink-0"
-              onClick={() => handleAddSkill(skillInput)}
-              disabled={skills.length >= 10 || !skillInput.trim()}
-            >
-              <Plus size={14} />
-            </Button>
-          </div>
-
-          {skills.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {skills.map((skill) => (
-                <span
+          <p className="text-xs text-muted-foreground -mt-2">Select the skills that best describe your work.</p>
+          <div className="flex flex-wrap gap-2">
+            {FIXED_SKILLS.map((skill) => {
+              const selected = skills.includes(skill);
+              return (
+                <button
                   key={skill}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-medium"
+                  type="button"
+                  onClick={() => toggleSkill(skill)}
+                  className={`px-4 py-2 rounded-full border text-xs font-medium transition-all ${
+                    selected
+                      ? "bg-purple-500/20 border-purple-500/40 text-purple-300"
+                      : "border-border text-muted-foreground hover:border-purple-500/30 hover:text-purple-300 hover:bg-purple-500/5"
+                  }`}
                 >
+                  {selected && <span className="mr-1">✓</span>}
                   {skill}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSkill(skill)}
-                    className="hover:text-white transition-colors"
-                  >
-                    <X size={11} />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-1.5">
-            {SKILL_SUGGESTIONS.filter((s) => !skills.includes(s)).slice(0, 8).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => handleAddSkill(s)}
-                disabled={skills.length >= 10}
-                className="px-2.5 py-1 rounded-full border border-dashed border-border text-muted-foreground text-[11px] hover:border-purple-500/30 hover:text-purple-300 hover:bg-purple-500/5 transition-all disabled:opacity-40"
-              >
-                + {s}
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </div>
 

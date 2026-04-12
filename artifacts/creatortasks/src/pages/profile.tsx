@@ -16,6 +16,9 @@ function avatarSrc(objectPath: string | null | undefined): string | null {
 }
 
 function portfolioSrc(objectPath: string): string {
+  if (objectPath.startsWith("http://") || objectPath.startsWith("https://")) {
+    return objectPath;
+  }
   return `${API_BASE}/api/storage${objectPath}`;
 }
 
