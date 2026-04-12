@@ -51,6 +51,7 @@ export interface LeaderboardEntry {
   bio: string | null;
   totalEarnings: number | null;
   completedTasksCount: number;
+  lastCompletedAt: string | null;
   rating: { average: string | null; total: number };
 }
 

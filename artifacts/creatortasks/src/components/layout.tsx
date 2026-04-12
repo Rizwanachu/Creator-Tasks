@@ -150,6 +150,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         My Profile
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile/edit" className="w-full cursor-pointer text-foreground/80 focus:text-foreground focus:bg-muted">
+                        Edit Profile
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       className="cursor-pointer text-red-500 focus:text-red-400 focus:bg-red-500/10"
                       onSelect={() => signOut()}

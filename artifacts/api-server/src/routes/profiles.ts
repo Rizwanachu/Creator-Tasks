@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, users, tasks, ratings } from "@workspace/db";
+import { db, users, tasks, ratings, portfolioItems } from "@workspace/db";
 import { eq, and, avg, count, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 
@@ -31,11 +31,22 @@ router.get("/users/:clerkId", async (req, res) => {
       .from(ratings)
       .where(eq(ratings.ratingFor, user.id));
 
+    const portfolio = await db
+      .select()
+      .from(portfolioItems)
+      .where(eq(portfolioItems.ownerClerkId, user.clerkId))
+      .orderBy(portfolioItems.createdAt);
+
     res.json({
       id: user.id,
       clerkId: user.clerkId,
       name: user.name,
       bio: user.bio,
+      skills: user.skills ?? [],
+      portfolioUrl: user.portfolioUrl,
+      instagramHandle: user.instagramHandle,
+      youtubeHandle: user.youtubeHandle,
+      avatarObjectPath: user.avatarObjectPath,
       totalEarnings: user.totalEarnings ?? 0,
       referralCode: user.referralCode,
       completedTasksCount: completedTasks.length,
@@ -45,6 +56,12 @@ router.get("/users/:clerkId", async (req, res) => {
         total: ratingStats[0]?.total ?? 0,
       },
       recentWork: completedTasks.slice(0, 6),
+      portfolioItems: portfolio.map((p) => ({
+        id: p.id,
+        imageObjectPath: p.imageObjectPath,
+        caption: p.caption,
+        createdAt: p.createdAt,
+      })),
     });
   } catch (err) {
     req.log.error({ err }, "Error fetching profile");
@@ -61,6 +78,7 @@ router.get("/leaderboard", async (req, res) => {
         clerkId: users.clerkId,
         name: users.name,
         totalEarnings: users.totalEarnings,
+        avatarObjectPath: users.avatarObjectPath,
         avgRating: avg(ratings.score),
         ratingCount: count(ratings.id),
         completedTasksCount: sql<number>`count(distinct case when ${tasks.status} = 'completed' then ${tasks.id} end)`,
@@ -80,6 +98,7 @@ router.get("/leaderboard", async (req, res) => {
         clerkId: w.clerkId,
         name: w.name,
         totalEarnings: w.totalEarnings ?? 0,
+        avatarObjectPath: w.avatarObjectPath,
         completedTasksCount: Number(w.completedTasksCount),
         lastCompletedAt: w.lastCompletedAt ?? null,
         rating: {
@@ -94,25 +113,132 @@ router.get("/leaderboard", async (req, res) => {
   }
 });
 
-// PUT /users/me — update own profile (bio, name)
+// PUT /users/me — update own profile
 router.put("/users/me", requireAuth, async (req, res) => {
   try {
-    const { name, bio } = req.body as { name?: string; bio?: string };
+    const {
+      name,
+      bio,
+      skills,
+      portfolioUrl,
+      instagramHandle,
+      youtubeHandle,
+      upiId,
+      avatarObjectPath,
+    } = req.body as {
+      name?: string;
+      bio?: string;
+      skills?: string[];
+      portfolioUrl?: string;
+      instagramHandle?: string;
+      youtubeHandle?: string;
+      upiId?: string;
+      avatarObjectPath?: string;
+    };
     const currentUser = req.dbUser!;
+
+    const updateData: Record<string, unknown> = {};
+    if (name !== undefined) updateData.name = name.trim().slice(0, 80);
+    if (bio !== undefined) updateData.bio = bio.trim().slice(0, 500);
+    if (skills !== undefined) updateData.skills = Array.isArray(skills) ? skills.slice(0, 10).map((s) => s.trim().slice(0, 40)) : [];
+    if (portfolioUrl !== undefined) updateData.portfolioUrl = portfolioUrl.trim() || null;
+    if (instagramHandle !== undefined) updateData.instagramHandle = instagramHandle.trim().replace(/^@/, "").slice(0, 60) || null;
+    if (youtubeHandle !== undefined) updateData.youtubeHandle = youtubeHandle.trim().replace(/^@/, "").slice(0, 60) || null;
+    if (upiId !== undefined) updateData.upiId = upiId.trim() || null;
+    if (avatarObjectPath !== undefined) updateData.avatarObjectPath = avatarObjectPath.trim() || null;
 
     const [updated] = await db
       .update(users)
-      .set({
-        ...(name !== undefined && { name: name.trim().slice(0, 80) }),
-        ...(bio !== undefined && { bio: bio.trim().slice(0, 500) }),
-      })
+      .set(updateData)
       .where(eq(users.id, currentUser.id))
       .returning();
 
-    res.json(updated);
+    res.json({
+      id: updated.id,
+      clerkId: updated.clerkId,
+      name: updated.name,
+      bio: updated.bio,
+      skills: updated.skills ?? [],
+      portfolioUrl: updated.portfolioUrl,
+      instagramHandle: updated.instagramHandle,
+      youtubeHandle: updated.youtubeHandle,
+      upiId: updated.upiId,
+      avatarObjectPath: updated.avatarObjectPath,
+    });
   } catch (err) {
     req.log.error({ err }, "Error updating profile");
     res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
+// POST /users/me/portfolio — add portfolio item
+router.post("/users/me/portfolio", requireAuth, async (req, res) => {
+  try {
+    const { imageObjectPath, caption } = req.body as { imageObjectPath?: string; caption?: string };
+    const currentUser = req.dbUser!;
+
+    if (!imageObjectPath) {
+      res.status(400).json({ error: "imageObjectPath is required" });
+      return;
+    }
+
+    const existing = await db.select({ count: count(portfolioItems.id) })
+      .from(portfolioItems)
+      .where(eq(portfolioItems.ownerClerkId, currentUser.clerkId));
+
+    if ((existing[0]?.count ?? 0) >= 12) {
+      res.status(400).json({ error: "Portfolio limit reached (max 12 items)" });
+      return;
+    }
+
+    const [item] = await db.insert(portfolioItems).values({
+      ownerClerkId: currentUser.clerkId,
+      imageObjectPath: imageObjectPath.trim(),
+      caption: caption?.trim().slice(0, 200) || null,
+    }).returning();
+
+    res.json(item);
+  } catch (err) {
+    req.log.error({ err }, "Error adding portfolio item");
+    res.status(500).json({ error: "Failed to add portfolio item" });
+  }
+});
+
+// DELETE /users/me/portfolio/:id — remove portfolio item
+router.delete("/users/me/portfolio/:id", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUser = req.dbUser!;
+
+    const item = await db.query.portfolioItems.findFirst({
+      where: and(eq(portfolioItems.id, id), eq(portfolioItems.ownerClerkId, currentUser.clerkId)),
+    });
+
+    if (!item) {
+      res.status(404).json({ error: "Portfolio item not found" });
+      return;
+    }
+
+    await db.delete(portfolioItems).where(eq(portfolioItems.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Error deleting portfolio item");
+    res.status(500).json({ error: "Failed to delete portfolio item" });
+  }
+});
+
+// GET /users/me/portfolio — get own portfolio items
+router.get("/users/me/portfolio", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const items = await db.select()
+      .from(portfolioItems)
+      .where(eq(portfolioItems.ownerClerkId, currentUser.clerkId))
+      .orderBy(portfolioItems.createdAt);
+    res.json(items);
+  } catch (err) {
+    req.log.error({ err }, "Error fetching portfolio");
+    res.status(500).json({ error: "Failed to fetch portfolio" });
   }
 });
 

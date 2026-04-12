@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { useProfileComplete } from "@/hooks/use-profile";
 
 // Patch history API once so query-string changes fire a custom 'urlchange' event
 // that components can listen to (wouter only tracks pathname, not search params)
@@ -8,7 +9,7 @@ import React, { useEffect, useRef } from "react";
   history.pushState = function (...args) { orig.push.apply(history, args); fire(); };
   history.replaceState = function (...args) { orig.replace.apply(history, args); fire(); };
 }());
-import { ClerkProvider, Show, useClerk, useAuth } from '@clerk/react';
+import { ClerkProvider, useClerk, useAuth } from '@clerk/react';
 import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from 'wouter';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { ThemeProvider, useTheme } from "next-themes";
@@ -27,6 +28,7 @@ import { Dashboard } from "@/pages/dashboard";
 import { SignInPage, SignUpPage } from "@/pages/auth";
 import { NotificationsPage } from "@/pages/notifications";
 import { ProfilePage } from "@/pages/profile";
+import { ProfileEditPage } from "@/pages/profile-edit";
 import { AdminPage } from "@/pages/admin";
 import { LeaderboardPage } from "@/pages/leaderboard";
 
@@ -74,6 +76,18 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   if (!isLoaded) return null;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   
+  return <Component />;
+}
+
+function ProfileGatedRoute({ component: Component, path }: { component: React.ComponentType; path: string }) {
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { isComplete, isLoading } = useProfileComplete(userId ?? undefined);
+
+  if (!isLoaded) return null;
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
+  if (isLoading) return null;
+  if (!isComplete) return <Redirect to={`/profile/edit?next=${encodeURIComponent(path)}`} />;
+
   return <Component />;
 }
 
@@ -141,7 +155,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/tasks/:id" component={TaskDetail} />
             
             <Route path="/create">
-              <ProtectedRoute component={CreateTask} />
+              <ProfileGatedRoute component={CreateTask} path="/create" />
             </Route>
             
             <Route path="/dashboard">
@@ -150,6 +164,10 @@ function ClerkProviderWithRoutes() {
 
             <Route path="/notifications">
               <ProtectedRoute component={NotificationsPage} />
+            </Route>
+
+            <Route path="/profile/edit">
+              <ProtectedRoute component={ProfileEditPage} />
             </Route>
 
             <Route path="/profile/:clerkId" component={ProfilePage} />

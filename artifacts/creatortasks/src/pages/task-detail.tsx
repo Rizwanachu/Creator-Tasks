@@ -21,6 +21,7 @@ import {
 } from "@/hooks/use-invites";
 import { useCreateDepositOrder, useVerifyDeposit } from "@/hooks/use-wallet";
 import { useAuth } from "@clerk/react";
+import { useProfileComplete } from "@/hooks/use-profile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -112,6 +113,7 @@ export function TaskDetail() {
   const { data: myApplication } = useMyApplication(id || "");
   const { data: applicationsData } = useTaskApplications(id || "");
   const { data: taskInvites } = useTaskInvites(id || "");
+  const { isComplete: profileIsComplete } = useProfileComplete(userId ?? undefined);
 
   const [submissionContent, setSubmissionContent] = useState("");
   const [submissionUrl, setSubmissionUrl] = useState("");
@@ -194,7 +196,8 @@ export function TaskDetail() {
 
   const isCreator = !!userId && userId === task.creatorClerkId;
   const isWorker = !!userId && userId === task.workerClerkId;
-  const canApply = !!userId && !isCreator && task.status === "open" && !myApplication;
+  const needsProfile = !!userId && !isCreator && task.status === "open" && !myApplication && !profileIsComplete;
+  const canApply = !!userId && !isCreator && task.status === "open" && !myApplication && profileIsComplete;
   const hasApplied = !!myApplication;
   const canRate = (isCreator || isWorker) && task.status === "completed" && !ratingDone;
   const dl = deadlineDisplay(task.deadline);
@@ -408,6 +411,26 @@ export function TaskDetail() {
                     View delivered work
                   </a>
                 )}
+              </div>
+            )}
+
+            {/* Profile incomplete banner for would-be applicants */}
+            {needsProfile && (
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-5 flex items-start gap-3">
+                <AlertCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-300 mb-1">Complete your profile to apply</p>
+                  <p className="text-xs text-amber-400/70 mb-3">
+                    Add your name and bio to your profile before applying for tasks.
+                  </p>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="btn-gradient text-white rounded-xl border-0 text-xs font-semibold"
+                  >
+                    <Link href={`/profile/edit?next=/tasks/${id}`}>Complete Profile</Link>
+                  </Button>
+                </div>
               </div>
             )}
 

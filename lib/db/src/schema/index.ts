@@ -6,11 +6,25 @@ export const users = pgTable("users", {
   email: text("email"),
   name: text("name"),
   bio: text("bio"),
+  skills: text("skills").array(),
+  portfolioUrl: text("portfolio_url"),
+  instagramHandle: text("instagram_handle"),
+  youtubeHandle: text("youtube_handle"),
+  upiId: text("upi_id"),
+  avatarObjectPath: text("avatar_object_path"),
   referralCode: text("referral_code").unique(),
   referrerId: uuid("referrer_id"),
   totalEarnings: integer("total_earnings").default(0),
   balance: integer("balance").default(0),
   pendingBalance: integer("pending_balance").default(0),
+});
+
+export const portfolioItems = pgTable("portfolio_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  ownerClerkId: text("owner_clerk_id").notNull(),
+  imageObjectPath: text("image_object_path").notNull(),
+  caption: text("caption"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const tasks = pgTable("tasks", {

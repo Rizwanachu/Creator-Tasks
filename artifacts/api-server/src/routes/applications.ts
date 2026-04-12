@@ -33,6 +33,15 @@ router.post("/tasks/:id/apply", requireAuth, async (req, res) => {
       return;
     }
 
+    const applicant = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
+    if (!applicant?.name?.trim() || !applicant?.bio?.trim()) {
+      res.status(403).json({
+        error: "Please complete your profile (name and bio required) before applying.",
+        profileIncomplete: true,
+      });
+      return;
+    }
+
     const existing = await db.query.applications.findFirst({
       where: and(eq(applications.taskId, taskId), eq(applications.workerId, currentUser.id)),
     });

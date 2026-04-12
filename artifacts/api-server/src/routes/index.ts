@@ -12,11 +12,13 @@ import referralsRouter from "./referrals";
 import applicationsRouter from "./applications";
 import userInvitesRouter from "./user-invites";
 import bookmarksRouter from "./bookmarks";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(statsRouter);
+router.use(storageRouter);
 router.use(notificationsRouter);
 router.use(ratingsRouter);
 router.use(profilesRouter);

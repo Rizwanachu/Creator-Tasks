@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { WalletModal } from "@/components/wallet-modal";
-import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, Copy, Gift, Users, TrendingUp, Mail, XCircle, AlertTriangle, Bookmark, Sparkles } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, Copy, Gift, Users, TrendingUp, Mail, XCircle, AlertTriangle, Bookmark, Sparkles, AlertCircle } from "lucide-react";
 import { useMyDisputes, useBookmarks } from "@/hooks/use-bookmarks";
 import { toast } from "sonner";
 import { useAuth } from "@clerk/react";
@@ -54,6 +54,7 @@ export function Dashboard() {
   const { data: dashboard, isLoading: loadingDash } = useDashboard();
   const { data: wallet, isLoading: loadingWallet } = useWallet();
   const { data: profile } = useProfile(userId ?? undefined);
+  const profileComplete = !!(profile?.name?.trim() && profile?.bio?.trim());
   const { data: referralData } = useReferral();
 
   const { data: myInvites } = useMyInvites();
@@ -158,6 +159,20 @@ export function Dashboard() {
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
       <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight mb-6 md:mb-8">Dashboard</h1>
+
+      {/* Profile incomplete banner */}
+      {userId && !profileComplete && profile !== undefined && (
+        <div className="mb-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <AlertCircle size={20} className="text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+          <div className="flex-1">
+            <h3 className="font-semibold text-amber-300 mb-0.5">Your profile is incomplete</h3>
+            <p className="text-sm text-amber-400/70">Add your name and bio to post tasks and apply for work.</p>
+          </div>
+          <Button asChild size="sm" className="btn-gradient text-white rounded-xl border-0 font-semibold text-xs shrink-0">
+            <Link href="/profile/edit">Complete Profile</Link>
+          </Button>
+        </div>
+      )}
 
       {/* Onboarding banner */}
       {isNewUser && (

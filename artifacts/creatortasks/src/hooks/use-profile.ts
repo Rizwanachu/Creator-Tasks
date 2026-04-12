@@ -2,11 +2,24 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
 import { apiFetch } from "@/lib/api";
 
+export interface PortfolioItem {
+  id: string;
+  ownerClerkId: string;
+  imageObjectPath: string;
+  caption: string | null;
+  createdAt: string;
+}
+
 export interface UserProfile {
   id: string;
   clerkId: string;
   name: string | null;
   bio: string | null;
+  skills: string[];
+  portfolioUrl: string | null;
+  instagramHandle: string | null;
+  youtubeHandle: string | null;
+  avatarObjectPath: string | null;
   totalEarnings: number;
   referralCode: string | null;
   completedTasksCount: number;
@@ -22,6 +35,11 @@ export interface UserProfile {
     category: string;
     createdAt: string;
   }>;
+  portfolioItems: PortfolioItem[];
+}
+
+export interface MyProfile extends UserProfile {
+  upiId: string | null;
 }
 
 export function useProfile(clerkId: string | undefined) {
@@ -32,13 +50,62 @@ export function useProfile(clerkId: string | undefined) {
   });
 }
 
+export function useProfileComplete(clerkId: string | undefined) {
+  const { data: profile, isLoading } = useProfile(clerkId);
+
+  const isComplete = !!(profile?.name?.trim() && profile?.bio?.trim());
+  const completionPercent = isLoading ? 0 : (() => {
+    let pct = 0;
+    if (profile?.name?.trim()) pct += 40;
+    if (profile?.bio?.trim()) pct += 40;
+    if ((profile?.skills?.length ?? 0) > 0 || profile?.portfolioUrl || (profile?.portfolioItems?.length ?? 0) > 0) pct += 20;
+    return pct;
+  })();
+
+  return { isComplete, completionPercent, isLoading, profile };
+}
+
 export function useUpdateProfile() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { name?: string; bio?: string }) =>
-      apiFetch("/api/users/me", { method: "PUT", data }, getToken),
+    mutationFn: (data: {
+      name?: string;
+      bio?: string;
+      skills?: string[];
+      portfolioUrl?: string;
+      instagramHandle?: string;
+      youtubeHandle?: string;
+      upiId?: string;
+      avatarObjectPath?: string;
+    }) => apiFetch("/api/users/me", { method: "PUT", data }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+}
+
+export function useAddPortfolioItem() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { imageObjectPath: string; caption?: string }) =>
+      apiFetch("/api/users/me/portfolio", { method: "POST", data }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+}
+
+export function useDeletePortfolioItem() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/api/users/me/portfolio/${id}`, { method: "DELETE" }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
@@ -61,6 +128,8 @@ export interface ReferralData {
   referralLink: string;
   totalReferrals: number;
   totalCommissionEarned: number;
+  totalTasksCompleted: number;
+  commissionPct: number;
   lifetimeCommission: number;
   milestonesEarned: number;
   signupBonusPerFriend: number;

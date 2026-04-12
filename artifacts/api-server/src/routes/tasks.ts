@@ -194,6 +194,15 @@ router.post("/tasks", requireAuth, async (req, res) => {
     const currentUser = req.dbUser!;
 
     const poster = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
+
+    if (!poster?.name?.trim() || !poster?.bio?.trim()) {
+      res.status(403).json({
+        error: "Please complete your profile (name and bio required) before posting tasks.",
+        profileIncomplete: true,
+      });
+      return;
+    }
+
     const available = poster?.balance ?? 0;
     if (available < budgetNum) {
       const shortfall = budgetNum - available;
