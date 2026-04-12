@@ -29,20 +29,28 @@ export const requireAuth = async (
       where: eq(users.clerkId, clerkUserId),
     });
 
-    if (!dbUser) {
-      const sessionClaims = auth.sessionClaims as Record<string, unknown> | null;
-      const email = (sessionClaims?.email as string) || "";
-      const name = (sessionClaims?.name as string) || (sessionClaims?.full_name as string) || "";
+    const sessionClaims = auth.sessionClaims as Record<string, unknown> | null;
+    const clerkEmail = (sessionClaims?.email as string) || "";
+    const clerkName = (sessionClaims?.name as string) || (sessionClaims?.full_name as string) || "";
 
+    if (!dbUser) {
       const [inserted] = await db
         .insert(users)
         .values({
           clerkId: clerkUserId,
-          email,
-          name,
+          email: clerkEmail,
+          name: clerkName,
         })
         .returning();
       dbUser = inserted;
+    } else if (clerkEmail && dbUser.email !== clerkEmail) {
+      // Keep email in sync with Clerk (important for owner privilege checks)
+      const [updated] = await db
+        .update(users)
+        .set({ email: clerkEmail })
+        .where(eq(users.clerkId, clerkUserId))
+        .returning();
+      dbUser = updated ?? dbUser;
     }
 
     req.dbUser = dbUser;
