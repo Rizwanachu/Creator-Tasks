@@ -126,6 +126,8 @@ export function TaskDetail() {
   const [ratingDone, setRatingDone] = useState(false);
   const [showDisputeForm, setShowDisputeForm] = useState(false);
   const [disputeReason, setDisputeReason] = useState("");
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   const [applicationMessage, setApplicationMessage] = useState("");
   const [applicationPortfolio, setApplicationPortfolio] = useState("");
@@ -282,8 +284,8 @@ export function TaskDetail() {
   };
 
   const handleReject = () => {
-    rejectTask.mutate(task.id, {
-      onSuccess: () => toast.success("Submission rejected. Task reopened."),
+    rejectTask.mutate({ id: task.id, reason: rejectReason.trim() || undefined }, {
+      onSuccess: () => { toast.success("Submission rejected. Task reopened."); setShowRejectForm(false); setRejectReason(""); },
       onError: (err) => toast.error(err instanceof Error ? err.message : "Failed to reject"),
     });
   };
@@ -864,7 +866,7 @@ export function TaskDetail() {
                     {approveTask.isPending ? "Approving..." : "Approve & Pay"}
                   </Button>
 
-                  {!showRevisionForm ? (
+                  {!showRevisionForm && !showRejectForm ? (
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -876,12 +878,33 @@ export function TaskDetail() {
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={handleReject}
+                        onClick={() => setShowRejectForm(true)}
                         disabled={actionsPending || (task.revisionCount ?? 0) < 1}
                         className="flex-1 rounded-xl border-red-500/30 text-red-400 hover:bg-red-500/5 disabled:opacity-30"
                       >
                         Reject
                       </Button>
+                    </div>
+                  ) : showRejectForm ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        placeholder="Optional: Tell the worker why their submission was rejected..."
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        className="min-h-[80px] resize-none text-sm"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleReject}
+                          disabled={actionsPending}
+                          className="flex-1 bg-red-600 hover:bg-red-500 text-white rounded-xl border-0"
+                        >
+                          {rejectTask.isPending ? "Rejecting..." : "Confirm Reject"}
+                        </Button>
+                        <Button variant="ghost" onClick={() => { setShowRejectForm(false); setRejectReason(""); }} className="text-muted-foreground">
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-2">

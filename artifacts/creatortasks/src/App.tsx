@@ -28,6 +28,7 @@ import { SignInPage, SignUpPage } from "@/pages/auth";
 import { NotificationsPage } from "@/pages/notifications";
 import { ProfilePage } from "@/pages/profile";
 import { AdminPage } from "@/pages/admin";
+import { LeaderboardPage } from "@/pages/leaderboard";
 
 const queryClient = new QueryClient();
 
@@ -156,6 +157,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/admin">
               <ProtectedRoute component={AdminPage} />
             </Route>
+
+            <Route path="/leaderboard" component={LeaderboardPage} />
             
             <Route component={NotFound} />
           </Switch>

@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { WalletModal } from "@/components/wallet-modal";
-import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, Copy, Gift, Users, TrendingUp, Mail, XCircle, Star } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, Copy, Gift, Users, TrendingUp, Mail, XCircle, Star, AlertTriangle, Bookmark, Sparkles } from "lucide-react";
+import { useMyDisputes, useBookmarks } from "@/hooks/use-bookmarks";
 import { toast } from "sonner";
 import { useAuth } from "@clerk/react";
 import { Link } from "wouter";
@@ -37,7 +38,7 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-const VALID_TABS = ["posted", "accepted", "transactions", "invitations", "referral"];
+const VALID_TABS = ["posted", "accepted", "bookmarks", "transactions", "invitations", "referral", "disputes"];
 
 export function Dashboard() {
   const tabParam = useSearchParam("tab");
@@ -59,6 +60,9 @@ export function Dashboard() {
   const acceptInvite = useAcceptInvite();
   const declineInvite = useDeclineInvite();
 
+  const { data: myDisputes } = useMyDisputes();
+  const { data: bookmarkedTasks } = useBookmarks();
+
   const createOrder = useCreateDepositOrder();
   const verifyDeposit = useVerifyDeposit();
   const withdraw = useWithdraw();
@@ -71,6 +75,7 @@ export function Dashboard() {
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [upiId, setUpiId] = useState("");
+  const [txTypeFilter, setTxTypeFilter] = useState<string>("all");
 
   const handleDeposit = async () => {
     const amount = Number(depositAmount);
@@ -148,9 +153,35 @@ export function Dashboard() {
     });
   };
 
+  const isNewUser = !isLoading && (dashboard?.postedTasks?.length ?? 0) === 0 && (dashboard?.acceptedTasks?.length ?? 0) === 0;
+
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
       <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight mb-6 md:mb-8">Dashboard</h1>
+
+      {/* Onboarding banner */}
+      {isNewUser && (
+        <div className="mb-8 rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center shrink-0">
+            <Sparkles size={22} className="text-purple-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-foreground mb-1">Welcome to CreatorTasks! 🎉</h3>
+            <p className="text-sm text-zinc-400 mb-3">You're all set. Post your first task to get content created, or browse open tasks to start earning as a creator.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm" className="btn-gradient text-white rounded-xl border-0 font-semibold text-xs">
+                <Link href="/create">Post a Task</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="rounded-xl text-xs">
+                <Link href="/tasks">Browse & Earn</Link>
+              </Button>
+              <Button asChild size="sm" variant="ghost" className="rounded-xl text-xs text-zinc-500">
+                <Link href="/leaderboard">View Leaderboard</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Wallet Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-10">
@@ -233,10 +264,27 @@ export function Dashboard() {
               )}
             </TabsTrigger>
             <TabsTrigger
+              value="bookmarks"
+              className="flex-1 md:flex-none rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground text-sm whitespace-nowrap"
+            >
+              Bookmarks
+            </TabsTrigger>
+            <TabsTrigger
               value="referral"
               className="flex-1 md:flex-none rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground text-sm whitespace-nowrap"
             >
               Referral
+            </TabsTrigger>
+            <TabsTrigger
+              value="disputes"
+              className="flex-1 md:flex-none rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground text-sm whitespace-nowrap"
+            >
+              Disputes
+              {(myDisputes?.filter((d) => d.status === "open").length ?? 0) > 0 && (
+                <span className="ml-1.5 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {myDisputes!.filter((d) => d.status === "open").length}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -286,6 +334,22 @@ export function Dashboard() {
         </TabsContent>
 
         <TabsContent value="transactions" className="focus-visible:outline-none">
+          {/* Type filter pills */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {["all", "deposit", "payment", "withdrawal", "fee", "refund", "referral_bonus", "referral_commission", "referral_milestone"].map((t) => (
+              <button
+                key={t}
+                onClick={() => setTxTypeFilter(t)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 ${
+                  txTypeFilter === t
+                    ? "bg-purple-500/15 border-purple-500/40 text-purple-300"
+                    : "bg-muted border-border text-zinc-500 hover:border-zinc-600 hover:text-zinc-400"
+                }`}
+              >
+                {t === "all" ? "All" : t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+              </button>
+            ))}
+          </div>
           <Card className="bg-card border-border">
             <div className="divide-y divide-border">
               {isLoading ? (
@@ -301,12 +365,12 @@ export function Dashboard() {
                     <Skeleton className="h-5 w-16 bg-white/5" />
                   </div>
                 ))
-              ) : wallet?.transactions?.length === 0 ? (
+              ) : wallet?.transactions?.filter((tx) => txTypeFilter === "all" || tx.type === txTypeFilter).length === 0 ? (
                 <div className="p-8 text-center text-zinc-500 text-sm">
-                  No transactions yet.
+                  No transactions{txTypeFilter !== "all" ? ` of type "${txTypeFilter.replace(/_/g, " ")}"` : ""}.
                 </div>
               ) : (
-                wallet?.transactions?.map((tx) => (
+                wallet?.transactions?.filter((tx) => txTypeFilter === "all" || tx.type === txTypeFilter).map((tx) => (
                   <div key={tx.id} className="p-4 sm:p-5 flex items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
@@ -441,6 +505,75 @@ export function Dashboard() {
                       {inv.status === "pending" && inv.taskStatus !== "open" && (
                         <span className="text-xs text-zinc-500 shrink-0">Task no longer open</span>
                       )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="bookmarks" className="focus-visible:outline-none">
+          {!bookmarkedTasks?.length ? (
+            <div className="text-center py-16 bg-card border border-border rounded-2xl px-4">
+              <Bookmark size={32} className="mx-auto text-muted-foreground/40 mb-3" />
+              <p className="text-muted-foreground mb-2">No bookmarked tasks yet</p>
+              <p className="text-xs text-zinc-600">Click the bookmark icon on any task to save it here.</p>
+              <Button asChild className="btn-gradient text-white rounded-xl border-0 font-semibold mt-4 text-sm">
+                <Link href="/tasks">Browse Tasks</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {bookmarkedTasks.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="disputes" className="focus-visible:outline-none">
+          {!myDisputes?.length ? (
+            <div className="text-center py-16 bg-card border border-border rounded-2xl px-4">
+              <AlertTriangle size={32} className="mx-auto text-muted-foreground/40 mb-3" />
+              <p className="text-muted-foreground mb-2">No disputes filed</p>
+              <p className="text-xs text-zinc-600">If you have an issue with a task, use the report button on the task page.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {myDisputes.map((d) => (
+                <Card key={d.id} className={`bg-card border ${d.status === "resolved" ? "border-green-500/20" : "border-orange-500/20"}`}>
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          {d.taskId ? (
+                            <Link href={`/tasks/${d.taskId}`} className="font-semibold text-sm text-foreground hover:text-purple-400 transition-colors">
+                              {d.taskTitle || "Unknown Task"}
+                            </Link>
+                          ) : (
+                            <span className="font-semibold text-sm text-foreground">{d.taskTitle || "Unknown Task"}</span>
+                          )}
+                          <Badge
+                            variant="outline"
+                            className={`text-xs capitalize ${d.status === "resolved" ? "bg-green-500/10 text-green-400 border-green-500/20" : "bg-orange-500/10 text-orange-400 border-orange-500/20"}`}
+                          >
+                            {d.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-zinc-500 mb-2 line-clamp-2">{d.reason}</p>
+                        {d.adminNote && (
+                          <p className="text-xs text-zinc-400 bg-muted/50 rounded-lg px-3 py-2 border border-border">
+                            <span className="font-medium text-foreground">Admin note:</span> {d.adminNote}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-xs text-zinc-500">{new Date(d.createdAt).toLocaleDateString()}</div>
+                        {d.resolvedAt && (
+                          <div className="text-xs text-green-500 mt-1">Resolved {new Date(d.resolvedAt).toLocaleDateString()}</div>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

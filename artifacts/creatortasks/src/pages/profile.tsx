@@ -4,8 +4,9 @@ import { useAuth } from "@clerk/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Briefcase, CheckCircle, TrendingUp, Link as LinkIcon } from "lucide-react";
+import { Star, Briefcase, CheckCircle, TrendingUp, Link as LinkIcon, Send } from "lucide-react";
 import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
 
 const CATEGORY_LABELS: Record<string, string> = {
   reels: "Reels", hooks: "Hooks", thumbnails: "Thumbnails", other: "Other",
@@ -100,6 +101,21 @@ export function ProfilePage() {
             <StarRating value={avgRating} />
             {profile.rating.total > 0 && (
               <span className="text-xs text-muted-foreground ml-1">({profile.rating.total} review{profile.rating.total !== 1 ? "s" : ""})</span>
+            )}
+
+            {!isOwnProfile && userId && (
+              <div className="mt-4">
+                <Button
+                  asChild
+                  size="sm"
+                  className="btn-gradient text-white rounded-xl border-0 font-semibold text-xs"
+                >
+                  <Link href={`/create?inviteClerkId=${clerkId}`}>
+                    <Send size={13} className="mr-2" />
+                    Invite to a Task
+                  </Link>
+                </Button>
+              </div>
             )}
           </div>
         </div>

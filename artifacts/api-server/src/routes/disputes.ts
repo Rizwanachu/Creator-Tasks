@@ -54,6 +54,32 @@ router.post("/tasks/:id/dispute", requireAuth, async (req, res) => {
   }
 });
 
+// GET /disputes/mine — current user's own disputes
+router.get("/disputes/mine", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const list = await db
+      .select({
+        id: disputes.id,
+        taskId: disputes.taskId,
+        reason: disputes.reason,
+        status: disputes.status,
+        adminNote: disputes.adminNote,
+        resolvedAt: disputes.resolvedAt,
+        createdAt: disputes.createdAt,
+        taskTitle: tasks.title,
+      })
+      .from(disputes)
+      .leftJoin(tasks, eq(disputes.taskId, tasks.id))
+      .where(eq(disputes.reportedBy, currentUser.id))
+      .orderBy(sql`${disputes.createdAt} DESC`);
+    res.json(list);
+  } catch (err) {
+    req.log.error({ err }, "Error fetching my disputes");
+    res.status(500).json({ error: "Failed to fetch disputes" });
+  }
+});
+
 // GET /admin/disputes — admin only: list all disputes
 router.get("/admin/disputes", requireAuth, async (req, res) => {
   try {

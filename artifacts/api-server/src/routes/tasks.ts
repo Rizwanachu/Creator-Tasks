@@ -475,8 +475,12 @@ router.post("/tasks/:id/reject", requireAuth, async (req, res) => {
       await tx.insert(transactions).values({ userId: currentUser.id, amount: task.budget, type: "refund" });
     });
 
+    const { reason } = req.body as { reason?: string };
     if (task.workerId) {
-      await createNotification(task.workerId, "task_rejected", `Your submission for "${task.title}" was rejected.`, id);
+      const msg = reason?.trim()
+        ? `Your submission for "${task.title}" was rejected. Reason: ${reason.trim()}`
+        : `Your submission for "${task.title}" was rejected.`;
+      await createNotification(task.workerId, "task_rejected", msg, id);
     }
 
     const [updated] = await db.select().from(tasks).where(eq(tasks.id, id));

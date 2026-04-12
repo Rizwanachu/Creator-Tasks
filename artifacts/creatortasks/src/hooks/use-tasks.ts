@@ -197,9 +197,9 @@ export function useRejectTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      apiFetch(`/api/tasks/${id}/reject`, { method: "POST" }, getToken),
-    onSuccess: (_, id) => {
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      apiFetch(`/api/tasks/${id}/reject`, { method: "POST", body: JSON.stringify({ reason }) }, getToken),
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["tasks", id] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });

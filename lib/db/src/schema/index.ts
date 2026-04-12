@@ -99,6 +99,13 @@ export const referrals = pgTable("referrals", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const bookmarks = pgTable("bookmarks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  taskId: uuid("task_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const applications = pgTable("applications", {
   id: uuid("id").defaultRandom().primaryKey(),
   taskId: uuid("task_id").notNull(),

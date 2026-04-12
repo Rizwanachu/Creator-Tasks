@@ -3,7 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Task } from "@/hooks/use-tasks";
 import { useAuth } from "@clerk/react";
-import { Clock, Eye, Flame, AlertCircle, Timer } from "lucide-react";
+import { Clock, Eye, Flame, AlertCircle, Timer, Bookmark } from "lucide-react";
+import { useIsBookmarked, useToggleBookmark } from "@/hooks/use-bookmarks";
+import { toast } from "sonner";
 
 const CATEGORY_COLORS: Record<string, string> = {
   reels: "bg-pink-500/10 text-pink-500 border-pink-500/20",
@@ -74,6 +76,21 @@ export function TaskCard({ task }: { task: Task }) {
   const isTrending = task.budget >= 1800;
   const viewers = viewerCount(task.id);
   const dl = deadlineLabel(task.deadline);
+
+  const { data: bookmarkData } = useIsBookmarked(task.id);
+  const { add, remove } = useToggleBookmark(task.id);
+  const bookmarked = bookmarkData?.bookmarked ?? false;
+
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!userId) { toast.error("Sign in to bookmark tasks"); return; }
+    if (bookmarked) {
+      remove.mutate(undefined, { onSuccess: () => toast.success("Bookmark removed") });
+    } else {
+      add.mutate(undefined, { onSuccess: () => toast.success("Task bookmarked") });
+    }
+  };
 
   return (
     <div className="group card-lit bg-card border border-border rounded-2xl p-6 card-glow transition-all duration-300 flex flex-col h-full relative">
@@ -156,6 +173,19 @@ export function TaskCard({ task }: { task: Task }) {
           </div>
 
           <div className="flex gap-2 shrink-0">
+            {userId && !isCreator && (
+              <button
+                onClick={handleBookmark}
+                title={bookmarked ? "Remove bookmark" : "Bookmark task"}
+                className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-200 ${
+                  bookmarked
+                    ? "border-purple-500/40 bg-purple-500/10 text-purple-400"
+                    : "border-border bg-muted/50 text-muted-foreground hover:border-purple-500/30 hover:text-purple-400"
+                }`}
+              >
+                <Bookmark size={13} className={bookmarked ? "fill-current" : ""} />
+              </button>
+            )}
             {task.status === "open" && userId && !isCreator && (
               <Button
                 asChild
