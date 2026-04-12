@@ -4,6 +4,7 @@ import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware } from "./middlewares/clerkProxyMiddleware";
 import router from "./routes";
+import webhookRouter from "./routes/webhook";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
@@ -31,6 +32,12 @@ app.use(
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
 app.use(cors({ credentials: true, origin: true }));
+
+// Webhook must be registered with raw body BEFORE express.json() strips it.
+// Razorpay sends application/json but we need the raw bytes to verify the HMAC.
+// Scoped to /api/webhooks only so the JSON parser is unaffected for every other route.
+app.use("/api/webhooks", express.raw({ type: "application/json", limit: "1mb" }), webhookRouter);
+
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 

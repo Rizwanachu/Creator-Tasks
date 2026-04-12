@@ -3,12 +3,16 @@ import { eq, sql } from "drizzle-orm";
 import { createNotification } from "./notify";
 
 const REFERRAL_COMMISSION_PCT = 0.01;
+// Referral commission only applies to tasks with meaningful budgets (anti-farming)
+const REFERRAL_MIN_BUDGET = 300;
 
 export async function processReferralRewards(
   workerId: string,
   taskId: string,
   budget: number,
 ) {
+  if (budget < REFERRAL_MIN_BUDGET) return;
+
   const referral = await db.query.referrals.findFirst({
     where: eq(referrals.referredUserId, workerId),
   });

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, transactions, users, withdrawals } from "@workspace/db";
-import { and, eq, sql } from "drizzle-orm";
+import { db, transactions, users, withdrawals, tasks, disputes } from "@workspace/db";
+import { and, eq, sql, count } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import Razorpay from "razorpay";
 import crypto from "crypto";
@@ -89,10 +89,13 @@ router.post("/wallet/deposit/create-order", requireAuth, async (req, res) => {
 
     const razorpay = getRazorpay();
 
+    const currentUser = req.dbUser!;
+
     const order = await razorpay.orders.create({
       amount: amountNum * 100,
       currency: "INR",
       receipt: `dep_${Date.now()}`,
+      notes: { userId: currentUser.id },
     });
 
     res.json({
@@ -215,6 +218,30 @@ router.post("/wallet/withdraw", requireAuth, async (req, res) => {
 
     if (!user || (user.balance ?? 0) < amountNum) {
       res.status(400).json({ error: "Insufficient balance" });
+      return;
+    }
+
+    // Guard: must have completed at least 1 task to withdraw
+    const [{ completedCount }] = await db
+      .select({ completedCount: count() })
+      .from(tasks)
+      .where(and(eq(tasks.workerId, currentUser.id), eq(tasks.status, "completed")));
+    if (completedCount < 1) {
+      res.status(403).json({
+        error: "You must complete at least 1 task before withdrawing earnings.",
+      });
+      return;
+    }
+
+    // Guard: no open disputes
+    const [{ openDisputes }] = await db
+      .select({ openDisputes: count() })
+      .from(disputes)
+      .where(and(eq(disputes.raisedBy, currentUser.id), eq(disputes.status, "open")));
+    if (openDisputes > 0) {
+      res.status(403).json({
+        error: "You have open dispute(s). Withdrawals are blocked until all disputes are resolved.",
+      });
       return;
     }
 

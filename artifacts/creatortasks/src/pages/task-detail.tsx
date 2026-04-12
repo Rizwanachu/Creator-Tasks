@@ -926,10 +926,11 @@ export function TaskDetail() {
                       <Button
                         variant="outline"
                         onClick={() => setShowRevisionForm(true)}
-                        disabled={actionsPending}
-                        className="flex-1 rounded-xl border-amber-500/30 text-amber-400 hover:bg-amber-500/5"
+                        disabled={actionsPending || (task.revisionCount ?? 0) >= 2}
+                        className="flex-1 rounded-xl border-amber-500/30 text-amber-400 hover:bg-amber-500/5 disabled:opacity-30"
+                        title={(task.revisionCount ?? 0) >= 2 ? "Maximum revisions reached" : undefined}
                       >
-                        Request Revision
+                        Request Revision {(task.revisionCount ?? 0) > 0 && `(${2 - (task.revisionCount ?? 0)} left)`}
                       </Button>
                       <Button
                         variant="outline"
@@ -987,6 +988,11 @@ export function TaskDetail() {
                   {(task.revisionCount ?? 0) < 1 && (
                     <p className="text-xs text-zinc-600 text-center">
                       You must request at least one revision before rejecting.
+                    </p>
+                  )}
+                  {(task.revisionCount ?? 0) >= 2 && (
+                    <p className="text-xs text-amber-500/80 text-center">
+                      Maximum 2 revisions reached. Approve the work or raise a dispute.
                     </p>
                   )}
                 </CardContent>

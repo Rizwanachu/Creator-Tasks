@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, tasks, users, submissions, transactions, notifications } from "@workspace/db";
-import { eq, and, sql, ilike, gte, lte, or } from "drizzle-orm";
+import { eq, and, sql, ilike, gte, lte, or, count } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { createNotification } from "../lib/notify";
 import { processReferralRewards } from "../lib/referral-rewards";
@@ -203,6 +203,20 @@ router.post("/tasks", requireAuth, async (req, res) => {
         profileIncomplete: true,
       });
       return;
+    }
+
+    // Fraud guard: max 3 tasks per day per poster
+    if (!ownerFree) {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const [{ value: tasksToday }] = await db
+        .select({ value: count() })
+        .from(tasks)
+        .where(and(eq(tasks.creatorId, currentUser.id), gte(tasks.createdAt, todayStart)));
+      if (tasksToday >= 3) {
+        res.status(429).json({ error: "You can post a maximum of 3 tasks per day. Try again tomorrow." });
+        return;
+      }
     }
 
     const available = poster?.balance ?? 0;
@@ -535,6 +549,15 @@ router.post("/tasks/:id/request-revision", requireAuth, async (req, res) => {
 
     if (task.status !== "submitted") {
       res.status(400).json({ error: "Task has not been submitted yet" });
+      return;
+    }
+
+    // Enforce maximum 2 revisions — after that creator must approve or raise a dispute
+    const MAX_REVISIONS = 2;
+    if ((task.revisionCount ?? 0) >= MAX_REVISIONS) {
+      res.status(400).json({
+        error: `Maximum ${MAX_REVISIONS} revisions allowed. Please approve the work or raise a dispute.`,
+      });
       return;
     }
 
