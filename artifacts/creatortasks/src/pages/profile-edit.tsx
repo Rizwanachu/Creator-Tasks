@@ -70,6 +70,7 @@ export function ProfileEditPage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
+  const [customSkillInput, setCustomSkillInput] = useState("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
   const [instagramHandle, setInstagramHandle] = useState("");
   const [youtubeHandle, setYoutubeHandle] = useState("");
@@ -192,6 +193,17 @@ export function ProfileEditPage() {
     setSkills((prev) =>
       prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
     );
+  };
+
+  const addCustomSkill = () => {
+    const trimmed = customSkillInput.trim();
+    if (!trimmed) return;
+    if (skills.includes(trimmed)) {
+      setCustomSkillInput("");
+      return;
+    }
+    setSkills((prev) => [...prev, trimmed]);
+    setCustomSkillInput("");
   };
 
   const handleSave = () => {
@@ -357,7 +369,7 @@ export function ProfileEditPage() {
         {/* Skills */}
         <div className="bg-card border border-border rounded-2xl p-5 md:p-6 space-y-4">
           <h2 className="text-sm font-semibold text-foreground">Skills</h2>
-          <p className="text-xs text-muted-foreground -mt-2">Select the skills that best describe your work.</p>
+          <p className="text-xs text-muted-foreground -mt-2">Select from the list or add your own custom skills.</p>
           <div className="flex flex-wrap gap-2">
             {FIXED_SKILLS.map((skill) => {
               const selected = skills.includes(skill);
@@ -377,6 +389,43 @@ export function ProfileEditPage() {
                 </button>
               );
             })}
+            {skills.filter((s) => !FIXED_SKILLS.includes(s)).map((skill) => (
+              <span
+                key={skill}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border bg-purple-500/20 border-purple-500/40 text-purple-300 text-xs font-medium"
+              >
+                {skill}
+                <button
+                  type="button"
+                  onClick={() => toggleSkill(skill)}
+                  className="text-purple-300/60 hover:text-purple-300 transition-colors leading-none"
+                  aria-label={`Remove ${skill}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Input
+              placeholder="Add a custom skill..."
+              value={customSkillInput}
+              onChange={(e) => setCustomSkillInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomSkill(); } }}
+              className="flex-1 focus-visible:ring-ring rounded-xl h-9 text-sm"
+              maxLength={60}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-xl shrink-0"
+              onClick={addCustomSkill}
+              disabled={!customSkillInput.trim()}
+            >
+              <Plus size={14} className="mr-1" />
+              Add
+            </Button>
           </div>
         </div>
 
