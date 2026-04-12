@@ -5,7 +5,7 @@
   "buildCommand": "pnpm --filter @workspace/api-server run build:serverless && pnpm --filter @workspace/creatortasks run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/index.mjs": {
+    "api/index.js": {
       "maxDuration": 30
     }
   },
