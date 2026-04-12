@@ -1,8 +1,10 @@
-import { createProxyMiddleware } from "http-proxy-middleware";
 import type { RequestHandler } from "express";
 
 const CLERK_FAPI = "https://frontend-api.clerk.dev";
 export const CLERK_PROXY_PATH = "/api/__clerk";
+
+// Lazy singleton — created on first matching request so module load is side-effect free.
+let _proxy: RequestHandler | null = null;
 
 export function clerkProxyMiddleware(): RequestHandler {
   if (process.env.NODE_ENV !== "production") {
@@ -14,29 +16,42 @@ export function clerkProxyMiddleware(): RequestHandler {
     return (_req, _res, next) => next();
   }
 
-  return createProxyMiddleware({
-    target: CLERK_FAPI,
-    changeOrigin: true,
-    pathRewrite: (path: string) =>
-      path.replace(new RegExp(`^${CLERK_PROXY_PATH}`), ""),
-    on: {
-      proxyReq: (proxyReq, req) => {
-        const protocol = req.headers["x-forwarded-proto"] || "https";
-        const host = req.headers.host || "";
-        const proxyUrl = `${protocol}://${host}${CLERK_PROXY_PATH}`;
+  return (req, res, next) => {
+    if (!_proxy) {
+      // Dynamic import so http-proxy-middleware is NOT evaluated at module load
+      // time. Avoids startup-time side-effects (socket creation, etc.) that can
+      // crash a cold-start serverless function.
+      const { createProxyMiddleware } =
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        require("http-proxy-middleware") as typeof import("http-proxy-middleware");
 
-        proxyReq.setHeader("Clerk-Proxy-Url", proxyUrl);
-        proxyReq.setHeader("Clerk-Secret-Key", secretKey);
+      _proxy = createProxyMiddleware({
+        target: CLERK_FAPI,
+        changeOrigin: true,
+        pathRewrite: (path: string) =>
+          path.replace(new RegExp(`^${CLERK_PROXY_PATH}`), ""),
+        on: {
+          proxyReq: (proxyReq, innerReq) => {
+            const protocol =
+              innerReq.headers["x-forwarded-proto"] || "https";
+            const host = innerReq.headers.host || "";
+            const proxyUrl = `${protocol}://${host}${CLERK_PROXY_PATH}`;
 
-        const xff = req.headers["x-forwarded-for"];
-        const clientIp =
-          (Array.isArray(xff) ? xff[0] : xff)?.split(",")[0]?.trim() ||
-          req.socket?.remoteAddress ||
-          "";
-        if (clientIp) {
-          proxyReq.setHeader("X-Forwarded-For", clientIp);
-        }
-      },
-    },
-  }) as RequestHandler;
+            proxyReq.setHeader("Clerk-Proxy-Url", proxyUrl);
+            proxyReq.setHeader("Clerk-Secret-Key", secretKey);
+
+            const xff = innerReq.headers["x-forwarded-for"];
+            const clientIp =
+              (Array.isArray(xff) ? xff[0] : xff)?.split(",")[0]?.trim() ||
+              innerReq.socket?.remoteAddress ||
+              "";
+            if (clientIp) {
+              proxyReq.setHeader("X-Forwarded-For", clientIp);
+            }
+          },
+        },
+      }) as RequestHandler;
+    }
+    _proxy(req, res, next);
+  };
 }

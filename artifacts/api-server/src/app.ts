@@ -1,33 +1,38 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
-import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware } from "./middlewares/clerkProxyMiddleware";
 import router from "./routes";
 import webhookRouter from "./routes/webhook";
 import { logger } from "./lib/logger";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const app: Express = express();
 
-app.use(
-  pinoHttp({
-    logger,
-    serializers: {
-      req(req) {
-        return {
-          id: req.id,
-          method: req.method,
-          url: req.url?.split("?")[0],
-        };
+// In production we use a plain console logger (no pino worker threads / SonicBoom).
+// In development pino-http gives pretty structured request logs.
+if (!isProduction) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const pinoHttp = require("pino-http") as typeof import("pino-http");
+  app.use(
+    pinoHttp({
+      logger: logger as any,
+      serializers: {
+        req(req) {
+          return {
+            id: req.id,
+            method: req.method,
+            url: req.url?.split("?")[0],
+          };
+        },
+        res(res) {
+          return { statusCode: res.statusCode };
+        },
       },
-      res(res) {
-        return {
-          statusCode: res.statusCode,
-        };
-      },
-    },
-  }),
-);
+    }),
+  );
+}
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
@@ -49,10 +54,11 @@ app.use("/api", router);
 // Returns JSON so apiFetch can parse the error message correctly.
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
   const message = err instanceof Error ? err.message : "Internal server error";
-  const status = (err as { status?: number; statusCode?: number })?.status
-    ?? (err as { status?: number; statusCode?: number })?.statusCode
-    ?? 500;
-  (req as any).log?.error({ err }, "Unhandled error");
+  const status =
+    (err as { status?: number; statusCode?: number })?.status ??
+    (err as { status?: number; statusCode?: number })?.statusCode ??
+    500;
+  logger.error({ err }, "Unhandled error");
   res.status(status).json({ error: message });
 });
 
