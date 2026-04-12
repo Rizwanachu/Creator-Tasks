@@ -1,20 +1,21 @@
+import React from "react";
 import { useNotifications, useMarkAllRead, useMarkRead } from "@/hooks/use-notifications";
 import { Link } from "wouter";
-import { Bell, Check, CheckCheck, ArrowLeft, Inbox } from "lucide-react";
+import { Bell, Check, CheckCheck, ArrowLeft, Inbox, CheckCircle2, Upload, RotateCcw, XCircle, Ban, Wallet, AlertTriangle, ShieldCheck, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const TYPE_ICONS: Record<string, string> = {
-  task_accepted: "✅",
-  work_submitted: "📥",
-  task_approved: "🎉",
-  revision_requested: "🔄",
-  task_rejected: "❌",
-  task_cancelled: "🚫",
-  wallet_credited: "💰",
-  dispute_opened: "⚠️",
-  dispute_resolved: "🔧",
-  referral_commission: "🎁",
+const TYPE_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  task_accepted: CheckCircle2,
+  work_submitted: Upload,
+  task_approved: CheckCircle2,
+  revision_requested: RotateCcw,
+  task_rejected: XCircle,
+  task_cancelled: Ban,
+  wallet_credited: Wallet,
+  dispute_opened: AlertTriangle,
+  dispute_resolved: ShieldCheck,
+  referral_commission: Gift,
 };
 
 function timeAgo(dateStr: string): string {
@@ -114,8 +115,8 @@ export function NotificationsPage() {
                 <span className="absolute top-4 right-4 w-2 h-2 rounded-full bg-purple-500 shrink-0" />
               )}
 
-              <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0 text-base">
-                {TYPE_ICONS[n.type] ?? "🔔"}
+              <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                {(() => { const Icon = TYPE_ICONS[n.type] ?? Bell; return <Icon size={16} className="text-muted-foreground" />; })()}
               </div>
 
               <div className="flex-1 min-w-0">

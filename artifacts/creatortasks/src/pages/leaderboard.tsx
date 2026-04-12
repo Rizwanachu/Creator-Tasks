@@ -18,7 +18,11 @@ function StarRow({ avg, total }: { avg: string | null; total: number }) {
   );
 }
 
-const MEDALS = ["🥇","🥈","🥉"];
+const MEDAL_COLORS = [
+  "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  "bg-zinc-400/15 text-zinc-300 border-zinc-400/25",
+  "bg-orange-500/15 text-orange-400 border-orange-500/25",
+];
 
 export function LeaderboardPage() {
   const { data, isLoading } = useLeaderboard();
@@ -75,7 +79,7 @@ export function LeaderboardPage() {
                   {/* Rank */}
                   <div className="w-8 text-center shrink-0">
                     {isTop3 ? (
-                      <span className="text-xl">{MEDALS[idx]}</span>
+                      <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full border text-xs font-bold ${MEDAL_COLORS[idx]}`}>{idx + 1}</span>
                     ) : (
                       <span className="text-sm font-bold text-zinc-500">#{idx + 1}</span>
                     )}

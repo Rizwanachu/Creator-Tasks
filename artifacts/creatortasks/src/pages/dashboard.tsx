@@ -166,7 +166,7 @@ export function Dashboard() {
             <Sparkles size={22} className="text-purple-400" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-foreground mb-1">Welcome to CreatorTasks! 🎉</h3>
+            <h3 className="font-bold text-foreground mb-1">Welcome to CreatorTasks!</h3>
             <p className="text-sm text-zinc-400 mb-3">You're all set. Post your first task to get content created, or browse open tasks to start earning as a creator.</p>
             <div className="flex flex-wrap gap-2">
               <Button asChild size="sm" className="btn-gradient text-white rounded-xl border-0 font-semibold text-xs">
@@ -661,12 +661,12 @@ export function Dashboard() {
                 <h3 className="font-semibold text-foreground mb-3 text-sm">How it works</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { step: "1", icon: "🔗", label: "Share your link", desc: "Send your referral link to creators you know" },
-                    { step: "2", icon: "✅", label: "They sign up & work", desc: "Your referred creator joins and completes tasks" },
-                    { step: "3", icon: "💰", label: "You earn 1%", desc: "1% of every task budget they complete — forever" },
-                  ].map(({ step, icon, label, desc }) => (
+                    { step: "1", label: "Share your link", desc: "Send your referral link to creators you know" },
+                    { step: "2", label: "They sign up & work", desc: "Your referred creator joins and completes tasks" },
+                    { step: "3", label: "You earn 1%", desc: "1% of every task budget they complete — forever" },
+                  ].map(({ step, label, desc }) => (
                     <div key={step} className="bg-muted/40 border border-border rounded-xl p-4">
-                      <div className="text-xl mb-2">{icon}</div>
+                      <div className="w-6 h-6 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-xs font-bold text-purple-400 mb-3">{step}</div>
                       <div className="text-sm font-semibold text-foreground mb-1">{label}</div>
                       <div className="text-xs text-zinc-500">{desc}</div>
                     </div>

@@ -42,28 +42,24 @@ const CATEGORIES = [
   {
     value: "reels",
     label: "Reels",
-    icon: "🎬",
     sub: "Short-form video",
     activeColor: "border-pink-500 bg-pink-500/15 text-pink-300",
   },
   {
     value: "hooks",
     label: "Hooks",
-    icon: "✍️",
     sub: "Viral openers",
     activeColor: "border-orange-500 bg-orange-500/15 text-orange-300",
   },
   {
     value: "thumbnails",
     label: "Thumbnails",
-    icon: "🖼",
     sub: "Click-worthy visuals",
     activeColor: "border-cyan-500 bg-cyan-500/15 text-cyan-300",
   },
   {
     value: "other",
     label: "Other",
-    icon: "✨",
     sub: "Anything else",
     activeColor: "border-zinc-400 bg-zinc-500/15 text-zinc-300",
   },
@@ -187,7 +183,7 @@ function TaskPreview({
       <div className="card-lit bg-card border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${CATEGORY_BADGE[category ?? "reels"]}`}>
-            {cat.icon} {cat.label}
+            {cat.label}
           </span>
           <AnimatedPreviewSection animKey={budgetKey}>
             <span className={`font-bold text-sm tabular-nums ${hasBudget ? "text-purple-600 dark:text-purple-400" : "text-muted-foreground"}`}>
@@ -211,7 +207,7 @@ function TaskPreview({
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <div className="flex items-center gap-1.5 text-xs text-zinc-500">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span>⚡ Accepted in ~3 mins</span>
+            <span>Accepted in ~3 mins</span>
           </div>
           <span className="text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2.5 py-1 rounded-full font-medium">
             Accept Task
@@ -470,7 +466,6 @@ export function CreateTask() {
                                     : "border-border bg-muted/30 hover:bg-muted hover:border-border text-muted-foreground hover:text-foreground"
                                 }`}
                               >
-                                <span className="text-lg leading-none">{cat.icon}</span>
                                 <span className="text-xs font-semibold leading-none">{cat.label}</span>
                                 <span className="text-[10px] leading-none opacity-60">{cat.sub}</span>
                               </button>
