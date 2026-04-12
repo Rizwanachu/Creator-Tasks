@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Readable } from "stream";
 import multer from "multer";
+import sharp from "sharp";
 import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
@@ -74,24 +75,26 @@ router.post(
       return;
     }
 
-    const purpose = (req.body as Record<string, string>)["purpose"] as string | undefined;
-    const filename = req.file.originalname;
-    const contentType = req.file.mimetype;
-    const clerkId = req.dbUser?.clerkId;
+    if (!req.file.mimetype.startsWith("image/")) {
+      res.status(400).json({ error: "Only image files are allowed" });
+      return;
+    }
 
     try {
-      const objectPath = await objectStorageService.uploadObjectBuffer({
-        buffer: req.file.buffer,
-        contentType,
-        purpose,
-        clerkId,
-        filename,
-      });
+      const purpose = (req.body as Record<string, string>)["purpose"] as string | undefined;
+      const maxDimension = purpose === "avatar" ? 400 : 1200;
 
-      res.json({ objectPath });
+      const compressed = await sharp(req.file.buffer)
+        .rotate()
+        .resize(maxDimension, maxDimension, { fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 80, progressive: true })
+        .toBuffer();
+
+      const dataUrl = `data:image/jpeg;base64,${compressed.toString("base64")}`;
+      res.json({ objectPath: dataUrl });
     } catch (error) {
-      req.log.error({ err: error }, "Error uploading file");
-      res.status(500).json({ error: "Failed to upload file" });
+      req.log.error({ err: error }, "Error processing image");
+      res.status(500).json({ error: "Failed to process image" });
     }
   }
 );

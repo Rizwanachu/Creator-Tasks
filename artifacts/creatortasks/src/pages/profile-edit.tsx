@@ -14,6 +14,9 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
 function avatarUrl(objectPath: string | null | undefined): string | null {
   if (!objectPath) return null;
+  if (objectPath.startsWith("data:") || objectPath.startsWith("http://") || objectPath.startsWith("https://")) {
+    return objectPath;
+  }
   return `${API_BASE}/api/storage${objectPath}`;
 }
 
