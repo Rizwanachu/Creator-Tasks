@@ -4,8 +4,8 @@ import { apiFetch } from "@/lib/api";
 
 export interface PortfolioItem {
   id: string;
-  ownerClerkId: string;
-  imageObjectPath: string;
+  userId: string;
+  url: string;
   caption: string | null;
   createdAt: string;
 }
@@ -19,7 +19,7 @@ export interface UserProfile {
   portfolioUrl: string | null;
   instagramHandle: string | null;
   youtubeHandle: string | null;
-  avatarObjectPath: string | null;
+  avatarUrl: string | null;
   totalEarnings: number;
   referralCode: string | null;
   completedTasksCount: number;
@@ -87,10 +87,11 @@ export function useUpdateProfile() {
       instagramHandle?: string;
       youtubeHandle?: string;
       upiId?: string;
-      avatarObjectPath?: string;
+      avatarUrl?: string;
     }) => apiFetch("/api/users/me", { method: "PUT", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["my-profile"] });
     },
   });
 }
@@ -100,10 +101,11 @@ export function useAddPortfolioItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { imageObjectPath: string; caption?: string }) =>
+    mutationFn: (data: { url: string; caption?: string }) =>
       apiFetch("/api/users/me/portfolio", { method: "POST", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["my-profile"] });
     },
   });
 }
@@ -117,6 +119,7 @@ export function useDeletePortfolioItem() {
       apiFetch(`/api/users/me/portfolio/${id}`, { method: "DELETE" }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["my-profile"] });
     },
   });
 }

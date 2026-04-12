@@ -34,7 +34,7 @@ router.get("/users/:clerkId", async (req, res) => {
     const portfolio = await db
       .select()
       .from(portfolioItems)
-      .where(eq(portfolioItems.ownerClerkId, user.clerkId))
+      .where(eq(portfolioItems.userId, user.clerkId))
       .orderBy(portfolioItems.createdAt);
 
     res.json({
@@ -46,7 +46,7 @@ router.get("/users/:clerkId", async (req, res) => {
       portfolioUrl: user.portfolioUrl,
       instagramHandle: user.instagramHandle,
       youtubeHandle: user.youtubeHandle,
-      avatarObjectPath: user.avatarObjectPath,
+      avatarUrl: user.avatarUrl,
       totalEarnings: user.totalEarnings ?? 0,
       referralCode: user.referralCode,
       completedTasksCount: completedTasks.length,
@@ -58,7 +58,7 @@ router.get("/users/:clerkId", async (req, res) => {
       recentWork: completedTasks.slice(0, 6),
       portfolioItems: portfolio.map((p) => ({
         id: p.id,
-        imageObjectPath: p.imageObjectPath,
+        url: p.url,
         caption: p.caption,
         createdAt: p.createdAt,
       })),
@@ -78,7 +78,7 @@ router.get("/leaderboard", async (req, res) => {
         clerkId: users.clerkId,
         name: users.name,
         totalEarnings: users.totalEarnings,
-        avatarObjectPath: users.avatarObjectPath,
+        avatarUrl: users.avatarUrl,
         avgRating: avg(ratings.score),
         ratingCount: count(ratings.id),
         completedTasksCount: sql<number>`count(distinct case when ${tasks.status} = 'completed' then ${tasks.id} end)`,
@@ -98,7 +98,7 @@ router.get("/leaderboard", async (req, res) => {
         clerkId: w.clerkId,
         name: w.name,
         totalEarnings: w.totalEarnings ?? 0,
-        avatarObjectPath: w.avatarObjectPath,
+        avatarUrl: w.avatarUrl,
         completedTasksCount: Number(w.completedTasksCount),
         lastCompletedAt: w.lastCompletedAt ?? null,
         rating: {
@@ -123,7 +123,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
       return;
     }
     const portfolio = await db.select().from(portfolioItems)
-      .where(eq(portfolioItems.ownerClerkId, user.clerkId))
+      .where(eq(portfolioItems.userId, user.clerkId))
       .orderBy(portfolioItems.createdAt);
 
     res.json({
@@ -136,10 +136,10 @@ router.get("/users/me", requireAuth, async (req, res) => {
       instagramHandle: user.instagramHandle,
       youtubeHandle: user.youtubeHandle,
       upiId: user.upiId,
-      avatarObjectPath: user.avatarObjectPath,
+      avatarUrl: user.avatarUrl,
       portfolioItems: portfolio.map((p) => ({
         id: p.id,
-        imageObjectPath: p.imageObjectPath,
+        url: p.url,
         caption: p.caption,
         createdAt: p.createdAt,
       })),
@@ -161,7 +161,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
       instagramHandle,
       youtubeHandle,
       upiId,
-      avatarObjectPath,
+      avatarUrl,
     } = req.body as {
       name?: string;
       bio?: string;
@@ -170,7 +170,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
       instagramHandle?: string;
       youtubeHandle?: string;
       upiId?: string;
-      avatarObjectPath?: string;
+      avatarUrl?: string;
     };
     const currentUser = req.dbUser!;
 
@@ -197,7 +197,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
     if (instagramHandle !== undefined) updateData.instagramHandle = instagramHandle.trim().replace(/^@/, "").slice(0, 60) || null;
     if (youtubeHandle !== undefined) updateData.youtubeHandle = youtubeHandle.trim().replace(/^@/, "").slice(0, 60) || null;
     if (upiId !== undefined) updateData.upiId = upiId.trim() || null;
-    if (avatarObjectPath !== undefined) updateData.avatarObjectPath = avatarObjectPath.trim() || null;
+    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl.trim() || null;
 
     const [updated] = await db
       .update(users)
@@ -215,7 +215,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
       instagramHandle: updated.instagramHandle,
       youtubeHandle: updated.youtubeHandle,
       upiId: updated.upiId,
-      avatarObjectPath: updated.avatarObjectPath,
+      avatarUrl: updated.avatarUrl,
     });
   } catch (err) {
     req.log.error({ err }, "Error updating profile");
@@ -226,17 +226,17 @@ router.put("/users/me", requireAuth, async (req, res) => {
 // POST /users/me/portfolio — add portfolio item
 router.post("/users/me/portfolio", requireAuth, async (req, res) => {
   try {
-    const { imageObjectPath, caption } = req.body as { imageObjectPath?: string; caption?: string };
+    const { url, caption } = req.body as { url?: string; caption?: string };
     const currentUser = req.dbUser!;
 
-    if (!imageObjectPath) {
-      res.status(400).json({ error: "imageObjectPath is required" });
+    if (!url) {
+      res.status(400).json({ error: "url is required" });
       return;
     }
 
     const existing = await db.select({ count: count(portfolioItems.id) })
       .from(portfolioItems)
-      .where(eq(portfolioItems.ownerClerkId, currentUser.clerkId));
+      .where(eq(portfolioItems.userId, currentUser.clerkId));
 
     if ((existing[0]?.count ?? 0) >= 12) {
       res.status(400).json({ error: "Portfolio limit reached (max 12 items)" });
@@ -244,8 +244,8 @@ router.post("/users/me/portfolio", requireAuth, async (req, res) => {
     }
 
     const [item] = await db.insert(portfolioItems).values({
-      ownerClerkId: currentUser.clerkId,
-      imageObjectPath: imageObjectPath.trim(),
+      userId: currentUser.clerkId,
+      url: url.trim(),
       caption: caption?.trim().slice(0, 200) || null,
     }).returning();
 
@@ -263,7 +263,7 @@ router.delete("/users/me/portfolio/:id", requireAuth, async (req, res) => {
     const currentUser = req.dbUser!;
 
     const item = await db.query.portfolioItems.findFirst({
-      where: and(eq(portfolioItems.id, id), eq(portfolioItems.ownerClerkId, currentUser.clerkId)),
+      where: and(eq(portfolioItems.id, id), eq(portfolioItems.userId, currentUser.clerkId)),
     });
 
     if (!item) {
@@ -285,7 +285,7 @@ router.get("/users/me/portfolio", requireAuth, async (req, res) => {
     const currentUser = req.dbUser!;
     const items = await db.select()
       .from(portfolioItems)
-      .where(eq(portfolioItems.ownerClerkId, currentUser.clerkId))
+      .where(eq(portfolioItems.userId, currentUser.clerkId))
       .orderBy(portfolioItems.createdAt);
     res.json(items);
   } catch (err) {

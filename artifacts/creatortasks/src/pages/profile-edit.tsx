@@ -75,7 +75,7 @@ export function ProfileEditPage() {
   const [youtubeHandle, setYoutubeHandle] = useState("");
   const [upiId, setUpiId] = useState("");
 
-  const [avatarObjectPath, setAvatarObjectPath] = useState<string | null>(null);
+  const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -98,7 +98,7 @@ export function ProfileEditPage() {
       setInstagramHandle(profile.instagramHandle ?? "");
       setYoutubeHandle(profile.youtubeHandle ?? "");
       setUpiId(profile.upiId ?? "");
-      setAvatarObjectPath(profile.avatarObjectPath ?? null);
+      setAvatarPath(profile.avatarUrl ?? null);
       setInitialized(true);
     }
   }, [profile, initialized]);
@@ -117,7 +117,7 @@ export function ProfileEditPage() {
     setAvatarPreview(preview);
     try {
       const objectPath = await uploadFileToStorage(file, getToken, "avatar");
-      setAvatarObjectPath(objectPath);
+      setAvatarPath(objectPath);
     } catch {
       toast.error("Failed to upload avatar");
       setAvatarPreview(null);
@@ -142,7 +142,7 @@ export function ProfileEditPage() {
     setUploadingPortfolio(true);
     try {
       const objectPath = await uploadFileToStorage(file, getToken, "portfolio");
-      await addPortfolioItem.mutateAsync({ imageObjectPath: objectPath });
+      await addPortfolioItem.mutateAsync({ url: objectPath });
       toast.success("Portfolio item added!");
     } catch {
       toast.error("Failed to upload portfolio item");
@@ -165,7 +165,7 @@ export function ProfileEditPage() {
     setAddingByUrl(true);
     try {
       await addPortfolioItem.mutateAsync({
-        imageObjectPath: url,
+        url: url,
         caption: portfolioCaptionInput.trim() || undefined,
       });
       setPortfolioUrlInput("");
@@ -198,7 +198,7 @@ export function ProfileEditPage() {
         instagramHandle: instagramHandle.trim() || undefined,
         youtubeHandle: youtubeHandle.trim() || undefined,
         upiId: upiId.trim() || undefined,
-        avatarObjectPath: avatarObjectPath ?? undefined,
+        avatarUrl: avatarPath ?? undefined,
       },
       {
         onSuccess: () => {
@@ -215,7 +215,7 @@ export function ProfileEditPage() {
   };
 
   const isComplete = !!(name.trim() && bio.trim());
-  const currentAvatarSrc = avatarPreview ?? avatarUrl(avatarObjectPath);
+  const currentAvatarSrc = avatarPreview ?? avatarUrl(avatarPath);
   const initials = name ? name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : (profile?.name?.charAt(0)?.toUpperCase() ?? "?");
 
   if (isLoading) {
@@ -507,7 +507,7 @@ export function ProfileEditPage() {
               {profile?.portfolioItems?.map((item) => (
                 <div key={item.id} className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-muted">
                   <img
-                    src={portfolioImageUrl(item.imageObjectPath)}
+                    src={portfolioImageUrl(item.url)}
                     alt={item.caption ?? "Portfolio"}
                     className="w-full h-full object-cover"
                   />

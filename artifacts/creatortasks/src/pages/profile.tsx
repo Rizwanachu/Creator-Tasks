@@ -93,7 +93,7 @@ export function ProfilePage() {
     ? profile.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "?";
   const avgRating = profile.rating.average ? parseFloat(profile.rating.average) : null;
-  const imgSrc = avatarSrc(profile.avatarObjectPath);
+  const imgSrc = avatarSrc(profile.avatarUrl);
   const isProfileIncomplete = isOwnProfile && !(profile.name?.trim() && profile.bio?.trim());
 
   return (
@@ -264,7 +264,7 @@ export function ProfilePage() {
             {profile.portfolioItems.map((item) => (
               <div key={item.id} className="aspect-square rounded-xl overflow-hidden border border-border bg-muted relative group">
                 <img
-                  src={portfolioSrc(item.imageObjectPath)}
+                  src={portfolioSrc(item.url)}
                   alt={item.caption ?? "Portfolio"}
                   className="w-full h-full object-cover"
                 />

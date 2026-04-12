@@ -11,7 +11,7 @@ export const users = pgTable("users", {
   instagramHandle: text("instagram_handle"),
   youtubeHandle: text("youtube_handle"),
   upiId: text("upi_id"),
-  avatarObjectPath: text("avatar_object_path"),
+  avatarUrl: text("avatar_object_path"),
   referralCode: text("referral_code").unique(),
   referrerId: uuid("referrer_id"),
   totalEarnings: integer("total_earnings").default(0),
@@ -21,8 +21,8 @@ export const users = pgTable("users", {
 
 export const portfolioItems = pgTable("portfolio_items", {
   id: uuid("id").defaultRandom().primaryKey(),
-  ownerClerkId: text("owner_clerk_id").notNull(),
-  imageObjectPath: text("image_object_path").notNull(),
+  userId: text("owner_clerk_id").notNull(),
+  url: text("image_object_path").notNull(),
   caption: text("caption"),
   createdAt: timestamp("created_at").defaultNow(),
 });
