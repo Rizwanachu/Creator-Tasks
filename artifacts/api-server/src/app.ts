@@ -6,13 +6,12 @@ import router from "./routes";
 import webhookRouter from "./routes/webhook";
 import { logger } from "./lib/logger";
 
-const isProduction = process.env.NODE_ENV === "production";
-
 const app: Express = express();
 
-// In production we use a plain console logger (no pino worker threads / SonicBoom).
-// In development pino-http gives pretty structured request logs.
-if (!isProduction) {
+// Use process.env.NODE_ENV directly (not via a variable) so esbuild's define
+// substitution ("production") turns this into `if (false)` and tree-shakes
+// the entire pino-http block out of the serverless bundle.
+if (process.env.NODE_ENV !== "production") {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const pinoHttp = require("pino-http") as typeof import("pino-http");
   app.use(
@@ -20,11 +19,7 @@ if (!isProduction) {
       logger: logger as any,
       serializers: {
         req(req) {
-          return {
-            id: req.id,
-            method: req.method,
-            url: req.url?.split("?")[0],
-          };
+          return { id: req.id, method: req.method, url: req.url?.split("?")[0] };
         },
         res(res) {
           return { statusCode: res.statusCode };
@@ -39,8 +34,6 @@ app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(cors({ credentials: true, origin: true }));
 
 // Webhook must be registered with raw body BEFORE express.json() strips it.
-// Razorpay sends application/json but we need the raw bytes to verify the HMAC.
-// Scoped to /api/webhooks only so the JSON parser is unaffected for every other route.
 app.use("/api/webhooks", express.raw({ type: "application/json", limit: "1mb" }), webhookRouter);
 
 app.use(express.json({ limit: "2mb" }));
@@ -50,10 +43,15 @@ app.use(clerkMiddleware());
 
 app.use("/api", router);
 
-// Global error handler — must have 4 args for Express to recognise it as an error handler.
-// Returns JSON so apiFetch can parse the error message correctly.
-app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
-  const message = err instanceof Error ? err.message : "Internal server error";
+// Global error handler — 4 args required by Express.
+// Returns JSON so apiFetch can parse the error message.
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  const message =
+    err instanceof Error && err.message
+      ? err.message
+      : typeof err === "string" && err
+        ? err
+        : "Internal server error";
   const status =
     (err as { status?: number; statusCode?: number })?.status ??
     (err as { status?: number; statusCode?: number })?.statusCode ??

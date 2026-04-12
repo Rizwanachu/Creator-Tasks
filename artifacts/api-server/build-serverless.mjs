@@ -1,11 +1,14 @@
 /**
- * Builds src/app.ts into ../../api/index.js (project root) for the Vercel
- * serverless function. CJS format so Vercel's runtime picks it up without any
- * TypeScript recompilation.
+ * Builds src/serverless.ts into ../../api/index.js for the Vercel serverless
+ * function. The entry file:
+ *   - wraps app init in try/catch (any startup crash → readable JSON 500)
+ *   - does module.exports = handler directly (no ESM interop wrapper needed)
  *
- * The footer ensures `module.exports = app` directly (not `module.exports.default = app`)
- * so Vercel's Nodejs launcher finds the Express handler regardless of how it
- * resolves the CJS default export.
+ * Key flags:
+ *   define  – bakes NODE_ENV="production" so esbuild tree-shakes out every
+ *             pino / pino-pretty / worker-thread code path at compile time.
+ *   external – pg-native is an optional C++ addon; mark external so pg's
+ *              try/catch loader handles absence gracefully at runtime.
  */
 import { build } from "esbuild";
 import path from "node:path";
@@ -15,19 +18,17 @@ const artifactDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(artifactDir, "../..");
 
 await build({
-  entryPoints: [path.resolve(artifactDir, "src/app.ts")],
+  entryPoints: [path.resolve(artifactDir, "src/serverless.ts")],
   platform: "node",
   bundle: true,
   format: "cjs",
   outfile: path.resolve(projectRoot, "api/index.js"),
   logLevel: "info",
-  // pg-native is an optional C++ addon — mark external so require() fails
-  // gracefully at runtime and pg falls back to the pure-JS implementation.
-  // *.node catches any other native addons.
-  external: ["*.node", "pg-native"],
-  // Ensures module.exports IS the Express app, not { default: app }.
-  // Vercel's Nodejs launcher calls module.exports(req, res) directly.
-  footer: {
-    js: "module.exports = module.exports.default ?? module.exports;",
+  // Bake NODE_ENV into the bundle so isProduction is always true at compile
+  // time. Dead branches (pino, pino-http, pino-pretty, worker threads) are
+  // eliminated by esbuild before they can cause runtime failures.
+  define: {
+    "process.env.NODE_ENV": '"production"',
   },
+  external: ["*.node", "pg-native"],
 });
