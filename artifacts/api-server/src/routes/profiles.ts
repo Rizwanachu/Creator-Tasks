@@ -32,6 +32,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
       avatarUrl: user.avatarUrl,
       portfolioItems: portfolio.map((p) => ({
         id: p.id,
+        userId: p.userId,
         url: p.url,
         caption: p.caption,
         createdAt: p.createdAt,
@@ -264,6 +265,7 @@ router.get("/users/:clerkId", async (req, res) => {
       recentWork: completedTasks.slice(0, 6),
       portfolioItems: portfolio.map((p) => ({
         id: p.id,
+        userId: p.userId,
         url: p.url,
         caption: p.caption,
         createdAt: p.createdAt,

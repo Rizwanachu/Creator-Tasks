@@ -4,7 +4,7 @@ import { apiFetch } from "@/lib/api";
 
 export interface PortfolioItem {
   id: string;
-  userId: string;
+  userId?: string;
   url: string;
   caption: string | null;
   createdAt: string;
@@ -38,9 +38,23 @@ export interface UserProfile {
   portfolioItems: PortfolioItem[];
 }
 
-export interface MyProfile extends UserProfile {
+/** Represents the authenticated /users/me response — includes private fields (upiId) */
+export interface PrivateProfile {
+  id: string;
+  clerkId: string;
+  name: string | null;
+  bio: string | null;
+  skills: string[];
+  portfolioUrl: string | null;
+  instagramHandle: string | null;
+  youtubeHandle: string | null;
   upiId: string | null;
+  avatarUrl: string | null;
+  portfolioItems: PortfolioItem[];
 }
+
+/** @deprecated Use PrivateProfile instead */
+export interface MyProfile extends PrivateProfile {}
 
 export function useProfile(clerkId: string | undefined) {
   return useQuery<UserProfile>({
@@ -52,7 +66,7 @@ export function useProfile(clerkId: string | undefined) {
 
 export function useMyProfile() {
   const { getToken, isSignedIn } = useAuth();
-  return useQuery<MyProfile>({
+  return useQuery<PrivateProfile>({
     queryKey: ["my-profile"],
     queryFn: () => apiFetch("/api/users/me", {}, getToken),
     enabled: !!isSignedIn,
