@@ -109,7 +109,7 @@ See `.env.example` for the full list.
 The project is Vercel-ready:
 
 - **`vercel.json`** at the root: sets `buildCommand` (just the Vite frontend build), `outputDirectory`, and rewrites `/api/*` to a serverless function.
-- **`api/index.ts`** at the root: thin TypeScript entry point that re-exports the Express app (`export { default } from "../artifacts/api-server/src/app"`). Vercel's `@vercel/node` bundles it natively with esbuild, resolving all workspace packages via pnpm symlinks.
+- **`api/index.js`** at the root: committed CJS bundle (4.6MB) pre-built by esbuild from `artifacts/api-server/src/app.ts`. Vercel detects it as a serverless function from the source, and the build command rebuilds it fresh on every deploy. Must be rebuilt (`pnpm --filter @workspace/api-server run build:serverless`) and committed whenever API code changes.
 - DB schema migrations (`drizzle-kit push`) are NOT in the build command — run them manually after schema changes.
 - **`vite.config.ts`**: `PORT` is only validated in dev mode; `BASE_PATH` defaults to `/` for production builds — no env vars needed for `vercel build`.
 
