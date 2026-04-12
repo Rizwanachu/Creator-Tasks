@@ -137,6 +137,21 @@ router.put("/users/me", requireAuth, async (req, res) => {
     };
     const currentUser = req.dbUser!;
 
+    const validationErrors: string[] = [];
+
+    if (portfolioUrl !== undefined && portfolioUrl.trim()) {
+      try { new URL(portfolioUrl.trim()); } catch {
+        validationErrors.push("portfolioUrl must be a valid URL");
+      }
+    }
+    if (upiId !== undefined && upiId.trim() && !upiId.trim().includes("@")) {
+      validationErrors.push("upiId must be a valid UPI ID (must contain @)");
+    }
+    if (validationErrors.length > 0) {
+      res.status(400).json({ error: validationErrors.join("; ") });
+      return;
+    }
+
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name.trim().slice(0, 80);
     if (bio !== undefined) updateData.bio = bio.trim().slice(0, 500);

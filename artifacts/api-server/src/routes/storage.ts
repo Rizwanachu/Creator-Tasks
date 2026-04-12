@@ -5,7 +5,7 @@ import {
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
-import { ObjectPermission } from "../lib/objectAcl";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -13,11 +13,13 @@ const objectStorageService = new ObjectStorageService();
 /**
  * POST /storage/uploads/request-url
  *
- * Request a presigned URL for file upload.
+ * Request a presigned URL for file upload. Requires authentication.
+ * Accepts an optional `purpose` field ("avatar" | "portfolio") to generate
+ * user-scoped, deterministic storage paths.
  * The client sends JSON metadata (name, size, contentType) — NOT the file.
  * Then uploads the file directly to the returned presigned URL.
  */
-router.post("/storage/uploads/request-url", async (req: Request, res: Response) => {
+router.post("/storage/uploads/request-url", requireAuth, async (req: Request, res: Response) => {
   const parsed = RequestUploadUrlBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Missing or invalid required fields" });
@@ -26,8 +28,15 @@ router.post("/storage/uploads/request-url", async (req: Request, res: Response) 
 
   try {
     const { name, size, contentType } = parsed.data;
+    const purpose = typeof req.body.purpose === "string" ? req.body.purpose : undefined;
+    const clerkId = req.dbUser?.clerkId;
 
-    const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+    const uploadURL = await objectStorageService.getObjectEntityUploadURL({
+      purpose,
+      clerkId,
+      filename: name,
+      contentType,
+    });
     const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
 
     res.json(
@@ -80,9 +89,9 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
 /**
  * GET /storage/objects/*
  *
- * Serve object entities from PRIVATE_OBJECT_DIR.
- * These are served from a separate path from /public-objects and can optionally
- * be protected with authentication or ACL checks based on the use case.
+ * Serve uploaded object entities (avatars, portfolio images) from PRIVATE_OBJECT_DIR.
+ * These are intentionally public — all uploads are user profile content (avatars,
+ * portfolio images) which must be visible on public profile pages without auth.
  */
 router.get("/storage/objects/*path", async (req: Request, res: Response) => {
   try {
@@ -90,21 +99,6 @@ router.get("/storage/objects/*path", async (req: Request, res: Response) => {
     const wildcardPath = Array.isArray(raw) ? raw.join("/") : raw;
     const objectPath = `/objects/${wildcardPath}`;
     const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
-
-    // --- Protected route example (uncomment when using replit-auth) ---
-    // if (!req.isAuthenticated()) {
-    //   res.status(401).json({ error: "Unauthorized" });
-    //   return;
-    // }
-    // const canAccess = await objectStorageService.canAccessObjectEntity({
-    //   userId: req.user.id,
-    //   objectFile,
-    //   requestedPermission: ObjectPermission.READ,
-    // });
-    // if (!canAccess) {
-    //   res.status(403).json({ error: "Forbidden" });
-    //   return;
-    // }
 
     const response = await objectStorageService.downloadObject(objectFile);
 

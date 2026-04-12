@@ -18,10 +18,17 @@ function avatarUrl(objectPath: string | null | undefined): string | null {
 }
 
 function portfolioImageUrl(objectPath: string): string {
+  if (objectPath.startsWith("http://") || objectPath.startsWith("https://")) {
+    return objectPath;
+  }
   return `${API_BASE}/api/storage${objectPath}`;
 }
 
-async function uploadFileToStorage(file: File, getToken: () => Promise<string | null>): Promise<string> {
+async function uploadFileToStorage(
+  file: File,
+  getToken: () => Promise<string | null>,
+  purpose?: "avatar" | "portfolio",
+): Promise<string> {
   const token = await getToken();
   const metaRes = await fetch(`${API_BASE}/api/storage/uploads/request-url`, {
     method: "POST",
@@ -29,7 +36,7 @@ async function uploadFileToStorage(file: File, getToken: () => Promise<string | 
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+    body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type, purpose }),
   });
   if (!metaRes.ok) throw new Error("Failed to get upload URL");
   const { uploadURL, objectPath } = await metaRes.json();
@@ -75,7 +82,9 @@ export function ProfileEditPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const [uploadingPortfolio, setUploadingPortfolio] = useState(false);
-  const [captionDraft, setCaptionDraft] = useState<Record<string, string>>({});
+  const [portfolioUrlInput, setPortfolioUrlInput] = useState("");
+  const [portfolioCaptionInput, setPortfolioCaptionInput] = useState("");
+  const [addingByUrl, setAddingByUrl] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const portfolioInputRef = useRef<HTMLInputElement>(null);
@@ -108,7 +117,7 @@ export function ProfileEditPage() {
     const preview = URL.createObjectURL(file);
     setAvatarPreview(preview);
     try {
-      const objectPath = await uploadFileToStorage(file, getToken);
+      const objectPath = await uploadFileToStorage(file, getToken, "avatar");
       setAvatarObjectPath(objectPath);
     } catch {
       toast.error("Failed to upload avatar");
@@ -133,13 +142,40 @@ export function ProfileEditPage() {
     }
     setUploadingPortfolio(true);
     try {
-      const objectPath = await uploadFileToStorage(file, getToken);
+      const objectPath = await uploadFileToStorage(file, getToken, "portfolio");
       await addPortfolioItem.mutateAsync({ imageObjectPath: objectPath });
       toast.success("Portfolio item added!");
     } catch {
       toast.error("Failed to upload portfolio item");
     } finally {
       setUploadingPortfolio(false);
+    }
+  };
+
+  const handleAddPortfolioByUrl = async () => {
+    const url = portfolioUrlInput.trim();
+    if (!url) return;
+    try { new URL(url); } catch {
+      toast.error("Please enter a valid URL");
+      return;
+    }
+    if ((profile?.portfolioItems?.length ?? 0) >= 12) {
+      toast.error("Portfolio limit reached (max 12 items)");
+      return;
+    }
+    setAddingByUrl(true);
+    try {
+      await addPortfolioItem.mutateAsync({
+        imageObjectPath: url,
+        caption: portfolioCaptionInput.trim() || undefined,
+      });
+      setPortfolioUrlInput("");
+      setPortfolioCaptionInput("");
+      toast.success("Portfolio item added!");
+    } catch {
+      toast.error("Failed to add portfolio item");
+    } finally {
+      setAddingByUrl(false);
     }
   };
 
@@ -452,7 +488,7 @@ export function ProfileEditPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold text-foreground">Portfolio Gallery</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Showcase your best work — up to 12 images.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Showcase your best work — up to 12 items.</p>
             </div>
             <Button
               type="button"
@@ -463,9 +499,42 @@ export function ProfileEditPage() {
               disabled={uploadingPortfolio || (profile?.portfolioItems?.length ?? 0) >= 12}
             >
               <Upload size={13} className="mr-1.5" />
-              {uploadingPortfolio ? "Uploading..." : "Add Image"}
+              {uploadingPortfolio ? "Uploading..." : "Upload Image"}
             </Button>
           </div>
+
+          {/* Add by URL */}
+          {(profile?.portfolioItems?.length ?? 0) < 12 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Or paste an image URL</label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://example.com/my-work.jpg"
+                  value={portfolioUrlInput}
+                  onChange={(e) => setPortfolioUrlInput(e.target.value)}
+                  className="flex-1 focus-visible:ring-ring rounded-xl h-9 text-sm"
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddPortfolioByUrl(); } }}
+                />
+                <Input
+                  placeholder="Caption (optional)"
+                  value={portfolioCaptionInput}
+                  onChange={(e) => setPortfolioCaptionInput(e.target.value)}
+                  className="w-36 focus-visible:ring-ring rounded-xl h-9 text-sm"
+                  maxLength={200}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl shrink-0"
+                  onClick={handleAddPortfolioByUrl}
+                  disabled={addingByUrl || !portfolioUrlInput.trim()}
+                >
+                  {addingByUrl ? "Adding..." : <Plus size={14} />}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {(profile?.portfolioItems?.length ?? 0) === 0 ? (
             <button

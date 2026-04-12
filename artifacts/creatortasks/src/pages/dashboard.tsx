@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParam } from "@/hooks/use-search-param";
 import { useDashboard, useWallet, useCreateDepositOrder, useVerifyDeposit, useWithdraw } from "@/hooks/use-wallet";
-import { useProfile, useReferral } from "@/hooks/use-profile";
+import { useProfileComplete, useReferral } from "@/hooks/use-profile";
 import { useMyInvites, useAcceptInvite, useDeclineInvite } from "@/hooks/use-invites";
 import { TaskCard } from "@/components/task-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,8 +53,7 @@ export function Dashboard() {
   const { userId } = useAuth();
   const { data: dashboard, isLoading: loadingDash } = useDashboard();
   const { data: wallet, isLoading: loadingWallet } = useWallet();
-  const { data: profile } = useProfile(userId ?? undefined);
-  const profileComplete = !!(profile?.name?.trim() && profile?.bio?.trim());
+  const { isComplete: profileComplete, completionPercent, isLoading: profileLoading } = useProfileComplete(userId ?? undefined);
   const { data: referralData } = useReferral();
 
   const { data: myInvites } = useMyInvites();
@@ -161,16 +160,30 @@ export function Dashboard() {
       <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight mb-6 md:mb-8">Dashboard</h1>
 
       {/* Profile incomplete banner */}
-      {userId && !profileComplete && profile !== undefined && (
-        <div className="mb-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <AlertCircle size={20} className="text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
-          <div className="flex-1">
-            <h3 className="font-semibold text-amber-300 mb-0.5">Your profile is incomplete</h3>
-            <p className="text-sm text-amber-400/70">Add your name and bio to post tasks and apply for work.</p>
+      {userId && !profileComplete && !profileLoading && (
+        <div className="mb-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <AlertCircle size={20} className="text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-300 mb-0.5">Your profile is incomplete</h3>
+              <p className="text-sm text-amber-400/70">Add your name and bio to post tasks and apply for work.</p>
+            </div>
+            <Button asChild size="sm" className="btn-gradient text-white rounded-xl border-0 font-semibold text-xs shrink-0">
+              <Link href="/profile/edit">Complete Profile</Link>
+            </Button>
           </div>
-          <Button asChild size="sm" className="btn-gradient text-white rounded-xl border-0 font-semibold text-xs shrink-0">
-            <Link href="/profile/edit">Complete Profile</Link>
-          </Button>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs text-amber-400/60">
+              <span>Profile completion</span>
+              <span>{completionPercent}%</span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-amber-500/10 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-amber-400/70 transition-all duration-500"
+                style={{ width: `${completionPercent}%` }}
+              />
+            </div>
+          </div>
         </div>
       )}
 

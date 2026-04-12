@@ -196,8 +196,8 @@ router.post("/tasks", requireAuth, async (req, res) => {
     const poster = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
 
     if (!poster?.name?.trim() || !poster?.bio?.trim()) {
-      res.status(403).json({
-        error: "Please complete your profile (name and bio required) before posting tasks.",
+      res.status(400).json({
+        error: "Complete your profile (name + bio) before continuing",
         profileIncomplete: true,
       });
       return;
