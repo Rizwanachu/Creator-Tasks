@@ -4,6 +4,7 @@ import { eq, and, sql, ilike, gte, lte, or } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { createNotification } from "../lib/notify";
 import { processReferralRewards } from "../lib/referral-rewards";
+import { isOwner } from "../lib/owner";
 import {
   emailTaskAccepted,
   emailWorkSubmitted,
@@ -194,8 +195,9 @@ router.post("/tasks", requireAuth, async (req, res) => {
     const currentUser = req.dbUser!;
 
     const poster = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
+    const ownerFree = isOwner(poster?.email);
 
-    if (!poster?.name?.trim() || !poster?.bio?.trim()) {
+    if (!ownerFree && (!poster?.name?.trim() || !poster?.bio?.trim())) {
       res.status(400).json({
         error: "Complete your profile (name + bio) before continuing",
         profileIncomplete: true,
@@ -204,7 +206,7 @@ router.post("/tasks", requireAuth, async (req, res) => {
     }
 
     const available = poster?.balance ?? 0;
-    if (available < budgetNum) {
+    if (!ownerFree && available < budgetNum) {
       const shortfall = budgetNum - available;
       res.status(402).json({
         error: `Insufficient wallet balance. You need ₹${shortfall} more to post this task. Please top up your wallet first.`,
@@ -217,13 +219,15 @@ router.post("/tasks", requireAuth, async (req, res) => {
     const deadlineDate = deadline ? new Date(deadline) : null;
 
     const [task] = await db.transaction(async (tx) => {
-      await tx
-        .update(users)
-        .set({
-          balance: sql`${users.balance} - ${budgetNum}`,
-          pendingBalance: sql`${users.pendingBalance} + ${budgetNum}`,
-        })
-        .where(and(eq(users.id, currentUser.id), sql`${users.balance} >= ${budgetNum}`));
+      if (!ownerFree) {
+        await tx
+          .update(users)
+          .set({
+            balance: sql`${users.balance} - ${budgetNum}`,
+            pendingBalance: sql`${users.pendingBalance} + ${budgetNum}`,
+          })
+          .where(and(eq(users.id, currentUser.id), sql`${users.balance} >= ${budgetNum}`));
+      }
 
       return tx
         .insert(tasks)
@@ -346,7 +350,9 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
     }
 
     const posterPre = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
-    if (!posterPre || (posterPre.pendingBalance ?? 0) < task.budget) {
+    const ownerFree = isOwner(posterPre?.email);
+
+    if (!ownerFree && (!posterPre || (posterPre.pendingBalance ?? 0) < task.budget)) {
       res.status(402).json({
         error: `Escrow funds missing. The task budget of ₹${task.budget} must be in your wallet before approving.`,
         required: task.budget,
@@ -366,20 +372,22 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
 
       if (!updated) throw new ApproveError("NOT_SUBMITTED");
 
-      const [poster] = await tx
-        .select({ pendingBalance: users.pendingBalance })
-        .from(users)
-        .where(eq(users.id, currentUser.id));
+      if (!ownerFree) {
+        const [poster] = await tx
+          .select({ pendingBalance: users.pendingBalance })
+          .from(users)
+          .where(eq(users.id, currentUser.id));
 
-      const available = poster?.pendingBalance ?? 0;
-      if (available < task.budget) {
-        throw new ApproveError("INSUFFICIENT_BALANCE", task.budget - available, available);
+        const available = poster?.pendingBalance ?? 0;
+        if (available < task.budget) {
+          throw new ApproveError("INSUFFICIENT_BALANCE", task.budget - available, available);
+        }
+
+        await tx
+          .update(users)
+          .set({ pendingBalance: sql`${users.pendingBalance} - ${task.budget}` })
+          .where(eq(users.id, currentUser.id));
       }
-
-      await tx
-        .update(users)
-        .set({ pendingBalance: sql`${users.pendingBalance} - ${task.budget}` })
-        .where(eq(users.id, currentUser.id));
 
       await tx
         .update(users)

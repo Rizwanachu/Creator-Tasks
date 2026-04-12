@@ -3,14 +3,15 @@ import { db, disputes, tasks, users } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { createNotification } from "../lib/notify";
+import { isOwner } from "../lib/owner";
 
 const router = Router();
 
 const ADMIN_CLERK_ID = process.env["ADMIN_CLERK_ID"];
 
-function isAdmin(clerkId: string | undefined) {
-  if (!ADMIN_CLERK_ID) return false;
-  return clerkId === ADMIN_CLERK_ID;
+function isAdmin(user: { clerkId?: string; email?: string | null }) {
+  if (ADMIN_CLERK_ID && user.clerkId === ADMIN_CLERK_ID) return true;
+  return isOwner(user.email);
 }
 
 // POST /tasks/:id/dispute — flag/report a task
@@ -84,7 +85,7 @@ router.get("/disputes/mine", requireAuth, async (req, res) => {
 router.get("/admin/disputes", requireAuth, async (req, res) => {
   try {
     const currentUser = req.dbUser!;
-    if (!isAdmin(currentUser.clerkId)) {
+    if (!isAdmin(currentUser)) {
       res.status(403).json({ error: "Admin access required" });
       return;
     }
@@ -117,7 +118,7 @@ router.get("/admin/disputes", requireAuth, async (req, res) => {
 router.post("/admin/disputes/:id/resolve", requireAuth, async (req, res) => {
   try {
     const currentUser = req.dbUser!;
-    if (!isAdmin(currentUser.clerkId)) {
+    if (!isAdmin(currentUser)) {
       res.status(403).json({ error: "Admin access required" });
       return;
     }
@@ -156,7 +157,7 @@ router.post("/admin/disputes/:id/resolve", requireAuth, async (req, res) => {
 router.get("/admin/stats", requireAuth, async (req, res) => {
   try {
     const currentUser = req.dbUser!;
-    if (!isAdmin(currentUser.clerkId)) {
+    if (!isAdmin(currentUser)) {
       res.status(403).json({ error: "Admin access required" });
       return;
     }

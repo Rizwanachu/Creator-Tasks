@@ -143,10 +143,6 @@ export function TaskDetail() {
   const startConversation = useStartConversation();
   const [, setLocation] = useLocation();
 
-  const canMessage = !!userId && (
-    (isCreator && !!task?.workerId) || isWorker
-  ) && task?.status !== "cancelled";
-
   const handleDeposit = async () => {
     const amount = Number(depositAmount);
     if (isNaN(amount) || amount < 100) { toast.error("Minimum deposit is ₹100"); return; }
@@ -203,6 +199,9 @@ export function TaskDetail() {
 
   const isCreator = !!userId && userId === task.creatorClerkId;
   const isWorker = !!userId && userId === task.workerClerkId;
+  const canMessage = !!userId && (
+    (isCreator && !!task.workerId) || isWorker
+  ) && task.status !== "cancelled";
   const needsProfile = !!userId && !isCreator && task.status === "open" && !myApplication && !profileIsComplete;
   const canApply = !!userId && !isCreator && task.status === "open" && !myApplication && profileIsComplete;
   const hasApplied = !!myApplication;
