@@ -6,7 +6,7 @@ import { createNotification } from "../lib/notify";
 
 const router = Router();
 
-const SIGNUP_BONUS = 50;
+const COMMISSION_PCT = 0.01;
 
 function generateCode(name: string): string {
   const base = (name || "user").replace(/\s+/g, "").slice(0, 6).toUpperCase();
@@ -39,14 +39,7 @@ router.get("/referral", requireAuth, async (req, res) => {
     const myReferrals = await db.select().from(referrals).where(eq(referrals.referrerId, currentUser.id));
 
     const totalCommission = myReferrals.reduce((sum, r) => sum + (r.commissionEarned ?? 0), 0);
-    const milestonesEarned = myReferrals.filter(r => r.milestone3Paid).length * 30 + myReferrals.filter(r => r.milestone5Paid).length * 50;
-
-    const referralTxns = await db.select().from(transactions)
-      .where(and(
-        eq(transactions.userId, currentUser.id),
-        eq(transactions.type, "referral_commission"),
-      ));
-    const lifetimeCommission = referralTxns.reduce((sum, t) => sum + t.amount, 0);
+    const totalTasks = myReferrals.reduce((sum, r) => sum + (r.completedTaskCount ?? 0), 0);
 
     const myRecord = await db.query.referrals.findFirst({
       where: eq(referrals.referredUserId, currentUser.id),
@@ -57,13 +50,9 @@ router.get("/referral", requireAuth, async (req, res) => {
       referralLink: `${process.env["FRONTEND_URL"] ?? "https://creatortasks.in"}?ref=${user?.referralCode}`,
       totalReferrals: myReferrals.length,
       totalCommissionEarned: totalCommission,
-      lifetimeCommission,
-      milestonesEarned,
-      signupBonusPerFriend: SIGNUP_BONUS,
-      referrals: myReferrals.map(r => ({
-        ...r,
-        nextMilestone: !r.milestone3Paid ? 3 : !r.milestone5Paid ? 5 : null,
-      })),
+      totalTasksCompleted: totalTasks,
+      commissionPct: COMMISSION_PCT * 100,
+      referrals: myReferrals.map(r => ({ ...r })),
       isReferred: !!myRecord,
       referredCompletedTasks: myRecord?.completedTaskCount ?? 0,
     });
@@ -105,37 +94,21 @@ router.post("/referral/apply", requireAuth, async (req, res) => {
       await tx.insert(referrals).values({
         referrerId: referrer.id,
         referredUserId: currentUser.id,
-        commissionEarned: SIGNUP_BONUS,
+        commissionEarned: 0,
       });
 
       await tx.update(users)
-        .set({ referrerId: referrer.id, balance: sql`${users.balance} + ${SIGNUP_BONUS}` })
+        .set({ referrerId: referrer.id })
         .where(eq(users.id, currentUser.id));
-
-      await tx.update(users)
-        .set({ balance: sql`${users.balance} + ${SIGNUP_BONUS}` })
-        .where(eq(users.id, referrer.id));
-
-      await tx.insert(transactions).values([
-        { userId: referrer.id, amount: SIGNUP_BONUS, type: "referral" },
-        { userId: currentUser.id, amount: SIGNUP_BONUS, type: "referral" },
-      ]);
     });
 
-    await Promise.all([
-      createNotification(
-        referrer.id,
-        "referral_commission",
-        `Someone joined using your referral code! ₹${SIGNUP_BONUS} added to your wallet.`,
-      ),
-      createNotification(
-        currentUser.id,
-        "referral_bonus",
-        `Referral code applied! ₹${SIGNUP_BONUS} welcome bonus added to your wallet.`,
-      ),
-    ]);
+    await createNotification(
+      referrer.id,
+      "referral_commission",
+      `Someone joined using your referral code! You'll earn 1% commission on every task they complete.`,
+    );
 
-    res.json({ success: true, message: `Referral applied. ₹${SIGNUP_BONUS} credited to both wallets.` });
+    res.json({ success: true, message: "Referral code applied. You'll both benefit as tasks get completed." });
   } catch (err) {
     req.log.error({ err }, "Error applying referral");
     res.status(500).json({ error: "Failed to apply referral" });

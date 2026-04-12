@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { WalletModal } from "@/components/wallet-modal";
-import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, Copy, Gift, Users, TrendingUp, Mail, XCircle, Star, AlertTriangle, Bookmark, Sparkles } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, Copy, Gift, Users, TrendingUp, Mail, XCircle, AlertTriangle, Bookmark, Sparkles } from "lucide-react";
 import { useMyDisputes, useBookmarks } from "@/hooks/use-bookmarks";
 import { toast } from "sonner";
 import { useAuth } from "@clerk/react";
@@ -336,7 +336,7 @@ export function Dashboard() {
         <TabsContent value="transactions" className="focus-visible:outline-none">
           {/* Type filter pills */}
           <div className="flex flex-wrap gap-2 mb-4">
-            {["all", "deposit", "payment", "withdrawal", "fee", "refund", "referral_bonus", "referral_commission", "referral_milestone"].map((t) => (
+            {["all", "deposit", "payment", "withdrawal", "fee", "refund", "referral_commission"].map((t) => (
               <button
                 key={t}
                 onClick={() => setTxTypeFilter(t)}
@@ -584,17 +584,17 @@ export function Dashboard() {
 
         <TabsContent value="referral" className="focus-visible:outline-none space-y-6">
           {/* Stats row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card className="bg-card border-border card-lit">
               <CardContent className="p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
                     <Gift size={16} className="text-purple-400" />
                   </div>
-                  <span className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Total Referral Earned</span>
+                  <span className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Total Commission Earned</span>
                 </div>
                 <div className="text-2xl font-bold text-foreground">₹{(referralData?.totalCommissionEarned ?? 0).toLocaleString()}</div>
-                <p className="text-xs text-zinc-500 mt-1">signup bonuses + commissions</p>
+                <p className="text-xs text-zinc-500 mt-1">1% on every completed task</p>
               </CardContent>
             </Card>
             <Card className="bg-card border-border card-lit">
@@ -615,22 +615,10 @@ export function Dashboard() {
                   <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
                     <TrendingUp size={16} className="text-green-400" />
                   </div>
-                  <span className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Lifetime Commission</span>
+                  <span className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Tasks Completed</span>
                 </div>
-                <div className="text-2xl font-bold text-foreground">₹{(referralData?.lifetimeCommission ?? 0).toLocaleString()}</div>
-                <p className="text-xs text-zinc-500 mt-1">3% on every completed task</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border card-lit">
-              <CardContent className="p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                    <Star size={16} className="text-yellow-400" />
-                  </div>
-                  <span className="text-xs text-zinc-500 uppercase tracking-wide font-medium">Milestone Rewards</span>
-                </div>
-                <div className="text-2xl font-bold text-foreground">₹{(referralData?.milestonesEarned ?? 0).toLocaleString()}</div>
-                <p className="text-xs text-zinc-500 mt-1">3rd & 5th task bonuses</p>
+                <div className="text-2xl font-bold text-foreground">{referralData?.totalTasksCompleted ?? 0}</div>
+                <p className="text-xs text-zinc-500 mt-1">by your referred creators</p>
               </CardContent>
             </Card>
           </div>
@@ -640,7 +628,10 @@ export function Dashboard() {
             <CardContent className="p-6 space-y-5">
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Your Referral Link</h3>
-                <p className="text-xs text-zinc-500 mb-4">Share this link. You both get ₹{referralData?.signupBonusPerFriend ?? 50} when they sign up — plus you earn 3% commission every time they complete a task.</p>
+                <p className="text-xs text-zinc-500 mb-4">
+                  Share this link. Every time someone you refer completes a task, you earn{" "}
+                  <span className="text-purple-400 font-semibold">{referralData?.commissionPct ?? 1}% of their task budget</span> — automatically added to your wallet.
+                </p>
                 {referralData?.code ? (
                   <div className="flex gap-2">
                     <div className="flex-1 bg-muted border border-border rounded-xl px-4 py-3 text-sm font-mono text-zinc-300 truncate">
@@ -665,16 +656,16 @@ export function Dashboard() {
                 )}
               </div>
 
-              {/* Earnings breakdown */}
+              {/* How it works */}
               <div className="border-t border-border pt-5">
-                <h3 className="font-semibold text-foreground mb-3 text-sm">How you earn</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <h3 className="font-semibold text-foreground mb-3 text-sm">How it works</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { icon: "🎁", label: "Signup Bonus", desc: `₹${referralData?.signupBonusPerFriend ?? 50} each when your friend joins`, color: "purple" },
-                    { icon: "💸", label: "Task Rewards", desc: "10% of platform fee split 50/50 each task they complete", color: "blue" },
-                    { icon: "📈", label: "Lifetime Commission", desc: "3% of platform fee on every task your friend completes", color: "green" },
-                  ].map(({ icon, label, desc, color }) => (
-                    <div key={label} className={`bg-${color}-500/5 border border-${color}-500/15 rounded-xl p-4`}>
+                    { step: "1", icon: "🔗", label: "Share your link", desc: "Send your referral link to creators you know" },
+                    { step: "2", icon: "✅", label: "They sign up & work", desc: "Your referred creator joins and completes tasks" },
+                    { step: "3", icon: "💰", label: "You earn 1%", desc: "1% of every task budget they complete — forever" },
+                  ].map(({ step, icon, label, desc }) => (
+                    <div key={step} className="bg-muted/40 border border-border rounded-xl p-4">
                       <div className="text-xl mb-2">{icon}</div>
                       <div className="text-sm font-semibold text-foreground mb-1">{label}</div>
                       <div className="text-xs text-zinc-500">{desc}</div>
@@ -683,24 +674,20 @@ export function Dashboard() {
                 </div>
               </div>
 
-              {/* Milestone rewards info */}
+              {/* Example earnings */}
               <div className="border-t border-border pt-5">
-                <h3 className="font-semibold text-foreground mb-3 text-sm">Milestone Bonuses</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-3 bg-muted/50 border border-border rounded-xl p-4">
-                    <div className="w-10 h-10 rounded-full bg-yellow-500/15 border border-yellow-500/20 flex items-center justify-center text-yellow-400 font-bold text-sm shrink-0">3rd</div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">3rd Task Bonus</div>
-                      <div className="text-xs text-zinc-500">You get ₹30 · Friend gets ₹20</div>
+                <h3 className="font-semibold text-foreground mb-3 text-sm">Example earnings</h3>
+                <div className="space-y-2">
+                  {[
+                    { budget: 500, label: "₹500 task" },
+                    { budget: 1000, label: "₹1,000 task" },
+                    { budget: 5000, label: "₹5,000 task" },
+                  ].map(({ budget, label }) => (
+                    <div key={budget} className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm text-zinc-400">{label} completed by your referral</span>
+                      <span className="text-sm font-semibold text-green-400">+₹{Math.floor(budget * 0.01)} to you</span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 bg-muted/50 border border-border rounded-xl p-4">
-                    <div className="w-10 h-10 rounded-full bg-orange-500/15 border border-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-sm shrink-0">5th</div>
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">5th Task Bonus</div>
-                      <div className="text-xs text-zinc-500">You get ₹50 · Friend gets ₹30</div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -709,47 +696,34 @@ export function Dashboard() {
           {/* Active referrals list */}
           <Card className="bg-card border-border">
             <CardContent className="p-6">
-              <h3 className="font-semibold text-foreground mb-4">Active Referrals</h3>
+              <h3 className="font-semibold text-foreground mb-4">Your Referrals</h3>
               {!referralData?.referrals?.length ? (
                 <div className="text-center py-10">
                   <div className="w-14 h-14 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-4">
                     <Users size={24} className="text-purple-400" />
                   </div>
                   <p className="text-sm font-medium text-foreground mb-1">No referrals yet</p>
-                  <p className="text-xs text-zinc-500 max-w-xs mx-auto">Share your link above — you earn every time a friend joins and completes tasks.</p>
+                  <p className="text-xs text-zinc-500 max-w-xs mx-auto">Share your link above — you earn 1% on every task they complete, for life.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {referralData.referrals.map((r) => {
-                    const progress = r.completedTaskCount;
-                    const next = r.nextMilestone;
-                    const pct = next ? Math.min((progress / next) * 100, 100) : 100;
-                    return (
-                      <div key={r.id} className="flex items-center gap-4 p-4 bg-muted/40 border border-border rounded-xl">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/30 border border-purple-500/20 flex items-center justify-center text-purple-300 font-bold text-sm shrink-0">
-                          {r.referredUserId.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-foreground">Creator</span>
-                            {r.milestone5Paid && (
-                              <span className="text-xs bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 rounded-full px-2 py-0.5">⭐ All milestones</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
-                              <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                            </div>
-                            <span className="text-xs text-zinc-500 shrink-0">{progress} task{progress !== 1 ? "s" : ""}{next ? ` / ${next} for bonus` : " · done"}</span>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className="text-sm font-semibold text-green-400">+₹{(r.commissionEarned ?? 0).toLocaleString()}</div>
-                          <div className="text-xs text-zinc-500">earned</div>
+                  {referralData.referrals.map((r) => (
+                    <div key={r.id} className="flex items-center gap-4 p-4 bg-muted/40 border border-border rounded-xl">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/30 border border-purple-500/20 flex items-center justify-center text-purple-300 font-bold text-sm shrink-0">
+                        {r.referredUserId.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-foreground mb-0.5">Creator</div>
+                        <div className="text-xs text-zinc-500">
+                          {r.completedTaskCount ?? 0} task{(r.completedTaskCount ?? 0) !== 1 ? "s" : ""} completed
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="text-right shrink-0">
+                        <div className="text-sm font-semibold text-green-400">+₹{(r.commissionEarned ?? 0).toLocaleString()}</div>
+                        <div className="text-xs text-zinc-500">earned</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
