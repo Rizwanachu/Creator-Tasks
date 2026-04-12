@@ -27,8 +27,7 @@ router.post("/storage/uploads/request-url", requireAuth, async (req: Request, re
   }
 
   try {
-    const { name, size, contentType } = parsed.data;
-    const purpose = typeof req.body.purpose === "string" ? req.body.purpose : undefined;
+    const { name, size, contentType, purpose } = parsed.data;
     const clerkId = req.dbUser?.clerkId;
 
     const uploadURL = await objectStorageService.getObjectEntityUploadURL({

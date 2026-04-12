@@ -29,6 +29,10 @@ export const RequestUploadUrlBody = zod.object({
     .string()
     .min(1)
     .describe("MIME type of the file (e.g. `image\/jpeg`)."),
+  purpose: zod
+    .enum(["avatar", "portfolio"])
+    .optional()
+    .describe("Upload purpose — determines storage path prefix."),
 });
 
 export const RequestUploadUrlResponse = zod.object({
