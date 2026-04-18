@@ -95,28 +95,19 @@ open → cancelled (creator cancels, escrow refunded)
 ### Replit (Secrets panel)
 - `RAZORPAY_KEY_ID` — Razorpay public key (starts with `rzp_test_` or `rzp_live_`)
 - `RAZORPAY_KEY_SECRET` — Razorpay secret key for HMAC verification
-- `RAZORPAY_WEBHOOK_SECRET` — Razorpay webhook secret (set in Razorpay Dashboard → Webhooks, URL: `https://creatortasks.vercel.app/api/webhooks/razorpay`, event: `payment.captured`)
+- `RAZORPAY_WEBHOOK_SECRET` — Razorpay webhook secret (set in Razorpay Dashboard → Webhooks, URL: `https://<your-replit-domain>/api/webhooks/razorpay`, event: `payment.captured`)
 - `DATABASE_URL` — PostgreSQL connection string
 - `VITE_CLERK_PUBLISHABLE_KEY` — Clerk publishable key (pk_live_…)
 - `CLERK_SECRET_KEY` — Clerk secret key (sk_live_…)
 
-### Vercel (Environment Variables dashboard)
-Same vars as above, minus `VITE_CLERK_PROXY_URL` (not needed on Vercel).
 See `.env.example` for the full list.
 
-## Vercel Deployment
+## Replit Workflows
 
-The project is Vercel-ready:
+- **Start Backend** — `PORT=8080 pnpm --filter @workspace/api-server run dev` (port 8080, console output)
+- **Start application** — `PORT=8081 BASE_PATH=/ pnpm --filter @workspace/creatortasks run dev` (port 8081, webview output)
 
-- **`vercel.json`** at the root: sets `buildCommand` (just the Vite frontend build), `outputDirectory`, and rewrites `/api/*` to a serverless function.
-- **`api/index.js`** at the root: committed CJS bundle (4.6MB) pre-built by esbuild from `artifacts/api-server/src/app.ts`. Vercel detects it as a serverless function from the source, and the build command rebuilds it fresh on every deploy. Must be rebuilt (`pnpm --filter @workspace/api-server run build:serverless`) and committed whenever API code changes.
-- DB schema migrations (`drizzle-kit push`) are NOT in the build command — run them manually after schema changes.
-- **`vite.config.ts`**: `PORT` is only validated in dev mode; `BASE_PATH` defaults to `/` for production builds — no env vars needed for `vercel build`.
-
-Steps to deploy on Vercel:
-1. Connect your GitHub repo on vercel.com
-2. Set environment variables in the Vercel dashboard (see `.env.example`)
-3. Deploy — Vercel runs `pnpm install` + builds the Vite frontend + bundles the API TypeScript serverless function automatically
+The frontend proxies `/api` requests to the backend at `http://localhost:8080` (configured in `vite.config.ts`).
 
 ## Key Commands
 
