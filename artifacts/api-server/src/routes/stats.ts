@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, tasks, users, transactions } from "@workspace/db";
+import { db, tasks, users } from "@workspace/db";
 import { eq, sql, count, sum } from "drizzle-orm";
 
 const router = Router();
@@ -13,9 +13,8 @@ router.get("/stats", async (_req, res) => {
       .where(eq(tasks.status, "completed"));
 
     const [paidOut] = await db
-      .select({ total: sum(transactions.amount) })
-      .from(transactions)
-      .where(eq(transactions.type, "earning"));
+      .select({ total: sum(users.totalEarnings) })
+      .from(users);
 
     const [activeCreators] = await db
       .select({ count: sql<number>`count(distinct ${tasks.creatorId})` })
