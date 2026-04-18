@@ -149,7 +149,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name.trim().slice(0, 80);
     if (bio !== undefined) updateData.bio = bio.trim().slice(0, 500);
-    if (skills !== undefined) updateData.skills = Array.isArray(skills) ? skills.slice(0, 10).map((s) => s.trim().slice(0, 40)) : [];
+    if (skills !== undefined) updateData.skills = Array.isArray(skills) ? skills.slice(0, 10).map((s) => s.trim().toLowerCase().slice(0, 40)) : [];
     if (portfolioUrl !== undefined) updateData.portfolioUrl = portfolioUrl.trim() || null;
     if (instagramHandle !== undefined) updateData.instagramHandle = instagramHandle.trim().replace(/^@/, "").slice(0, 60) || null;
     if (youtubeHandle !== undefined) updateData.youtubeHandle = youtubeHandle.trim().replace(/^@/, "").slice(0, 60) || null;

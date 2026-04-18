@@ -53,9 +53,16 @@ async function uploadFileToStorage(
 }
 
 const FIXED_SKILLS = [
-  "Reels", "Hooks", "Thumbnails", "Video Editing",
-  "Graphic Design", "Copywriting", "Other",
+  "reels", "hooks", "thumbnails", "video editing",
+  "graphic design", "copywriting", "other",
 ];
+
+function displaySkill(skill: string): string {
+  return skill
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
 export function ProfileEditPage() {
   const { userId, getToken } = useAuth();
@@ -199,7 +206,7 @@ export function ProfileEditPage() {
   };
 
   const addCustomSkill = () => {
-    const trimmed = customSkillInput.trim();
+    const trimmed = customSkillInput.trim().toLowerCase();
     if (!trimmed) return;
     if (skills.includes(trimmed)) {
       setCustomSkillInput("");
@@ -389,7 +396,7 @@ export function ProfileEditPage() {
                   }`}
                 >
                   {selected && <span className="mr-1">✓</span>}
-                  {skill}
+                  {displaySkill(skill)}
                 </button>
               );
             })}
@@ -398,7 +405,7 @@ export function ProfileEditPage() {
                 key={skill}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border bg-purple-500/20 border-purple-500/40 text-purple-300 text-xs font-medium"
               >
-                {skill}
+                {displaySkill(skill)}
                 <button
                   type="button"
                   onClick={() => toggleSkill(skill)}
