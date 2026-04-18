@@ -28,6 +28,7 @@ import { Dashboard } from "@/pages/dashboard";
 import { SignInPage, SignUpPage } from "@/pages/auth";
 import { NotificationsPage } from "@/pages/notifications";
 import { ProfilePage } from "@/pages/profile";
+import { CreatorPage } from "@/pages/creator";
 import { ProfileEditPage } from "@/pages/profile-edit";
 import { AdminPage } from "@/pages/admin";
 import { LeaderboardPage } from "@/pages/leaderboard";
@@ -176,6 +177,7 @@ function ClerkProviderWithRoutes() {
             </Route>
 
             <Route path="/profile/:clerkId" component={ProfilePage} />
+            <Route path="/creator/:username" component={CreatorPage} />
 
             <Route path="/admin">
               <ProtectedRoute component={AdminPage} />

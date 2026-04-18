@@ -9,10 +9,10 @@ if (!process.env.DATABASE_URL) {
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 const FAKE_USERS = [
-  { id: "00000000-0000-0000-0000-000000000001", clerkId: "seed_alex_m", email: "alex@example.com", name: "Alex M." },
-  { id: "00000000-0000-0000-0000-000000000002", clerkId: "seed_sarah_k", email: "sarah@example.com", name: "Sarah K." },
-  { id: "00000000-0000-0000-0000-000000000003", clerkId: "seed_devtips", email: "devtips@example.com", name: "DevTips" },
-  { id: "00000000-0000-0000-0000-000000000004", clerkId: "seed_growthlabs", email: "growth@example.com", name: "GrowthLabs" },
+  { id: "00000000-0000-0000-0000-000000000001", clerkId: "seed_alex_m", email: "alex@example.com", name: "Alex M.", username: "alex-m" },
+  { id: "00000000-0000-0000-0000-000000000002", clerkId: "seed_sarah_k", email: "sarah@example.com", name: "Sarah K.", username: "sarah-k" },
+  { id: "00000000-0000-0000-0000-000000000003", clerkId: "seed_devtips", email: "devtips@example.com", name: "DevTips", username: "devtips" },
+  { id: "00000000-0000-0000-0000-000000000004", clerkId: "seed_growthlabs", email: "growth@example.com", name: "GrowthLabs", username: "growthlabs" },
 ];
 
 function daysAgo(n) {
@@ -153,10 +153,10 @@ async function seed() {
   try {
     for (const u of FAKE_USERS) {
       await client.query(
-        `INSERT INTO users (id, clerk_id, email, name, balance, pending_balance)
-         VALUES ($1, $2, $3, $4, 0, 0)
-         ON CONFLICT (clerk_id) DO NOTHING`,
-        [u.id, u.clerkId, u.email, u.name]
+        `INSERT INTO users (id, clerk_id, email, name, username, balance, pending_balance)
+         VALUES ($1, $2, $3, $4, $5, 0, 0)
+         ON CONFLICT (clerk_id) DO UPDATE SET username = EXCLUDED.username`,
+        [u.id, u.clerkId, u.email, u.name, u.username]
       );
     }
     console.log("✓ Seeded fake users");

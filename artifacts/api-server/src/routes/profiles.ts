@@ -5,6 +5,58 @@ import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
+async function buildPublicProfile(user: typeof users.$inferSelect) {
+  const completedTasks = await db
+    .select({ id: tasks.id, title: tasks.title, budget: tasks.budget, category: tasks.category, createdAt: tasks.createdAt })
+    .from(tasks)
+    .where(and(eq(tasks.workerId, user.id), eq(tasks.status, "completed")));
+
+  const postedCount = await db
+    .select({ count: count(tasks.id) })
+    .from(tasks)
+    .where(eq(tasks.creatorId, user.id));
+
+  const ratingStats = await db
+    .select({ avg: avg(ratings.score), total: count(ratings.id) })
+    .from(ratings)
+    .where(eq(ratings.ratingFor, user.id));
+
+  const portfolio = await db
+    .select()
+    .from(portfolioItems)
+    .where(eq(portfolioItems.userId, user.clerkId))
+    .orderBy(portfolioItems.createdAt);
+
+  return {
+    id: user.id,
+    clerkId: user.clerkId,
+    username: user.username ?? null,
+    name: user.name,
+    bio: user.bio,
+    skills: user.skills ?? [],
+    portfolioUrl: user.portfolioUrl,
+    instagramHandle: user.instagramHandle,
+    youtubeHandle: user.youtubeHandle,
+    avatarUrl: user.avatarUrl,
+    totalEarnings: user.totalEarnings ?? 0,
+    referralCode: user.referralCode,
+    completedTasksCount: completedTasks.length,
+    postedTasksCount: postedCount[0]?.count ?? 0,
+    rating: {
+      average: ratingStats[0]?.avg ? parseFloat(String(ratingStats[0].avg)).toFixed(1) : null,
+      total: ratingStats[0]?.total ?? 0,
+    },
+    recentWork: completedTasks.slice(0, 6),
+    portfolioItems: portfolio.map((p) => ({
+      id: p.id,
+      userId: p.userId,
+      url: p.url,
+      caption: p.caption,
+      createdAt: p.createdAt,
+    })),
+  };
+}
+
 // GET /users/me — return authenticated user's full private profile (including upiId)
 // MUST be declared before GET /users/:clerkId to avoid :clerkId matching "me"
 router.get("/users/me", requireAuth, async (req, res) => {
@@ -211,6 +263,23 @@ router.get("/users/me/portfolio", requireAuth, async (req, res) => {
   }
 });
 
+// GET /users/by-username/:username — public profile lookup by username
+router.get("/users/by-username/:username", async (req, res) => {
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.username, req.params.username.toLowerCase()),
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    res.json(await buildPublicProfile(user));
+  } catch (err) {
+    req.log.error({ err }, "Error fetching profile by username");
+    res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
+
 // GET /users/:clerkId — public profile
 // MUST be declared after all /users/me routes to avoid :clerkId matching "me"
 router.get("/users/:clerkId", async (req, res) => {
@@ -222,55 +291,7 @@ router.get("/users/:clerkId", async (req, res) => {
       res.status(404).json({ error: "User not found" });
       return;
     }
-
-    const completedTasks = await db
-      .select({ id: tasks.id, title: tasks.title, budget: tasks.budget, category: tasks.category, createdAt: tasks.createdAt })
-      .from(tasks)
-      .where(and(eq(tasks.workerId, user.id), eq(tasks.status, "completed")));
-
-    const postedCount = await db
-      .select({ count: count(tasks.id) })
-      .from(tasks)
-      .where(eq(tasks.creatorId, user.id));
-
-    const ratingStats = await db
-      .select({ avg: avg(ratings.score), total: count(ratings.id) })
-      .from(ratings)
-      .where(eq(ratings.ratingFor, user.id));
-
-    const portfolio = await db
-      .select()
-      .from(portfolioItems)
-      .where(eq(portfolioItems.userId, user.clerkId))
-      .orderBy(portfolioItems.createdAt);
-
-    res.json({
-      id: user.id,
-      clerkId: user.clerkId,
-      name: user.name,
-      bio: user.bio,
-      skills: user.skills ?? [],
-      portfolioUrl: user.portfolioUrl,
-      instagramHandle: user.instagramHandle,
-      youtubeHandle: user.youtubeHandle,
-      avatarUrl: user.avatarUrl,
-      totalEarnings: user.totalEarnings ?? 0,
-      referralCode: user.referralCode,
-      completedTasksCount: completedTasks.length,
-      postedTasksCount: postedCount[0]?.count ?? 0,
-      rating: {
-        average: ratingStats[0]?.avg ? parseFloat(String(ratingStats[0].avg)).toFixed(1) : null,
-        total: ratingStats[0]?.total ?? 0,
-      },
-      recentWork: completedTasks.slice(0, 6),
-      portfolioItems: portfolio.map((p) => ({
-        id: p.id,
-        userId: p.userId,
-        url: p.url,
-        caption: p.caption,
-        createdAt: p.createdAt,
-      })),
-    });
+    res.json(await buildPublicProfile(user));
   } catch (err) {
     req.log.error({ err }, "Error fetching profile");
     res.status(500).json({ error: "Failed to fetch profile" });
@@ -284,6 +305,7 @@ router.get("/leaderboard", async (req, res) => {
       .select({
         id: users.id,
         clerkId: users.clerkId,
+        username: users.username,
         name: users.name,
         totalEarnings: users.totalEarnings,
         avatarUrl: users.avatarUrl,
@@ -304,6 +326,7 @@ router.get("/leaderboard", async (req, res) => {
       rows.map((w) => ({
         id: w.id,
         clerkId: w.clerkId,
+        username: w.username ?? null,
         name: w.name,
         totalEarnings: w.totalEarnings ?? 0,
         avatarUrl: w.avatarUrl,

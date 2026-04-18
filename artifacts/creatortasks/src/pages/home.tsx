@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { TaskCard } from "@/components/task-card";
-import { Task } from "@/hooks/use-tasks";
+import { Task, useTasks } from "@/hooks/use-tasks";
 import { useStats } from "@/hooks/use-stats";
 import { useAuth } from "@clerk/react";
 import { Redirect } from "wouter";
@@ -39,9 +39,9 @@ const FAKE_TASKS: Task[] = [
 ];
 
 const TICKER_ITEMS = [
-  "Tasks posted daily", "Real Razorpay payouts", "Join 300+ creators",
+  "Tasks posted daily", "Real Razorpay payouts", "Join our creator community",
   "AI content marketplace", "Earn from your skills", "Post a task in minutes",
-  "Tasks posted daily", "Real Razorpay payouts", "Join 300+ creators",
+  "Tasks posted daily", "Real Razorpay payouts", "Join our creator community",
   "AI content marketplace", "Earn from your skills", "Post a task in minutes",
 ];
 
@@ -98,9 +98,9 @@ function LiveStatsSection() {
   const { data: stats } = useStats();
 
   const statsConfig = [
-    { icon: CheckCircle, value: Math.max(stats?.completedTasks ?? 0, 120), prefix: "", suffix: "+", label: "Tasks Completed", color: "text-green-400" },
-    { icon: TrendingUp, value: Math.max(stats?.totalPaidOut ?? 0, 25000), prefix: "₹", suffix: "+", label: "Paid to Creators", color: "text-purple-400" },
-    { icon: Users, value: Math.max(stats?.activeCreators ?? 0, 340), prefix: "", suffix: "+", label: "Active Creators", color: "text-pink-400" },
+    { icon: CheckCircle, value: stats?.completedTasks ?? 0, prefix: "", suffix: "+", label: "Tasks Completed", color: "text-green-400" },
+    { icon: TrendingUp, value: stats?.totalPaidOut ?? 0, prefix: "₹", suffix: "+", label: "Paid to Creators", color: "text-purple-400" },
+    { icon: Users, value: stats?.activeCreators ?? 0, prefix: "", suffix: "+", label: "Active Creators", color: "text-pink-400" },
     { icon: Zap, value: 10, prefix: "", suffix: "%", label: "Platform Fee Only", color: "text-amber-400" },
   ];
 
@@ -115,6 +115,10 @@ function LiveStatsSection() {
 
 export function Home() {
   const { isSignedIn } = useAuth();
+  const { data: openTasksData } = useTasks({ status: "open", sort: "newest" });
+  const featuredTasks = openTasksData && openTasksData.length > 0
+    ? openTasksData.slice(0, 3)
+    : FAKE_TASKS;
 
   if (isSignedIn) {
     return <Redirect to="/tasks" />;
@@ -171,7 +175,7 @@ export function Home() {
               </div>
               <div className="flex items-center gap-1.5 text-xs text-zinc-500">
                 <Users size={12} className="text-purple-400" />
-                <span>Trusted by <span className="text-zinc-400 font-medium">300+ creators</span></span>
+                <span className="text-zinc-400 font-medium">Growing creator community</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-zinc-500">
                 <Zap size={12} className="text-amber-400" />
@@ -242,7 +246,7 @@ export function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {FAKE_TASKS.map((task) => (
+            {featuredTasks.map((task) => (
               <TaskCard key={task.id} task={task} />
             ))}
           </div>

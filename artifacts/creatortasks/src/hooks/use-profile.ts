@@ -13,6 +13,7 @@ export interface PortfolioItem {
 export interface UserProfile {
   id: string;
   clerkId: string;
+  username: string | null;
   name: string | null;
   bio: string | null;
   skills: string[];
@@ -61,6 +62,14 @@ export function useProfile(clerkId: string | undefined) {
     queryKey: ["profile", clerkId],
     queryFn: () => apiFetch(`/api/users/${clerkId}`),
     enabled: !!clerkId,
+  });
+}
+
+export function useProfileByUsername(username: string | undefined) {
+  return useQuery<UserProfile>({
+    queryKey: ["profile-by-username", username],
+    queryFn: () => apiFetch(`/api/users/by-username/${username}`),
+    enabled: !!username,
   });
 }
 

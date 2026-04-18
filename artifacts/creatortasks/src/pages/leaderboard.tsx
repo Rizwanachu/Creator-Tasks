@@ -92,7 +92,7 @@ export function LeaderboardPage() {
               const ago = timeAgo(entry.lastCompletedAt);
 
               return (
-                <Link key={entry.id} href={`/profile/${entry.clerkId}`}>
+                <Link key={entry.id} href={entry.username ? `/creator/${entry.username}` : `/profile/${entry.clerkId}`}>
                   <div
                     className={`flex items-center gap-4 bg-card border rounded-2xl p-4 transition-all duration-200 hover:border-purple-500/30 hover:bg-purple-500/[0.025] cursor-pointer ${
                       isMe
