@@ -301,7 +301,9 @@ router.get("/users/:clerkId", async (req, res) => {
 // GET /creators — browseable creator directory with search, skill filter, sort, and pagination
 router.get("/creators", async (req, res) => {
   try {
-    const search = (req.query.search as string | undefined)?.trim() ?? "";
+    const rawSearch = (req.query.search as string | undefined)?.trim() ?? "";
+    const usernameOnly = rawSearch.startsWith("@");
+    const search = usernameOnly ? rawSearch.slice(1) : rawSearch;
     const skill = (req.query.skill as string | undefined)?.trim().toLowerCase() ?? "";
     const sort = (req.query.sort as string | undefined) ?? "most_active";
     const page = Math.max(1, parseInt(req.query.page as string ?? "1", 10));
@@ -314,10 +316,12 @@ router.get("/creators", async (req, res) => {
     ];
     if (search) {
       conditions.push(
-        or(
-          ilike(users.name, `%${search}%`),
-          ilike(users.username, `%${search}%`)
-        )!
+        usernameOnly
+          ? ilike(users.username, `%${search}%`)!
+          : or(
+              ilike(users.name, `%${search}%`),
+              ilike(users.username, `%${search}%`)
+            )!
       );
     }
     if (skill) {

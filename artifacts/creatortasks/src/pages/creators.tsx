@@ -94,7 +94,7 @@ function CreatorCard({ creator }: { creator: CreatorSummary }) {
             )}
           </div>
           <span className="text-xs text-purple-400 group-hover:text-purple-300 flex items-center gap-0.5 transition-colors">
-            View <ArrowRight size={11} />
+            View Profile <ArrowRight size={11} />
           </span>
         </div>
       </div>
