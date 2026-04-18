@@ -108,6 +108,28 @@ router.get("/tasks", async (req, res) => {
   }
 });
 
+router.get("/tasks/my-posted", requireAuth, async (req, res) => {
+  try {
+    const currentUser = (req as any).user;
+    const openTasks = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        budget: tasks.budget,
+        category: tasks.category,
+        status: tasks.status,
+        createdAt: tasks.createdAt,
+      })
+      .from(tasks)
+      .where(and(eq(tasks.creatorId, currentUser.id), eq(tasks.status, "open")))
+      .orderBy(sql`${tasks.createdAt} DESC`);
+    res.json(openTasks);
+  } catch (err) {
+    req.log.error({ err }, "Error fetching my posted tasks");
+    res.status(500).json({ error: "Failed to fetch tasks" });
+  }
+});
+
 router.get("/tasks/:id", async (req, res) => {
   try {
     const id = String(req.params.id);

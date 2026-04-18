@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Star, CheckCircle, Users, ArrowRight, Zap, Send } from "lucide-react";
+import { InviteModal } from "@/components/invite-modal";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -37,7 +38,15 @@ function skillColor(skill: string): string {
   return SKILL_COLORS[skill.toLowerCase()] ?? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20";
 }
 
-function CreatorCard({ creator, currentUserId }: { creator: CreatorSummary; currentUserId: string | null | undefined }) {
+function CreatorCard({
+  creator,
+  currentUserId,
+  onInvite,
+}: {
+  creator: CreatorSummary;
+  currentUserId: string | null | undefined;
+  onInvite: (clerkId: string, name: string | null) => void;
+}) {
   const [, navigate] = useLocation();
   const initials = creator.name
     ? creator.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -116,7 +125,7 @@ function CreatorCard({ creator, currentUserId }: { creator: CreatorSummary; curr
             className="btn-gradient text-white rounded-lg border-0 font-semibold text-[10px] h-6 px-2.5"
             onClick={(e: React.MouseEvent) => {
               e.stopPropagation();
-              navigate(`/create?inviteClerkId=${creator.clerkId}`);
+              onInvite(creator.clerkId, creator.name ?? null);
             }}
           >
             <Send size={10} className="mr-1" />
@@ -202,6 +211,7 @@ export function CreatorsPage() {
   const { userId } = useAuth();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [inviteTarget, setInviteTarget] = useState<{ clerkId: string; name: string | null } | null>(null);
   const [skillPill, setSkillPill] = useState("");
   const [skillInput, setSkillInput] = useState("");
   const [skillInputDebounced, setSkillInputDebounced] = useState("");
@@ -238,6 +248,7 @@ export function CreatorsPage() {
   const allCreators = data?.pages.flatMap((p) => p.creators) ?? [];
 
   return (
+    <>
     <div className="container mx-auto px-4 py-10 max-w-6xl">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-1">
@@ -342,7 +353,12 @@ export function CreatorsPage() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {allCreators.map((creator) => (
-              <CreatorCard key={creator.id} creator={creator} currentUserId={userId} />
+              <CreatorCard
+                key={creator.id}
+                creator={creator}
+                currentUserId={userId}
+                onInvite={(clerkId, name) => setInviteTarget({ clerkId, name })}
+              />
             ))}
           </div>
 
@@ -361,5 +377,13 @@ export function CreatorsPage() {
         </>
       )}
     </div>
+
+    <InviteModal
+      open={!!inviteTarget}
+      onClose={() => setInviteTarget(null)}
+      inviteClerkId={inviteTarget?.clerkId ?? ""}
+      creatorName={inviteTarget?.name}
+    />
+    </>
   );
 }

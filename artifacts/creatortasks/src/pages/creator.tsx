@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRoute } from "wouter";
 import { useProfileByUsername } from "@/hooks/use-profile";
 import { useAuth } from "@clerk/react";
@@ -8,6 +9,7 @@ import { Star, Briefcase, CheckCircle, TrendingUp, Send, ExternalLink, Instagram
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { InviteModal } from "@/components/invite-modal";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -49,6 +51,7 @@ export function CreatorPage() {
   const username = params?.username;
   const { userId } = useAuth();
   const { data: profile, isLoading, error } = useProfileByUsername(username);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
   const isOwnProfile = userId === profile?.clerkId;
 
@@ -165,8 +168,8 @@ export function CreatorPage() {
                 </Button>
               )}
               {!isOwnProfile && userId && (
-                <Button asChild size="sm" className="btn-gradient text-white rounded-xl border-0 font-semibold text-xs">
-                  <Link href={`/create?inviteClerkId=${profile.clerkId}`}><Send size={13} className="mr-2" />Invite to a Task</Link>
+                <Button size="sm" className="btn-gradient text-white rounded-xl border-0 font-semibold text-xs" onClick={() => setInviteModalOpen(true)}>
+                  <Send size={13} className="mr-2" />Invite to a Task
                 </Button>
               )}
               <Button size="sm" variant="outline" className="rounded-xl text-xs" onClick={copyProfileLink}>
@@ -244,6 +247,15 @@ export function CreatorPage() {
             ))}
           </div>
         </div>
+      )}
+
+      {profile && (
+        <InviteModal
+          open={inviteModalOpen}
+          onClose={() => setInviteModalOpen(false)}
+          inviteClerkId={profile.clerkId}
+          creatorName={profile.name}
+        />
       )}
     </div>
   );
