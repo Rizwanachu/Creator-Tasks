@@ -138,8 +138,13 @@ router.put("/users/me", requireAuth, async (req, res) => {
     if (upiId !== undefined && upiId.trim() && !upiId.trim().includes("@")) {
       validationErrors.push("upiId must be a valid UPI ID (must contain @)");
     }
-    if (avatarUrl !== undefined && avatarUrl.trim() && !avatarUrl.trim().startsWith("/objects/avatars/")) {
-      validationErrors.push("avatarUrl must be a valid storage path (e.g. /objects/avatars/...)");
+    if (
+      avatarUrl !== undefined &&
+      avatarUrl.trim() &&
+      !avatarUrl.trim().startsWith("/objects/avatars/") &&
+      !avatarUrl.trim().startsWith("data:image/")
+    ) {
+      validationErrors.push("avatarUrl must be a valid storage path (e.g. /objects/avatars/...) or a data URL");
     }
     if (validationErrors.length > 0) {
       res.status(400).json({ error: validationErrors.join("; ") });

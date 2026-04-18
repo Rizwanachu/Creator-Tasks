@@ -103,10 +103,24 @@ router.post(
     try {
       const purpose = (req.body as Record<string, string>)["purpose"] as string | undefined;
       const maxDimension = purpose === "avatar" ? 400 : 1200;
+      const clerkId = req.dbUser?.clerkId;
 
       const compressed = await compressImage(req.file.buffer, maxDimension);
-      const dataUrl = `data:image/jpeg;base64,${compressed.toString("base64")}`;
-      res.json({ objectPath: dataUrl });
+
+      try {
+        const objectPath = await objectStorageService.uploadObjectBuffer({
+          buffer: compressed,
+          contentType: "image/jpeg",
+          purpose,
+          clerkId,
+          filename: req.file.originalname,
+        });
+        res.json({ objectPath });
+      } catch (storageError) {
+        logger.warn({ err: storageError }, "Object storage unavailable, falling back to data URL");
+        const dataUrl = `data:image/jpeg;base64,${compressed.toString("base64")}`;
+        res.json({ objectPath: dataUrl });
+      }
     } catch (error) {
       logger.error({ err: error }, "Error processing image");
       res.status(500).json({ error: "Failed to process image" });
