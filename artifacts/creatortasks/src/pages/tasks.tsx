@@ -24,6 +24,12 @@ const SORT_OPTIONS = [
   { label: "Oldest first", value: "oldest" },
 ];
 
+const STATUS_PILLS = [
+  { label: "Open", value: "open" },
+  { label: "Completed", value: "completed" },
+  { label: "All", value: "" },
+];
+
 const VALID_CATEGORIES = ["reels", "hooks", "thumbnails", "other"];
 
 export function Tasks() {
@@ -43,6 +49,7 @@ export function Tasks() {
   const [maxBudget, setMaxBudget] = useState("");
   const [sort, setSort] = useState<"newest" | "highest" | "lowest" | "oldest">("newest");
   const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("open");
 
   const filters: TaskFilters = {
     category: activeCategory,
@@ -50,6 +57,7 @@ export function Tasks() {
     minBudget: minBudget ? Number(minBudget) : undefined,
     maxBudget: maxBudget ? Number(maxBudget) : undefined,
     sort,
+    status: statusFilter || undefined,
   };
 
   const { data: tasks, isLoading, error } = useTasks(filters);
@@ -141,6 +149,27 @@ export function Tasks() {
             </div>
           </div>
         )}
+
+        {/* Status pills */}
+        <div className="flex gap-2 mb-1">
+          {STATUS_PILLS.map(({ label, value }) => (
+            <button
+              key={label}
+              onClick={() => setStatusFilter(value)}
+              className={`px-3.5 py-1 rounded-full text-xs font-medium border transition-all duration-150 ${
+                statusFilter === value
+                  ? value === "completed"
+                    ? "bg-green-500/15 border-green-500/40 text-green-400"
+                    : value === ""
+                    ? "bg-zinc-500/15 border-zinc-500/40 text-zinc-400"
+                    : "bg-blue-500/15 border-blue-500/40 text-blue-400"
+                  : "bg-muted border-border text-muted-foreground hover:border-zinc-600 hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         {/* Category pills */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
