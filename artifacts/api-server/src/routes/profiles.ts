@@ -327,8 +327,8 @@ router.get("/creators", async (req, res) => {
     const orderExpr =
       sort === "top_rated"
         ? sql`avg(${ratings.score}) DESC NULLS LAST`
-        : sort === "top_earning"
-        ? desc(users.totalEarnings)
+        : sort === "newest"
+        ? sql`${users.createdAt} DESC NULLS LAST`
         : sql`count(distinct case when ${tasks.status} = 'completed' then ${tasks.id} end) DESC`;
 
     const rows = await db
@@ -340,9 +340,8 @@ router.get("/creators", async (req, res) => {
         bio: users.bio,
         skills: users.skills,
         avatarUrl: users.avatarUrl,
-        totalEarnings: users.totalEarnings,
         avgRating: avg(ratings.score),
-        ratingCount: count(ratings.id),
+        ratingCount: sql<number>`count(distinct ${ratings.id})`,
         completedTasksCount: sql<number>`count(distinct case when ${tasks.status} = 'completed' then ${tasks.id} end)`,
       })
       .from(users)

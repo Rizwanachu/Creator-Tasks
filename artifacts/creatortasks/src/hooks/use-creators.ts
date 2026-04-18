@@ -25,7 +25,7 @@ export interface CreatorsResponse {
 export interface UseCreatorsParams {
   search?: string;
   skill?: string;
-  sort?: "most_active" | "top_rated" | "top_earning";
+  sort?: "most_active" | "top_rated" | "newest";
   limit?: number;
 }
 

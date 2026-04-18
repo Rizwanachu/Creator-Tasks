@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link } from "wouter";
 import { useCreators, type CreatorSummary } from "@/hooks/use-creators";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -131,7 +131,12 @@ export function CreatorsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [skill, setSkill] = useState("");
-  const [sort, setSort] = useState<"most_active" | "top_rated" | "top_earning">("most_active");
+  const [sort, setSort] = useState<"most_active" | "top_rated" | "newest">("most_active");
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim()), 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error } = useCreators({
     search,
@@ -184,7 +189,7 @@ export function CreatorsPage() {
           <SelectContent>
             <SelectItem value="most_active">Most Active</SelectItem>
             <SelectItem value="top_rated">Top Rated</SelectItem>
-            <SelectItem value="top_earning">Top Earning</SelectItem>
+            <SelectItem value="newest">Newest</SelectItem>
           </SelectContent>
         </Select>
       </div>

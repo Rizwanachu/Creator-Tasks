@@ -18,6 +18,7 @@ export const users = pgTable("users", {
   totalEarnings: integer("total_earnings").default(0),
   balance: integer("balance").default(0),
   pendingBalance: integer("pending_balance").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const portfolioItems = pgTable("portfolio_items", {
