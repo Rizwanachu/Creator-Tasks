@@ -1,12 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@clerk/react";
 import { useCreators, type CreatorSummary } from "@/hooks/use-creators";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Star, CheckCircle, Users, ArrowRight, Zap } from "lucide-react";
+import { Search, Star, CheckCircle, Users, ArrowRight, Zap, Send } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -36,80 +37,98 @@ function skillColor(skill: string): string {
   return SKILL_COLORS[skill.toLowerCase()] ?? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20";
 }
 
-function CreatorCard({ creator }: { creator: CreatorSummary }) {
+function CreatorCard({ creator, currentUserId }: { creator: CreatorSummary; currentUserId: string | null | undefined }) {
+  const [, navigate] = useLocation();
   const initials = creator.name
     ? creator.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : "?";
   const avg = creator.rating.average ? parseFloat(creator.rating.average) : null;
   const imgSrc = avatarSrc(creator.avatarUrl);
   const profileHref = `/creator/${creator.username}`;
+  const showInvite = !!currentUserId && currentUserId !== creator.clerkId;
 
   return (
-    <Link href={profileHref}>
-      <div className="group bg-card border border-border rounded-2xl p-5 hover:border-purple-500/30 hover:bg-purple-500/[0.02] transition-all duration-200 cursor-pointer flex flex-col h-full">
-        <div className="flex items-start gap-4 mb-4">
-          <Avatar className="w-12 h-12 border border-border rounded-xl shrink-0">
-            {imgSrc && <AvatarImage src={imgSrc} alt={creator.name ?? ""} className="object-cover" />}
-            <AvatarFallback className="bg-gradient-to-br from-purple-600/25 to-pink-600/25 text-purple-300 text-sm font-bold rounded-xl">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+    <div
+      role="article"
+      className="group bg-card border border-border rounded-2xl p-5 hover:border-purple-500/30 hover:bg-purple-500/[0.02] transition-all duration-200 cursor-pointer flex flex-col h-full"
+      onClick={() => navigate(profileHref)}
+    >
+      <div className="flex items-start gap-4 mb-4">
+        <Avatar className="w-12 h-12 border border-border rounded-xl shrink-0">
+          {imgSrc && <AvatarImage src={imgSrc} alt={creator.name ?? ""} className="object-cover" />}
+          <AvatarFallback className="bg-gradient-to-br from-purple-600/25 to-pink-600/25 text-purple-300 text-sm font-bold rounded-xl">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-              <span className="font-semibold text-foreground text-sm truncate">{creator.name || "Anonymous"}</span>
-              {creator.isAvailable && (
-                <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 font-medium shrink-0">
-                  <Zap size={8} className="fill-green-400" />
-                  Available
-                </span>
-              )}
-            </div>
-            {creator.username && (
-              <span className="text-xs text-muted-foreground">@{creator.username}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+            <span className="font-semibold text-foreground text-sm truncate">{creator.name || "Anonymous"}</span>
+            {creator.isAvailable && (
+              <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 font-medium shrink-0">
+                <Zap size={8} className="fill-green-400" />
+                Available
+              </span>
             )}
           </div>
+          {creator.username && (
+            <span className="text-xs text-muted-foreground">@{creator.username}</span>
+          )}
         </div>
+      </div>
 
-        {creator.bio ? (
-          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-4 flex-1">{creator.bio}</p>
-        ) : (
-          <p className="text-xs text-muted-foreground/40 italic mb-4 flex-1">No bio yet</p>
-        )}
+      {creator.bio ? (
+        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-4 flex-1">{creator.bio}</p>
+      ) : (
+        <p className="text-xs text-muted-foreground/40 italic mb-4 flex-1">No bio yet</p>
+      )}
 
-        {creator.skills.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {creator.skills.slice(0, 4).map((skill) => (
-              <span
-                key={skill}
-                className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${skillColor(skill)}`}
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center justify-between pt-3 border-t border-border">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <CheckCircle size={11} className="text-green-500" />
-              {creator.completedTasksCount}
+      {creator.skills.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {creator.skills.slice(0, 4).map((skill) => (
+            <span
+              key={skill}
+              className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${skillColor(skill)}`}
+            >
+              {skill}
             </span>
-            {avg !== null && (
-              <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-                <Star size={10} className="text-amber-400 fill-amber-400 shrink-0" />
-                {creator.rating.average}
-                <span className="text-muted-foreground/50 ml-0.5">({creator.rating.total})</span>
-              </span>
-            )}
-          </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between pt-3 border-t border-border">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <CheckCircle size={11} className="text-green-500" />
+            {creator.completedTasksCount}
+          </span>
+          {avg !== null && (
+            <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+              <Star size={10} className="text-amber-400 fill-amber-400 shrink-0" />
+              {creator.rating.average}
+              <span className="text-muted-foreground/50 ml-0.5">({creator.rating.total})</span>
+            </span>
+          )}
+        </div>
+        {showInvite ? (
+          <Button
+            size="sm"
+            className="btn-gradient text-white rounded-lg border-0 font-semibold text-[10px] h-6 px-2.5"
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              navigate(`/create?inviteClerkId=${creator.clerkId}`);
+            }}
+          >
+            <Send size={10} className="mr-1" />
+            Invite
+          </Button>
+        ) : (
           <span className="text-xs text-purple-400 group-hover:text-purple-300 flex items-center gap-0.5 transition-colors">
             View Profile <ArrowRight size={11} />
           </span>
-        </div>
+        )}
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -180,6 +199,7 @@ function EmptyState({
 }
 
 export function CreatorsPage() {
+  const { userId } = useAuth();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [skillPill, setSkillPill] = useState("");
@@ -322,7 +342,7 @@ export function CreatorsPage() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {allCreators.map((creator) => (
-              <CreatorCard key={creator.id} creator={creator} />
+              <CreatorCard key={creator.id} creator={creator} currentUserId={userId} />
             ))}
           </div>
 
