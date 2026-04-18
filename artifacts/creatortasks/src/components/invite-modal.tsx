@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { useQuery } from "@tanstack/react-query";
@@ -53,6 +53,16 @@ export function InviteModal({ open, onClose, inviteClerkId, creatorName }: Invit
     enabled: open && !!userId,
   });
 
+  const isReady = !isLoading && myTasks !== undefined;
+  const hasNoTasks = isReady && myTasks.length === 0;
+
+  useEffect(() => {
+    if (open && hasNoTasks) {
+      onClose();
+      navigate(`/create?inviteClerkId=${inviteClerkId}`);
+    }
+  }, [open, hasNoTasks, inviteClerkId, navigate, onClose]);
+
   function goCreate() {
     onClose();
     navigate(`/create?inviteClerkId=${inviteClerkId}`);
@@ -64,26 +74,21 @@ export function InviteModal({ open, onClose, inviteClerkId, creatorName }: Invit
       await sendInvite.mutateAsync({ taskId: selectedTaskId, workerClerkId: inviteClerkId });
       toast.success(`Invite sent to ${creatorName ?? "creator"}!`);
       onClose();
-    } catch (err: any) {
-      const msg = err?.message ?? "Failed to send invite";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to send invite";
       toast.error(msg);
     }
   }
 
-  const isReady = !isLoading && myTasks !== undefined;
-  const hasNoTasks = isReady && myTasks.length === 0;
-
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog open={open && !hasNoTasks} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="sm:max-w-md bg-card border-border">
         <DialogHeader>
           <DialogTitle className="text-foreground">
             Invite {creatorName ? <span className="text-purple-400">{creatorName}</span> : "Creator"} to a Task
           </DialogTitle>
           <DialogDescription className="text-muted-foreground text-sm">
-            {hasNoTasks
-              ? "You have no open tasks yet. Create one first."
-              : "Pick an existing open task or create a new one."}
+            Pick an existing open task or create a new one.
           </DialogDescription>
         </DialogHeader>
 
@@ -92,18 +97,10 @@ export function InviteModal({ open, onClose, inviteClerkId, creatorName }: Invit
             <div className="flex items-center justify-center py-8">
               <Loader2 size={20} className="animate-spin text-muted-foreground" />
             </div>
-          ) : hasNoTasks ? (
-            <Button
-              className="w-full btn-gradient text-white rounded-xl border-0 font-semibold"
-              onClick={goCreate}
-            >
-              <Plus size={15} className="mr-2" />
-              Create a New Task
-            </Button>
           ) : (
             <>
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-                {myTasks!.map((task) => (
+                {myTasks.map((task) => (
                   <button
                     key={task.id}
                     onClick={() => setSelectedTaskId(task.id === selectedTaskId ? null : task.id)}
