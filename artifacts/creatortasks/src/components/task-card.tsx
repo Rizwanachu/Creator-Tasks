@@ -68,7 +68,7 @@ function viewerCount(id: string): number {
   return 2 + (Math.abs(h) % 5);
 }
 
-export function TaskCard({ task }: { task: Task }) {
+export function TaskCard({ task, disableActions }: { task: Task; disableActions?: boolean }) {
   const { userId } = useAuth();
 
   const isCreator = !!userId && userId === task.creatorClerkId;
@@ -172,39 +172,41 @@ export function TaskCard({ task }: { task: Task }) {
             </div>
           </div>
 
-          <div className="flex gap-2 shrink-0">
-            {userId && !isCreator && (
-              <button
-                onClick={handleBookmark}
-                title={bookmarked ? "Remove bookmark" : "Bookmark task"}
-                className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-200 ${
-                  bookmarked
-                    ? "border-purple-500/40 bg-purple-500/10 text-purple-400"
-                    : "border-border bg-muted/50 text-muted-foreground hover:border-purple-500/30 hover:text-purple-400"
-                }`}
-              >
-                <Bookmark size={13} className={bookmarked ? "fill-current" : ""} />
-              </button>
-            )}
-            {task.status === "open" && userId && !isCreator && (
+          {!disableActions && (
+            <div className="flex gap-2 shrink-0">
+              {userId && !isCreator && (
+                <button
+                  onClick={handleBookmark}
+                  title={bookmarked ? "Remove bookmark" : "Bookmark task"}
+                  className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-200 ${
+                    bookmarked
+                      ? "border-purple-500/40 bg-purple-500/10 text-purple-400"
+                      : "border-border bg-muted/50 text-muted-foreground hover:border-purple-500/30 hover:text-purple-400"
+                  }`}
+                >
+                  <Bookmark size={13} className={bookmarked ? "fill-current" : ""} />
+                </button>
+              )}
+              {task.status === "open" && userId && !isCreator && (
+                <Button
+                  asChild
+                  size="sm"
+                  className="btn-gradient text-white rounded-xl text-xs px-3 border-0"
+                >
+                  <Link href={`/tasks/${task.id}`}>Apply Now</Link>
+                </Button>
+              )}
               <Button
                 asChild
                 size="sm"
-                className="btn-gradient text-white rounded-xl text-xs px-3 border-0"
+                className="bg-muted hover:bg-muted/70 border border-border hover:border-primary/30 rounded-xl text-muted-foreground hover:text-foreground text-xs px-3 transition-all duration-200"
               >
-                <Link href={`/tasks/${task.id}`}>Apply Now</Link>
+                <Link href={`/tasks/${task.id}`}>
+                  {isCreator ? "Manage" : isWorker ? "My Work" : "View"}
+                </Link>
               </Button>
-            )}
-            <Button
-              asChild
-              size="sm"
-              className="bg-muted hover:bg-muted/70 border border-border hover:border-primary/30 rounded-xl text-muted-foreground hover:text-foreground text-xs px-3 transition-all duration-200"
-            >
-              <Link href={`/tasks/${task.id}`}>
-                {isCreator ? "Manage" : isWorker ? "My Work" : "View"}
-              </Link>
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
