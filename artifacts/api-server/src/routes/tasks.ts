@@ -110,7 +110,7 @@ router.get("/tasks", async (req, res) => {
 
 router.get("/tasks/my-posted", requireAuth, async (req, res) => {
   try {
-    const currentUser = (req as any).user;
+    const currentUser = req.dbUser!;
     const openTasks = await db
       .select({
         id: tasks.id,
