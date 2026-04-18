@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Send, Plus, Briefcase, Loader2, ChevronRight } from "lucide-react";
+import { Send, Plus, Briefcase, Loader2, ChevronRight, AlertCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -47,13 +47,17 @@ export function InviteModal({ open, onClose, inviteClerkId, creatorName }: Invit
   const sendInvite = useSendInvite();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  const { data: myTasks, isLoading } = useQuery<PostedTask[]>({
-    queryKey: ["my-posted-tasks"],
+  useEffect(() => {
+    if (!open) setSelectedTaskId(null);
+  }, [open, inviteClerkId]);
+
+  const { data: myTasks, isLoading, isError, refetch } = useQuery<PostedTask[]>({
+    queryKey: ["my-posted-tasks", userId],
     queryFn: () => apiFetch("/api/tasks/my-posted", {}, getToken),
     enabled: open && !!userId,
   });
 
-  const isReady = !isLoading && myTasks !== undefined;
+  const isReady = !isLoading && !isError && myTasks !== undefined;
   const hasNoTasks = isReady && myTasks.length === 0;
 
   useEffect(() => {
@@ -93,14 +97,30 @@ export function InviteModal({ open, onClose, inviteClerkId, creatorName }: Invit
         </DialogHeader>
 
         <div className="mt-2 space-y-3">
-          {!isReady ? (
+          {isLoading || (!myTasks && !isError) ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 size={20} className="animate-spin text-muted-foreground" />
+            </div>
+          ) : isError ? (
+            <div className="flex flex-col items-center gap-3 py-6">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <AlertCircle size={16} className="text-red-400 shrink-0" />
+                <span>Could not load your tasks.</span>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="rounded-xl text-xs" onClick={() => refetch()}>
+                  Try again
+                </Button>
+                <Button size="sm" className="btn-gradient text-white rounded-xl border-0 text-xs font-semibold" onClick={goCreate}>
+                  <Plus size={12} className="mr-1" />
+                  Create a new task
+                </Button>
+              </div>
             </div>
           ) : (
             <>
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-                {myTasks.map((task) => (
+                {myTasks!.map((task) => (
                   <button
                     key={task.id}
                     onClick={() => setSelectedTaskId(task.id === selectedTaskId ? null : task.id)}
