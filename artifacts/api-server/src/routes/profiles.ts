@@ -82,6 +82,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
       youtubeHandle: user.youtubeHandle,
       upiId: user.upiId,
       avatarUrl: user.avatarUrl,
+      isAvailable: user.isAvailable ?? true,
       portfolioItems: portfolio.map((p) => ({
         id: p.id,
         userId: p.userId,
@@ -108,6 +109,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
       youtubeHandle,
       upiId,
       avatarUrl,
+      isAvailable,
     } = req.body as {
       name?: string;
       bio?: string;
@@ -117,6 +119,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
       youtubeHandle?: string;
       upiId?: string;
       avatarUrl?: string;
+      isAvailable?: boolean;
     };
     const currentUser = req.dbUser!;
 
@@ -152,6 +155,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
     if (youtubeHandle !== undefined) updateData.youtubeHandle = youtubeHandle.trim().replace(/^@/, "").slice(0, 60) || null;
     if (upiId !== undefined) updateData.upiId = upiId.trim() || null;
     if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl.trim() || null;
+    if (isAvailable !== undefined) updateData.isAvailable = Boolean(isAvailable);
 
     const [updated] = await db
       .update(users)
@@ -170,6 +174,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
       youtubeHandle: updated.youtubeHandle,
       upiId: updated.upiId,
       avatarUrl: updated.avatarUrl,
+      isAvailable: updated.isAvailable ?? true,
     });
   } catch (err) {
     req.log.error({ err }, "Error updating profile");
@@ -304,8 +309,9 @@ router.get("/creators", async (req, res) => {
     const rawSearch = (req.query.search as string | undefined)?.trim() ?? "";
     const usernameOnly = rawSearch.startsWith("@");
     const search = usernameOnly ? rawSearch.slice(1) : rawSearch;
-    const skill = (req.query.skill as string | undefined)?.trim().toLowerCase() ?? "";
+    const skill = (req.query.skill as string | undefined)?.trim() ?? "";
     const sort = (req.query.sort as string | undefined) ?? "most_active";
+    const available = req.query.available === "true";
     const page = Math.max(1, parseInt(req.query.page as string ?? "1", 10));
     const limit = Math.min(48, Math.max(1, parseInt(req.query.limit as string ?? "12", 10)));
     const offset = (page - 1) * limit;
@@ -327,6 +333,9 @@ router.get("/creators", async (req, res) => {
     if (skill) {
       conditions.push(sql`${users.skills} @> array[${skill}]::text[]`);
     }
+    if (available) {
+      conditions.push(eq(users.isAvailable, true));
+    }
 
     const orderExpr =
       sort === "top_rated"
@@ -344,6 +353,7 @@ router.get("/creators", async (req, res) => {
         bio: users.bio,
         skills: users.skills,
         avatarUrl: users.avatarUrl,
+        isAvailable: users.isAvailable,
         avgRating: avg(ratings.score),
         ratingCount: sql<number>`count(distinct ${ratings.id})`,
         completedTasksCount: sql<number>`count(distinct case when ${tasks.status} = 'completed' then ${tasks.id} end)`,
@@ -369,6 +379,7 @@ router.get("/creators", async (req, res) => {
         bio: u.bio,
         skills: u.skills ?? [],
         avatarUrl: u.avatarUrl,
+        isAvailable: u.isAvailable ?? true,
         completedTasksCount: Number(u.completedTasksCount),
         rating: {
           average: u.avgRating ? parseFloat(String(u.avgRating)).toFixed(1) : null,

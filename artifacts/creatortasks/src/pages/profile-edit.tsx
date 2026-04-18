@@ -76,6 +76,7 @@ export function ProfileEditPage() {
   const [instagramHandle, setInstagramHandle] = useState("");
   const [youtubeHandle, setYoutubeHandle] = useState("");
   const [upiId, setUpiId] = useState("");
+  const [isAvailable, setIsAvailable] = useState(true);
 
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -103,6 +104,7 @@ export function ProfileEditPage() {
       setYoutubeHandle(profile.youtubeHandle ?? "");
       setUpiId(profile.upiId ?? "");
       setAvatarPath(profile.avatarUrl ?? null);
+      setIsAvailable(profile.isAvailable ?? true);
       setInitialized(true);
     }
   }, [profile, initialized]);
@@ -222,6 +224,7 @@ export function ProfileEditPage() {
         youtubeHandle: youtubeHandle.trim(),
         upiId: upiId.trim(),
         avatarUrl: avatarPath ?? undefined,
+        isAvailable,
       },
       {
         onSuccess: () => {
@@ -480,6 +483,27 @@ export function ProfileEditPage() {
                 type="url"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Availability */}
+        <div className="bg-card border border-border rounded-2xl p-5 md:p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Available for work</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Let brands know you're open to new tasks. Shows a badge on your profile in the creator directory.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isAvailable}
+              onClick={() => setIsAvailable((v) => !v)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${isAvailable ? "bg-green-500" : "bg-muted"}`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${isAvailable ? "translate-x-5" : "translate-x-0"}`}
+              />
+            </button>
           </div>
         </div>
 

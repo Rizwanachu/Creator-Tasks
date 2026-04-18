@@ -1,4 +1,4 @@
-import { pgTable, text, integer, uuid, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, uuid, timestamp, boolean, index } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -18,6 +18,7 @@ export const users = pgTable("users", {
   totalEarnings: integer("total_earnings").default(0),
   balance: integer("balance").default(0),
   pendingBalance: integer("pending_balance").default(0),
+  isAvailable: boolean("is_available").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -44,7 +45,10 @@ export const tasks = pgTable("tasks", {
   attachmentUrl: text("attachment_url"),
   flagged: boolean("flagged").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  workerIdIdx: index("tasks_worker_id_idx").on(table.workerId),
+  creatorIdIdx: index("tasks_creator_id_idx").on(table.creatorId),
+}));
 
 export const submissions = pgTable("submissions", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -91,7 +95,9 @@ export const ratings = pgTable("ratings", {
   score: integer("score").notNull(),
   comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  ratingForIdx: index("ratings_rating_for_idx").on(table.ratingFor),
+}));
 
 export const disputes = pgTable("disputes", {
   id: uuid("id").defaultRandom().primaryKey(),

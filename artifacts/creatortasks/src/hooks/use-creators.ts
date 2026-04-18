@@ -9,6 +9,7 @@ export interface CreatorSummary {
   bio: string | null;
   skills: string[];
   avatarUrl: string | null;
+  isAvailable: boolean;
   completedTasksCount: number;
   rating: {
     average: string | null;
@@ -26,6 +27,7 @@ export interface UseCreatorsParams {
   search?: string;
   skill?: string;
   sort?: "most_active" | "top_rated" | "newest";
+  available?: boolean;
   limit?: number;
 }
 
@@ -34,6 +36,7 @@ function buildUrl(params: UseCreatorsParams & { page: number }): string {
   if (params.search) q.set("search", params.search);
   if (params.skill) q.set("skill", params.skill);
   if (params.sort) q.set("sort", params.sort);
+  if (params.available) q.set("available", "true");
   if (params.limit) q.set("limit", String(params.limit));
   q.set("page", String(params.page));
   return `/api/creators?${q.toString()}`;

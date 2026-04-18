@@ -51,6 +51,7 @@ export interface PrivateProfile {
   youtubeHandle: string | null;
   upiId: string | null;
   avatarUrl: string | null;
+  isAvailable: boolean;
   portfolioItems: PortfolioItem[];
 }
 
@@ -111,6 +112,7 @@ export function useUpdateProfile() {
       youtubeHandle?: string;
       upiId?: string;
       avatarUrl?: string;
+      isAvailable?: boolean;
     }) => apiFetch("/api/users/me", { method: "PUT", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { useCreators, type CreatorSummary } from "@/hooks/use-creators";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Star, CheckCircle, Users, ArrowRight } from "lucide-react";
+import { Search, Star, CheckCircle, Users, ArrowRight, Zap } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -18,18 +18,23 @@ function avatarSrc(objectPath: string | null | undefined): string | null {
 
 const SKILL_PILLS = [
   { value: "", label: "All" },
-  { value: "reels", label: "Reels" },
-  { value: "hooks", label: "Hooks" },
-  { value: "thumbnails", label: "Thumbnails" },
-  { value: "other", label: "Other" },
+  { value: "Reels", label: "Reels" },
+  { value: "Hooks", label: "Hooks" },
+  { value: "Thumbnails", label: "Thumbnails" },
 ];
 
 const SKILL_COLORS: Record<string, string> = {
   reels: "bg-pink-500/10 text-pink-400 border-pink-500/20",
   hooks: "bg-orange-500/10 text-orange-400 border-orange-500/20",
   thumbnails: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-  other: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+  "video editing": "bg-violet-500/10 text-violet-400 border-violet-500/20",
+  "graphic design": "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  copywriting: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
 };
+
+function skillColor(skill: string): string {
+  return SKILL_COLORS[skill.toLowerCase()] ?? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20";
+}
 
 function CreatorCard({ creator }: { creator: CreatorSummary }) {
   const initials = creator.name
@@ -37,7 +42,7 @@ function CreatorCard({ creator }: { creator: CreatorSummary }) {
     : "?";
   const avg = creator.rating.average ? parseFloat(creator.rating.average) : null;
   const imgSrc = avatarSrc(creator.avatarUrl);
-  const profileHref = creator.username ? `/creator/${creator.username}` : `/profile/${creator.clerkId}`;
+  const profileHref = `/creator/${creator.username}`;
 
   return (
     <Link href={profileHref}>
@@ -53,6 +58,12 @@ function CreatorCard({ creator }: { creator: CreatorSummary }) {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
               <span className="font-semibold text-foreground text-sm truncate">{creator.name || "Anonymous"}</span>
+              {creator.isAvailable && (
+                <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 font-medium shrink-0">
+                  <Zap size={8} className="fill-green-400" />
+                  Available
+                </span>
+              )}
             </div>
             {creator.username && (
               <span className="text-xs text-muted-foreground">@{creator.username}</span>
@@ -71,9 +82,9 @@ function CreatorCard({ creator }: { creator: CreatorSummary }) {
             {creator.skills.slice(0, 4).map((skill) => (
               <span
                 key={skill}
-                className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${SKILL_COLORS[skill] ?? SKILL_COLORS.other}`}
+                className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${skillColor(skill)}`}
               >
-                {skill.charAt(0).toUpperCase() + skill.slice(1)}
+                {skill}
               </span>
             ))}
           </div>
@@ -127,21 +138,76 @@ function CreatorCardSkeleton() {
   );
 }
 
+function EmptyState({
+  search,
+  skill,
+  skillInput,
+  available,
+}: {
+  search: string;
+  skill: string;
+  skillInput: string;
+  available: boolean;
+}) {
+  const activeSkill = skill || skillInput;
+  const hasFilters = !!(search || activeSkill || available);
+
+  return (
+    <div className="text-center py-20 bg-card border border-border rounded-2xl">
+      <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mx-auto mb-4">
+        <Users size={20} className="text-purple-400" />
+      </div>
+      <h2 className="text-base font-bold text-foreground mb-1">No creators found</h2>
+      {hasFilters ? (
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">No creators match your current filters.</p>
+          {activeSkill && (
+            <p className="text-xs text-muted-foreground/60">
+              Try removing the "{activeSkill}" skill filter, or broaden your search.
+            </p>
+          )}
+          {available && (
+            <p className="text-xs text-muted-foreground/60">
+              Try turning off the "Available now" toggle to see all creators.
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">No creators have joined yet — be the first!</p>
+      )}
+    </div>
+  );
+}
+
 export function CreatorsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [skill, setSkill] = useState("");
+  const [skillPill, setSkillPill] = useState("");
+  const [skillInput, setSkillInput] = useState("");
+  const [skillInputDebounced, setSkillInputDebounced] = useState("");
   const [sort, setSort] = useState<"most_active" | "top_rated" | "newest">("most_active");
+  const [available, setAvailable] = useState(false);
+
+  const skillTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 400);
     return () => clearTimeout(t);
   }, [searchInput]);
 
+  useEffect(() => {
+    clearTimeout(skillTimerRef.current);
+    skillTimerRef.current = setTimeout(() => setSkillInputDebounced(skillInput.trim()), 400);
+    return () => clearTimeout(skillTimerRef.current);
+  }, [skillInput]);
+
+  const activeSkill = skillPill || skillInputDebounced;
+
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error } = useCreators({
     search,
-    skill,
+    skill: activeSkill,
     sort,
+    available,
     limit: 12,
   });
 
@@ -194,13 +260,16 @@ export function CreatorsPage() {
         </Select>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-7">
+      <div className="flex flex-wrap items-center gap-2 mb-7">
         {SKILL_PILLS.map(({ value, label }) => (
           <button
             key={value}
-            onClick={() => setSkill(value)}
+            onClick={() => {
+              setSkillPill(value);
+              if (value) setSkillInput("");
+            }}
             className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 ${
-              skill === value
+              skillPill === value && !skillInput
                 ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
                 : "bg-muted/40 text-muted-foreground border-border hover:border-purple-500/30 hover:text-foreground"
             }`}
@@ -208,6 +277,35 @@ export function CreatorsPage() {
             {label}
           </button>
         ))}
+
+        <div className="relative">
+          <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Filter by skill…"
+            value={skillInput}
+            onChange={(e) => {
+              setSkillInput(e.target.value);
+              if (e.target.value) setSkillPill("");
+            }}
+            className="pl-7 pr-3 py-1.5 rounded-full text-xs border border-border bg-muted/40 text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-purple-500/40 focus:text-foreground h-7 w-36 transition-all"
+          />
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Available now</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={available}
+            onClick={() => setAvailable((v) => !v)}
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${available ? "bg-green-500" : "bg-muted"}`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${available ? "translate-x-4" : "translate-x-0"}`}
+            />
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -219,15 +317,7 @@ export function CreatorsPage() {
           {Array.from({ length: 8 }).map((_, i) => <CreatorCardSkeleton key={i} />)}
         </div>
       ) : allCreators.length === 0 ? (
-        <div className="text-center py-20 bg-card border border-border rounded-2xl">
-          <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mx-auto mb-4">
-            <Users size={20} className="text-purple-400" />
-          </div>
-          <h2 className="text-base font-bold text-foreground mb-1">No creators found</h2>
-          <p className="text-sm text-muted-foreground">
-            {search || skill ? "Try adjusting your search or filters." : "No creators have joined yet — be the first!"}
-          </p>
-        </div>
+        <EmptyState search={search} skill={skillPill} skillInput={skillInput} available={available} />
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
