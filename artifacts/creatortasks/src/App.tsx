@@ -29,6 +29,7 @@ import { SignInPage, SignUpPage } from "@/pages/auth";
 import { NotificationsPage } from "@/pages/notifications";
 import { ProfilePage } from "@/pages/profile";
 import { CreatorPage } from "@/pages/creator";
+import { CreatorsPage } from "@/pages/creators";
 import { ProfileEditPage } from "@/pages/profile-edit";
 import { AdminPage } from "@/pages/admin";
 import { LeaderboardPage } from "@/pages/leaderboard";
@@ -158,6 +159,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/sign-up/*?" component={SignUpPage} />
             
             <Route path="/tasks" component={Tasks} />
+            <Route path="/creators" component={CreatorsPage} />
             <Route path="/tasks/:id" component={TaskDetail} />
             
             <Route path="/create">

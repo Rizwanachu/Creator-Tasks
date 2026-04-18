@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWallet } from "@/hooks/use-wallet";
 import { useNotifications } from "@/hooks/use-notifications";
-import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram } from "lucide-react";
+import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram, Users } from "lucide-react";
 import { useUnreadMessageCount } from "@/hooks/use-chat";
 
 function NavWalletBadge() {
@@ -99,6 +99,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const navLinks = [
     { href: "/tasks", label: "Browse Tasks", icon: ListTodo },
+    { href: "/creators", label: "Browse Creators", icon: Users },
     { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
     { href: "/create", label: "Post a Task", icon: PlusCircle },
     ...(isSignedIn ? [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),

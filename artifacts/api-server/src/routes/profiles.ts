@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, users, tasks, ratings, portfolioItems } from "@workspace/db";
-import { eq, and, avg, count, sql } from "drizzle-orm";
+import { eq, and, avg, count, sql, ilike, or, isNotNull, ne, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
@@ -295,6 +295,89 @@ router.get("/users/:clerkId", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Error fetching profile");
     res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
+
+// GET /creators — browseable creator directory with search, skill filter, sort, and pagination
+router.get("/creators", async (req, res) => {
+  try {
+    const search = (req.query.search as string | undefined)?.trim() ?? "";
+    const skill = (req.query.skill as string | undefined)?.trim().toLowerCase() ?? "";
+    const sort = (req.query.sort as string | undefined) ?? "most_active";
+    const page = Math.max(1, parseInt(req.query.page as string ?? "1", 10));
+    const limit = Math.min(48, Math.max(1, parseInt(req.query.limit as string ?? "12", 10)));
+    const offset = (page - 1) * limit;
+
+    const conditions = [
+      isNotNull(users.name),
+      ne(sql`trim(coalesce(${users.name}, ''))`, ""),
+    ];
+    if (search) {
+      conditions.push(
+        or(
+          ilike(users.name, `%${search}%`),
+          ilike(users.username, `%${search}%`)
+        )!
+      );
+    }
+    if (skill) {
+      conditions.push(sql`${users.skills} @> array[${skill}]::text[]`);
+    }
+
+    const orderExpr =
+      sort === "top_rated"
+        ? sql`avg(${ratings.score}) DESC NULLS LAST`
+        : sort === "top_earning"
+        ? desc(users.totalEarnings)
+        : sql`count(distinct case when ${tasks.status} = 'completed' then ${tasks.id} end) DESC`;
+
+    const rows = await db
+      .select({
+        id: users.id,
+        clerkId: users.clerkId,
+        username: users.username,
+        name: users.name,
+        bio: users.bio,
+        skills: users.skills,
+        avatarUrl: users.avatarUrl,
+        totalEarnings: users.totalEarnings,
+        avgRating: avg(ratings.score),
+        ratingCount: count(ratings.id),
+        completedTasksCount: sql<number>`count(distinct case when ${tasks.status} = 'completed' then ${tasks.id} end)`,
+      })
+      .from(users)
+      .leftJoin(ratings, eq(ratings.ratingFor, users.id))
+      .leftJoin(tasks, eq(tasks.workerId, users.id))
+      .where(and(...conditions))
+      .groupBy(users.id)
+      .orderBy(orderExpr)
+      .limit(limit + 1)
+      .offset(offset);
+
+    const hasMore = rows.length > limit;
+    const items = rows.slice(0, limit);
+
+    res.json({
+      creators: items.map((u) => ({
+        id: u.id,
+        clerkId: u.clerkId,
+        username: u.username ?? null,
+        name: u.name,
+        bio: u.bio,
+        skills: u.skills ?? [],
+        avatarUrl: u.avatarUrl,
+        completedTasksCount: Number(u.completedTasksCount),
+        rating: {
+          average: u.avgRating ? parseFloat(String(u.avgRating)).toFixed(1) : null,
+          total: Number(u.ratingCount),
+        },
+      })),
+      hasMore,
+      page,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching creators");
+    res.status(500).json({ error: "Failed to fetch creators" });
   }
 });
 
