@@ -82,23 +82,34 @@ const EXAMPLE_TASK = {
   category: "reels" as const,
 };
 
-const taskSchema = z.object({
-  title: z
-    .string()
-    .min(5, "Title must be at least 5 characters")
-    .max(100, "Title must be less than 100 characters"),
-  description: z
-    .string()
-    .min(20, "Description must be at least 20 characters")
-    .max(1000, "Description must be less than 1000 characters"),
-  budget: z.coerce
-    .number()
-    .min(100, "Minimum budget is ₹100")
-    .max(100000, "Maximum budget is ₹100,000"),
-  category: z.enum(["reels", "hooks", "thumbnails", "other"]),
-  deadline: z.string().optional(),
-  attachmentUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-});
+const taskSchema = z
+  .object({
+    title: z
+      .string()
+      .min(5, "Title must be at least 5 characters")
+      .max(100, "Title must be less than 100 characters"),
+    description: z
+      .string()
+      .min(20, "Description must be at least 20 characters")
+      .max(1000, "Description must be less than 1000 characters"),
+    budget: z.coerce
+      .number()
+      .min(100, "Minimum budget is ₹100")
+      .max(100000, "Maximum budget is ₹100,000"),
+    category: z.enum(["reels", "hooks", "thumbnails", "other"]),
+    otherCategory: z.string().max(50).optional(),
+    deadline: z.string().optional(),
+    attachmentUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  })
+  .superRefine((data, ctx) => {
+    if (data.category === "other" && !data.otherCategory?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please describe the type of content",
+        path: ["otherCategory"],
+      });
+    }
+  });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
 
@@ -272,6 +283,7 @@ export function CreateTask() {
       description: "",
       budget: undefined,
       category: "reels",
+      otherCategory: "",
       deadline: "",
       attachmentUrl: "",
     },
@@ -288,11 +300,15 @@ export function CreateTask() {
   }
 
   function submitTask(data: TaskFormValues) {
+    const actualCategory =
+      data.category === "other" && data.otherCategory?.trim()
+        ? data.otherCategory.trim()
+        : data.category;
     createTask.mutate({
       title: data.title,
       description: data.description,
       budget: data.budget,
-      category: data.category,
+      category: actualCategory,
       deadline: data.deadline || undefined,
       attachmentUrl: data.attachmentUrl || undefined,
     }, {
@@ -459,7 +475,12 @@ export function CreateTask() {
                               <button
                                 key={cat.value}
                                 type="button"
-                                onClick={() => field.onChange(cat.value)}
+                                onClick={() => {
+                                  field.onChange(cat.value);
+                                  if (cat.value !== "other") {
+                                    form.setValue("otherCategory", "", { shouldValidate: false });
+                                  }
+                                }}
                                 className={`flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl border text-center transition-all duration-200 active:scale-95 ${
                                   isActive
                                     ? cat.activeColor
@@ -477,6 +498,29 @@ export function CreateTask() {
                     </FormItem>
                   )}
                 />
+
+                {/* Custom category — only shown when "Other" is selected */}
+                {watched.category === "other" && (
+                  <FormField
+                    control={form.control}
+                    name="otherCategory"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground text-sm font-semibold">What type of content is it?</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. Logo Design, Copywriting, Music Production…"
+                            className="focus-visible:ring-ring rounded-xl h-11"
+                            maxLength={50}
+                            autoFocus
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {/* Description — guided */}
                 <FormField

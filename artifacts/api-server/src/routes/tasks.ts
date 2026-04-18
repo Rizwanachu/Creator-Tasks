@@ -191,7 +191,10 @@ router.post("/tasks", requireAuth, async (req, res) => {
       return;
     }
 
-    const categoryVal: Category = isValidCategory(category) ? category : "other";
+    const categoryVal: string =
+      typeof category === "string" && category.trim()
+        ? category.trim().toLowerCase().slice(0, 50)
+        : "other";
     const currentUser = req.dbUser!;
 
     const poster = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
