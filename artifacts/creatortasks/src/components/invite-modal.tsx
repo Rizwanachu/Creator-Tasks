@@ -24,10 +24,10 @@ interface PostedTask {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  reels: "Reels",
-  hooks: "Hooks",
-  thumbnails: "Thumbnails",
-  other: "Other",
+  reels: "Reels", hooks: "Hooks", thumbnails: "Thumbnails",
+  "video-editing": "Video Editing", animation: "Animation",
+  "graphic-design": "Graphic Design", logo: "Logo Design",
+  website: "Website Design", copywriting: "Copywriting", other: "Other",
 };
 
 function categoryLabel(cat: string): string {

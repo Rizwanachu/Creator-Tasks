@@ -26,13 +26,22 @@ function portfolioSrc(objectPath: string): string {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  reels: "Reels", hooks: "Hooks", thumbnails: "Thumbnails", other: "Other",
+  reels: "Reels", hooks: "Hooks", thumbnails: "Thumbnails",
+  "video-editing": "Video Editing", animation: "Animation",
+  "graphic-design": "Graphic Design", logo: "Logo Design",
+  website: "Website Design", copywriting: "Copywriting", other: "Other",
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
   reels: "bg-pink-500/10 text-pink-400 border-pink-500/20",
   hooks: "bg-orange-500/10 text-orange-400 border-orange-500/20",
   thumbnails: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+  "video-editing": "bg-violet-500/10 text-violet-500 border-violet-500/20",
+  animation: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  "graphic-design": "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  logo: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  website: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
+  copywriting: "bg-teal-500/10 text-teal-600 border-teal-500/20",
   other: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
 };
 

@@ -14,7 +14,13 @@ const CATEGORIES: { label: string; value: TaskCategory | undefined; emoji: strin
   { label: "Reels", value: "reels", emoji: "🎬" },
   { label: "Hooks", value: "hooks", emoji: "⚡" },
   { label: "Thumbnails", value: "thumbnails", emoji: "🖼️" },
-  { label: "Other", value: "other", emoji: "✏️" },
+  { label: "Video Editing", value: "video-editing", emoji: "🎞️" },
+  { label: "Animation", value: "animation", emoji: "✨" },
+  { label: "Graphic Design", value: "graphic-design", emoji: "🎨" },
+  { label: "Logo Design", value: "logo", emoji: "💎" },
+  { label: "Website", value: "website", emoji: "🌐" },
+  { label: "Copywriting", value: "copywriting", emoji: "✍️" },
+  { label: "Other", value: "other", emoji: "📦" },
 ];
 
 const SORT_OPTIONS = [
@@ -30,7 +36,7 @@ const STATUS_TABS = [
   { label: "All tasks", value: "" },
 ];
 
-const VALID_CATEGORIES = ["reels", "hooks", "thumbnails", "other"];
+const VALID_CATEGORIES = ["reels", "hooks", "thumbnails", "video-editing", "animation", "graphic-design", "logo", "website", "copywriting", "other"];
 
 export function Tasks() {
   const categoryParam = useSearchParam("category");

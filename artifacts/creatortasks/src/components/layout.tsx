@@ -444,8 +444,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   { href: "/tasks?category=reels", label: "Reels" },
                   { href: "/tasks?category=hooks", label: "Hooks" },
                   { href: "/tasks?category=thumbnails", label: "Thumbnails" },
-                  { href: "/tasks?category=scripts", label: "Scripts" },
-                  { href: "/tasks?category=other", label: "Other Content" },
+                  { href: "/tasks?category=video-editing", label: "Video Editing" },
+                  { href: "/tasks?category=animation", label: "Animation" },
+                  { href: "/tasks?category=graphic-design", label: "Graphic Design" },
+                  { href: "/tasks?category=logo", label: "Logo Design" },
+                  { href: "/tasks?category=website", label: "Website Design" },
+                  { href: "/tasks?category=copywriting", label: "Copywriting" },
                 ].map(({ href, label }) => (
                   <li key={href}>
                     <Link href={href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">

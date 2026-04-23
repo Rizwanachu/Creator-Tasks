@@ -40,30 +40,16 @@ declare global {
 }
 
 const CATEGORIES = [
-  {
-    value: "reels",
-    label: "Reels",
-    sub: "Short-form video",
-    activeColor: "border-pink-500 bg-pink-500/15 text-pink-300",
-  },
-  {
-    value: "hooks",
-    label: "Hooks",
-    sub: "Viral openers",
-    activeColor: "border-orange-500 bg-orange-500/15 text-orange-300",
-  },
-  {
-    value: "thumbnails",
-    label: "Thumbnails",
-    sub: "Click-worthy visuals",
-    activeColor: "border-cyan-500 bg-cyan-500/15 text-cyan-300",
-  },
-  {
-    value: "other",
-    label: "Other",
-    sub: "Anything else",
-    activeColor: "border-zinc-400 bg-zinc-500/15 text-zinc-300",
-  },
+  { value: "reels", label: "Reels", sub: "Short-form video", activeColor: "border-pink-500 bg-pink-500/15 text-pink-300" },
+  { value: "hooks", label: "Hooks", sub: "Viral openers", activeColor: "border-orange-500 bg-orange-500/15 text-orange-300" },
+  { value: "thumbnails", label: "Thumbnails", sub: "Click-worthy visuals", activeColor: "border-cyan-500 bg-cyan-500/15 text-cyan-300" },
+  { value: "video-editing", label: "Video Editing", sub: "Edit & produce videos", activeColor: "border-violet-500 bg-violet-500/15 text-violet-300" },
+  { value: "animation", label: "Animation", sub: "Motion graphics & 2D/3D", activeColor: "border-blue-500 bg-blue-500/15 text-blue-300" },
+  { value: "graphic-design", label: "Graphic Design", sub: "Visuals & layouts", activeColor: "border-emerald-500 bg-emerald-500/15 text-emerald-300" },
+  { value: "logo", label: "Logo Design", sub: "Brand identity", activeColor: "border-amber-500 bg-amber-500/15 text-amber-300" },
+  { value: "website", label: "Website Design", sub: "UI / landing pages", activeColor: "border-indigo-500 bg-indigo-500/15 text-indigo-300" },
+  { value: "copywriting", label: "Copywriting", sub: "Scripts, captions & copy", activeColor: "border-teal-500 bg-teal-500/15 text-teal-300" },
+  { value: "other", label: "Other", sub: "Anything else", activeColor: "border-zinc-400 bg-zinc-500/15 text-zinc-300" },
 ] as const;
 
 const BUDGET_PRESETS = [500, 1000, 2000, 5000];
@@ -72,6 +58,12 @@ const CATEGORY_BADGE: Record<string, string> = {
   reels: "bg-pink-500/10 text-pink-400 border border-pink-500/20",
   hooks: "bg-orange-500/10 text-orange-400 border border-orange-500/20",
   thumbnails: "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20",
+  "video-editing": "bg-violet-500/10 text-violet-400 border border-violet-500/20",
+  animation: "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+  "graphic-design": "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+  logo: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+  website: "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20",
+  copywriting: "bg-teal-500/10 text-teal-400 border border-teal-500/20",
   other: "bg-zinc-500/10 text-zinc-400 border border-zinc-500/20",
 };
 
@@ -97,7 +89,7 @@ const taskSchema = z
       .number()
       .min(100, "Minimum budget is ₹100")
       .max(100000, "Maximum budget is ₹100,000"),
-    category: z.enum(["reels", "hooks", "thumbnails", "other"]),
+    category: z.enum(["reels", "hooks", "thumbnails", "video-editing", "animation", "graphic-design", "logo", "website", "copywriting", "other"]),
     otherCategory: z.string().max(50).optional(),
     deadline: z.string().optional(),
     attachmentUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
