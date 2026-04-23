@@ -135,7 +135,6 @@ export function OnboardingPage() {
 
   // Step 1 — username
   const [username, setUsername] = useState("");
-  const [debouncedUsername, setDebouncedUsername] = useState("");
 
   // Step 2 — core focus
   const [focusCategories, setFocusCategories] = useState<string[]>([]);
@@ -172,13 +171,7 @@ export function OnboardingPage() {
   const updateProfile = useUpdateProfile();
   const addPortfolioItem = useAddPortfolioItem();
 
-  // Debounce username for availability check
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedUsername(username), 500);
-    return () => clearTimeout(t);
-  }, [username]);
-
-  const { data: usernameCheck, isFetching: checkingUsername } = useCheckUsername(debouncedUsername);
+  const { data: usernameCheck, isFetching: checkingUsername } = useCheckUsername(username);
 
   const isUsernameFormatValid = /^[a-z0-9_]{3,20}$/.test(username.trim().toLowerCase());
   const isUsernameAvailable = isUsernameFormatValid && !checkingUsername && usernameCheck?.available === true;

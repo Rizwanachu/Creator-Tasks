@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
 import { apiFetch } from "@/lib/api";
@@ -98,11 +99,20 @@ export function useProfileComplete(clerkId: string | undefined) {
   return { isComplete, completionPercent, isLoading, profile };
 }
 
-export function useCheckUsername(handle: string) {
+export function useCheckUsername(handle: string, debounceMs = 500) {
+  const [debouncedHandle, setDebouncedHandle] = useState(handle);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedHandle(handle), debounceMs);
+    return () => clearTimeout(t);
+  }, [handle, debounceMs]);
+
+  const normalized = debouncedHandle.trim().toLowerCase();
+
   return useQuery<{ available: boolean; reason?: string }>({
-    queryKey: ["check-username", handle.trim().toLowerCase()],
-    queryFn: () => apiFetch(`/api/users/check-username?handle=${encodeURIComponent(handle.trim().toLowerCase())}`),
-    enabled: /^[a-z0-9_]{3,20}$/.test(handle.trim().toLowerCase()),
+    queryKey: ["check-username", normalized],
+    queryFn: () => apiFetch(`/api/users/check-username?handle=${encodeURIComponent(normalized)}`),
+    enabled: /^[a-z0-9_]{3,20}$/.test(normalized),
     staleTime: 10_000,
   });
 }
