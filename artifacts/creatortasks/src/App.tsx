@@ -217,7 +217,7 @@ function ThemedToaster() {
 function App() {
   return (
     <HelmetProvider>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
         <TooltipProvider>
           <WouterRouter base={basePath}>
             <ClerkProviderWithRoutes />
