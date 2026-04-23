@@ -9,18 +9,18 @@ import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { Search, X, SlidersHorizontal, ChevronDown } from "lucide-react";
 
-const CATEGORIES: { label: string; value: TaskCategory | undefined; emoji: string }[] = [
-  { label: "All", value: undefined, emoji: "✦" },
-  { label: "Reels", value: "reels", emoji: "🎬" },
-  { label: "Hooks", value: "hooks", emoji: "⚡" },
-  { label: "Thumbnails", value: "thumbnails", emoji: "🖼️" },
-  { label: "Video Editing", value: "video-editing", emoji: "🎞️" },
-  { label: "Animation", value: "animation", emoji: "✨" },
-  { label: "Graphic Design", value: "graphic-design", emoji: "🎨" },
-  { label: "Logo Design", value: "logo", emoji: "💎" },
-  { label: "Website", value: "website", emoji: "🌐" },
-  { label: "Copywriting", value: "copywriting", emoji: "✍️" },
-  { label: "Other", value: "other", emoji: "📦" },
+const CATEGORIES: { label: string; value: TaskCategory | undefined }[] = [
+  { label: "All", value: undefined },
+  { label: "Reels", value: "reels" },
+  { label: "Hooks", value: "hooks" },
+  { label: "Thumbnails", value: "thumbnails" },
+  { label: "Video Editing", value: "video-editing" },
+  { label: "Animation", value: "animation" },
+  { label: "Graphic Design", value: "graphic-design" },
+  { label: "Logo Design", value: "logo" },
+  { label: "Website", value: "website" },
+  { label: "Copywriting", value: "copywriting" },
+  { label: "Other", value: "other" },
 ];
 
 const SORT_OPTIONS = [
@@ -117,22 +117,20 @@ export function Tasks() {
         </div>
       </div>
 
-      {/* Filter strip */}
-      <div className="border-b border-border bg-card/30 px-4">
+      {/* Category pill strip */}
+      <div className="border-b border-border bg-card/30 px-4 py-2.5">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex items-center gap-0 overflow-x-auto scrollbar-none">
-            {/* Category tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.label}
                 onClick={() => setActiveCategory(cat.value)}
-                className={`flex items-center gap-1.5 px-4 py-3.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap shrink-0 ${
+                className={`flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-all whitespace-nowrap shrink-0 ${
                   activeCategory === cat.value
-                    ? "border-purple-500 text-purple-400"
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                    ? "border-purple-500/40 text-purple-400 bg-purple-500/10"
+                    : "border-border text-muted-foreground hover:text-foreground bg-transparent"
                 }`}
               >
-                <span className="text-base leading-none">{cat.emoji}</span>
                 {cat.label}
               </button>
             ))}
