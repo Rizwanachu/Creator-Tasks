@@ -20,14 +20,14 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOTAL_STEPS = 7;
 
 const FOCUS_CATEGORIES = [
-  { label: "Editing", icon: "✂️" },
-  { label: "Programming", icon: "💻" },
-  { label: "Content Creation", icon: "📢" },
-  { label: "Design", icon: "🎨" },
-  { label: "Marketing", icon: "📣" },
-  { label: "Video Production", icon: "🎬" },
-  { label: "Photography", icon: "📷" },
-  { label: "Sales", icon: "📈" },
+  { label: "Editing" },
+  { label: "Programming" },
+  { label: "Content Creation" },
+  { label: "Design" },
+  { label: "Marketing" },
+  { label: "Video Production" },
+  { label: "Photography" },
+  { label: "Sales" },
 ];
 
 async function uploadFile(
@@ -408,7 +408,6 @@ export function OnboardingPage() {
                           : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground hover:bg-primary/5"
                       }`}
                     >
-                      <span className="text-lg">{cat.icon}</span>
                       {cat.label}
                     </button>
                   );
