@@ -18,12 +18,6 @@ function avatarSrc(objectPath: string | null | undefined): string | null {
   return `${API_BASE}/api/storage${objectPath}`;
 }
 
-const SKILL_PILLS = [
-  { value: "", label: "All" },
-  { value: "Reels", label: "Reels" },
-  { value: "Hooks", label: "Hooks" },
-  { value: "Thumbnails", label: "Thumbnails" },
-];
 
 const SKILL_COLORS: Record<string, string> = {
   reels: "bg-pink-500/10 text-pink-400 border-pink-500/20",
@@ -214,7 +208,6 @@ export function CreatorsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [inviteTarget, setInviteTarget] = useState<{ clerkId: string; name: string | null } | null>(null);
-  const [skillPill, setSkillPill] = useState("");
   const [skillInput, setSkillInput] = useState("");
   const [skillInputDebounced, setSkillInputDebounced] = useState("");
   const [sort, setSort] = useState<"most_active" | "top_rated" | "newest">("most_active");
@@ -233,7 +226,7 @@ export function CreatorsPage() {
     return () => clearTimeout(skillTimerRef.current);
   }, [skillInput]);
 
-  const activeSkill = skillPill || skillInputDebounced;
+  const activeSkill = skillInputDebounced;
 
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error } = useCreators({
     search,
@@ -291,22 +284,6 @@ export function CreatorsPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mb-7">
-        {SKILL_PILLS.map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => {
-              setSkillPill(value);
-              if (value) setSkillInput("");
-            }}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 ${
-              skillPill === value && !skillInput
-                ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
-                : "bg-muted/40 text-muted-foreground border-border hover:border-purple-500/30 hover:text-foreground"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
 
         <div className="relative">
           <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
@@ -347,7 +324,7 @@ export function CreatorsPage() {
           {Array.from({ length: 8 }).map((_, i) => <CreatorCardSkeleton key={i} />)}
         </div>
       ) : allCreators.length === 0 ? (
-        <EmptyState search={search} skill={skillPill} skillInput={skillInput} available={available} />
+        <EmptyState search={search} skill={skillInputDebounced} skillInput={skillInput} available={available} />
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
