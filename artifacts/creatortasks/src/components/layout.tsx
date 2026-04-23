@@ -437,28 +437,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </ul>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Categories</h4>
-              <ul className="flex flex-col gap-2">
-                {[
-                  { href: "/tasks?category=reels", label: "Reels" },
-                  { href: "/tasks?category=hooks", label: "Hooks" },
-                  { href: "/tasks?category=thumbnails", label: "Thumbnails" },
-                  { href: "/tasks?category=video-editing", label: "Video Editing" },
-                  { href: "/tasks?category=animation", label: "Animation" },
-                  { href: "/tasks?category=graphic-design", label: "Graphic Design" },
-                  { href: "/tasks?category=logo", label: "Logo Design" },
-                  { href: "/tasks?category=website", label: "Website Design" },
-                  { href: "/tasks?category=copywriting", label: "Copywriting" },
-                ].map(({ href, label }) => (
-                  <li key={href}>
-                    <Link href={href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                      {label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
 
           <div className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
