@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 const CATEGORIES: { label: string; value: TaskCategory | undefined }[] = [
   { label: "All", value: undefined },
@@ -18,13 +18,13 @@ const CATEGORIES: { label: string; value: TaskCategory | undefined }[] = [
 ];
 
 const SORT_OPTIONS = [
-  { label: "Newest first", value: "newest" },
-  { label: "Highest budget", value: "highest" },
-  { label: "Lowest budget", value: "lowest" },
-  { label: "Oldest first", value: "oldest" },
+  { label: "Newest", value: "newest" },
+  { label: "Highest pay", value: "highest" },
+  { label: "Lowest pay", value: "lowest" },
+  { label: "Oldest", value: "oldest" },
 ];
 
-const STATUS_PILLS = [
+const STATUS_TABS = [
   { label: "Open", value: "open" },
   { label: "Completed", value: "completed" },
   { label: "All", value: "" },
@@ -48,7 +48,6 @@ export function Tasks() {
   const [minBudget, setMinBudget] = useState("");
   const [maxBudget, setMaxBudget] = useState("");
   const [sort, setSort] = useState<"newest" | "highest" | "lowest" | "oldest">("newest");
-  const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState("open");
 
   const filters: TaskFilters = {
@@ -73,97 +72,53 @@ export function Tasks() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 md:py-12">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div className="container mx-auto px-4 py-6 md:py-10 max-w-6xl">
+
+      {/* Page header */}
+      <div className="flex items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight mb-1">Task Board</h1>
-          <p className="text-zinc-500 text-sm">Find opportunities and earn by completing tasks.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Task Board</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Find opportunities and earn by completing tasks.</p>
         </div>
-        <Button asChild className="btn-gradient text-white rounded-xl border-0 font-semibold shrink-0 w-full sm:w-auto">
+        <Button asChild className="btn-gradient text-white rounded-xl border-0 font-semibold shrink-0 hidden sm:flex">
           <Link href="/create">Post a Task</Link>
         </Button>
       </div>
 
-      {/* Search + filter bar */}
-      <div className="mb-6 space-y-3">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search tasks..."
-              value={searchQ}
-              onChange={(e) => setSearchQ(e.target.value)}
-              className="pl-9 rounded-xl h-10 bg-muted/40 border-border"
-            />
-            {searchQ && (
-              <button
-                onClick={() => setSearchQ("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X size={13} />
-              </button>
-            )}
-          </div>
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+        <Input
+          placeholder="Search tasks…"
+          value={searchQ}
+          onChange={(e) => setSearchQ(e.target.value)}
+          className="pl-10 pr-10 h-11 rounded-xl bg-muted/40 border-border text-sm"
+        />
+        {searchQ && (
           <button
-            onClick={() => setShowFilters((v) => !v)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
-              showFilters || (minBudget || maxBudget)
-                ? "border-purple-500/40 text-purple-400 bg-purple-500/10"
-                : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
+            onClick={() => setSearchQ("")}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
-            <SlidersHorizontal size={14} />
-            <span className="hidden sm:inline">Filters</span>
+            <X size={14} />
           </button>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as typeof sort)}
-            className="rounded-xl border border-border bg-muted/40 text-sm text-foreground px-3 py-2 h-10 cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Expanded filters */}
-        {showFilters && (
-          <div className="flex gap-3 flex-wrap items-center bg-muted/30 border border-border rounded-xl p-3">
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-muted-foreground whitespace-nowrap">Budget ₹</label>
-              <Input
-                type="number"
-                placeholder="Min"
-                value={minBudget}
-                onChange={(e) => setMinBudget(e.target.value)}
-                className="w-24 h-8 rounded-lg text-sm bg-background"
-              />
-              <span className="text-muted-foreground text-xs">–</span>
-              <Input
-                type="number"
-                placeholder="Max"
-                value={maxBudget}
-                onChange={(e) => setMaxBudget(e.target.value)}
-                className="w-24 h-8 rounded-lg text-sm bg-background"
-              />
-            </div>
-          </div>
         )}
+      </div>
 
-        {/* Status pills */}
-        <div className="flex gap-2 mb-1">
-          {STATUS_PILLS.map(({ label, value }) => (
+      {/* Status + Sort on one line */}
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex gap-1.5">
+          {STATUS_TABS.map(({ label, value }) => (
             <button
               key={label}
               onClick={() => setStatusFilter(value)}
-              className={`px-3.5 py-1 rounded-full text-xs font-medium border transition-all duration-150 ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                 statusFilter === value
                   ? value === "completed"
                     ? "bg-green-500/15 border-green-500/40 text-green-400"
                     : value === ""
                     ? "bg-zinc-500/15 border-zinc-500/40 text-zinc-400"
                     : "bg-blue-500/15 border-blue-500/40 text-blue-400"
-                  : "bg-muted border-border text-muted-foreground hover:border-zinc-600 hover:text-foreground"
+                  : "border-border text-muted-foreground hover:border-zinc-600 hover:text-foreground bg-transparent"
               }`}
             >
               {label}
@@ -171,36 +126,68 @@ export function Tasks() {
           ))}
         </div>
 
-        {/* Category pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.label}
-              onClick={() => setActiveCategory(cat.value)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 whitespace-nowrap shrink-0 ${
-                activeCategory === cat.value
-                  ? "btn-gradient text-white border-transparent"
-                  : "border-border text-muted-foreground hover:border-purple-500/40 hover:text-foreground bg-transparent"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-
+        <div className="flex items-center gap-2">
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="px-3 py-1.5 rounded-full text-sm font-medium border border-red-500/30 text-red-400 bg-red-500/5 hover:bg-red-500/10 transition-all whitespace-nowrap shrink-0 flex items-center gap-1"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium border border-red-500/30 text-red-400 bg-red-500/5 hover:bg-red-500/10 transition-all whitespace-nowrap"
             >
-              <X size={11} />
+              <X size={10} />
               Clear
             </button>
           )}
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as typeof sort)}
+            className="rounded-xl border border-border bg-muted/40 text-xs text-foreground px-3 py-1.5 h-8 cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
         </div>
       </div>
 
+      {/* Category pills */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 mb-6">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.label}
+            onClick={() => setActiveCategory(cat.value)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 whitespace-nowrap shrink-0 ${
+              activeCategory === cat.value
+                ? "btn-gradient text-white border-transparent"
+                : "border-border text-muted-foreground hover:border-purple-500/40 hover:text-foreground bg-transparent"
+            }`}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Budget filter (inline, compact) */}
+      <div className="flex items-center gap-2 mb-6 -mt-2">
+        <span className="text-xs text-muted-foreground whitespace-nowrap">Budget ₹</span>
+        <Input
+          type="number"
+          placeholder="Min"
+          value={minBudget}
+          onChange={(e) => setMinBudget(e.target.value)}
+          className="w-24 h-7 rounded-lg text-xs bg-muted/40 border-border"
+        />
+        <span className="text-muted-foreground text-xs">–</span>
+        <Input
+          type="number"
+          placeholder="Max"
+          value={maxBudget}
+          onChange={(e) => setMaxBudget(e.target.value)}
+          className="w-24 h-7 rounded-lg text-xs bg-muted/40 border-border"
+        />
+      </div>
+
+      {/* Task grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="bg-card border border-border rounded-2xl p-6 h-[220px] flex flex-col gap-3">
               <div className="flex justify-between">
@@ -242,20 +229,18 @@ export function Tasks() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {tasks?.map((task) => (
             <TaskCard key={task.id} task={task} />
           ))}
-          <div className="relative bg-card border border-dashed border-purple-500/30 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[180px] overflow-hidden">
+          <div className="relative bg-card border border-dashed border-purple-500/30 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 pointer-events-none" />
             <span className="flex items-center gap-1.5 text-xs font-semibold text-purple-500 bg-purple-500/10 border border-purple-500/20 rounded-full px-3 py-1">
               <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
               Coming Soon
             </span>
             <p className="text-sm font-semibold text-foreground">More tasks dropping soon</p>
-            <p className="text-xs text-muted-foreground max-w-[180px]">
-              New opportunities are added daily. Check back often!
-            </p>
+            <p className="text-xs text-muted-foreground max-w-[180px]">New opportunities added daily.</p>
           </div>
         </div>
       )}
