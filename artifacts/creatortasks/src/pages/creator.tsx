@@ -4,8 +4,23 @@ import { useProfileByUsername } from "@/hooks/use-profile";
 import { useAuth } from "@clerk/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Briefcase, CheckCircle, TrendingUp, Send, ExternalLink, Instagram, Youtube, Pencil, Image, Link as LinkIcon } from "lucide-react";
+import {
+  Star,
+  Briefcase,
+  Send,
+  ExternalLink,
+  Instagram,
+  Youtube,
+  Pencil,
+  Link as LinkIcon,
+  MessageSquare,
+  Heart,
+  LayoutGrid,
+  CheckCircle2,
+  TrendingUp,
+  ImageIcon,
+  Share2,
+} from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -15,17 +30,30 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
 function avatarSrc(objectPath: string | null | undefined): string | null {
   if (!objectPath) return null;
-  if (objectPath.startsWith("data:") || objectPath.startsWith("http://") || objectPath.startsWith("https://")) return objectPath;
+  if (
+    objectPath.startsWith("data:") ||
+    objectPath.startsWith("http://") ||
+    objectPath.startsWith("https://")
+  )
+    return objectPath;
   return `${API_BASE}/api/storage${objectPath}`;
 }
 
 function portfolioSrc(objectPath: string): string {
-  if (objectPath.startsWith("data:") || objectPath.startsWith("http://") || objectPath.startsWith("https://")) return objectPath;
+  if (
+    objectPath.startsWith("data:") ||
+    objectPath.startsWith("http://") ||
+    objectPath.startsWith("https://")
+  )
+    return objectPath;
   return `${API_BASE}/api/storage${objectPath}`;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  reels: "Reels", hooks: "Hooks", thumbnails: "Thumbnails", other: "Other",
+  reels: "Reels",
+  hooks: "Hooks",
+  thumbnails: "Thumbnails",
+  other: "Other",
 };
 const CATEGORY_COLORS: Record<string, string> = {
   reels: "bg-pink-500/10 text-pink-400 border-pink-500/20",
@@ -34,14 +62,22 @@ const CATEGORY_COLORS: Record<string, string> = {
   other: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
 };
 
-function StarRating({ value, size = 16 }: { value: number | null; size?: number }) {
-  if (!value) return <span className="text-muted-foreground text-sm">No ratings yet</span>;
+function StatCard({
+  value,
+  label,
+  prefix,
+}: {
+  value: string | number;
+  label: string;
+  prefix?: string;
+}) {
   return (
-    <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} size={size} className={i <= Math.round(value) ? "text-amber-400 fill-amber-400" : "text-muted-foreground/30"} />
-      ))}
-      <span className="text-sm font-semibold text-foreground ml-1">{value}</span>
+    <div className="flex flex-col items-center justify-center py-3 px-2 bg-muted/30 rounded-xl border border-border/60 hover:border-purple-500/20 hover:bg-purple-500/5 transition-colors">
+      <p className="text-sm font-bold text-foreground leading-none">
+        {prefix}
+        {value}
+      </p>
+      <p className="text-[10px] text-muted-foreground mt-1 leading-none">{label}</p>
     </div>
   );
 }
@@ -62,17 +98,30 @@ export function CreatorPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-3xl space-y-8">
-        <div className="flex gap-6 items-start">
-          <Skeleton className="w-24 h-24 rounded-2xl shrink-0" />
-          <div className="space-y-3 flex-1">
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
+      <div className="min-h-screen">
+        <Skeleton className="w-full h-52 rounded-none" />
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="w-full md:w-[300px] shrink-0 md:-mt-16 space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-5 space-y-4 pt-16 md:pt-5">
+                <Skeleton className="w-20 h-20 rounded-full -mt-12 md:-mt-14" />
+                <Skeleton className="h-5 w-36" />
+                <Skeleton className="h-4 w-24" />
+                <div className="grid grid-cols-2 gap-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-14 rounded-xl" />
+                  ))}
+                </div>
+                <Skeleton className="h-9 w-full rounded-xl" />
+                <Skeleton className="h-9 w-full rounded-xl" />
+              </div>
+            </div>
+            <div className="flex-1 space-y-4 pt-4">
+              <Skeleton className="h-28 rounded-2xl" />
+              <Skeleton className="h-44 rounded-2xl" />
+              <Skeleton className="h-56 rounded-2xl" />
+            </div>
           </div>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
         </div>
       </div>
     );
@@ -82,7 +131,9 @@ export function CreatorPage() {
     return (
       <div className="container mx-auto px-4 py-24 text-center">
         <h2 className="text-2xl font-bold mb-2">Creator not found</h2>
-        <p className="text-muted-foreground mb-6">This creator doesn't exist or hasn't joined yet.</p>
+        <p className="text-muted-foreground mb-6">
+          This creator doesn't exist or hasn't joined yet.
+        </p>
         <Link href="/tasks">
           <button className="px-4 py-2 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             Browse Tasks
@@ -93,161 +144,401 @@ export function CreatorPage() {
   }
 
   const initials = profile.name
-    ? profile.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    ? profile.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
     : "?";
-  const avgRating = profile.rating.average ? parseFloat(profile.rating.average) : null;
+  const avgRating = profile.rating.average
+    ? parseFloat(profile.rating.average)
+    : null;
   const imgSrc = avatarSrc(profile.avatarUrl);
+  const handle = profile.username ? profile.username.toUpperCase() : "";
+
+  const hasContent =
+    !!profile.bio ||
+    (profile.portfolioItems?.length ?? 0) > 0 ||
+    profile.recentWork.length > 0;
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-3xl">
-      <div className="bg-card border border-border rounded-2xl p-6 md:p-8 mb-6">
-        <div className="flex flex-col sm:flex-row gap-6 items-start">
-          <Avatar className="w-20 h-20 border-2 border-border rounded-2xl shrink-0">
-            {imgSrc && <AvatarImage src={imgSrc} alt={profile.name ?? ""} className="object-cover" />}
-            <AvatarFallback className="bg-gradient-to-br from-purple-600 to-pink-600 text-white text-2xl font-bold rounded-2xl">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+    <div className="min-h-screen pb-16">
+      {/* ── Cover Banner ── */}
+      <div className="relative w-full h-52 md:h-60 overflow-hidden">
+        <div
+          className="absolute inset-0 animate-gradient"
+          style={{
+            background:
+              "linear-gradient(135deg, #3b1f6e 0%, #7C5CFF 30%, #c026d3 60%, #1e3a8a 100%)",
+          }}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(124,92,255,0.5)_0%,transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(236,72,153,0.35)_0%,transparent_55%)]" />
+        <div className="absolute inset-0 bg-black/20" />
 
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <h1 className="text-2xl font-bold text-foreground">{profile.name || "Anonymous Creator"}</h1>
-              {profile.username && (
-                <span className="text-sm text-muted-foreground">@{profile.username}</span>
-              )}
-              {isOwnProfile && (
-                <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-400 border-purple-500/20">You</Badge>
-              )}
-            </div>
+        {handle && (
+          <div className="absolute inset-0 flex items-center justify-end overflow-hidden pointer-events-none select-none">
+            <span
+              className="text-white/[0.07] font-black tracking-tighter leading-none pr-6"
+              style={{ fontSize: "clamp(3.5rem, 12vw, 9rem)" }}
+            >
+              #{handle}
+            </span>
+          </div>
+        )}
 
-            {profile.bio ? (
-              <p className="text-muted-foreground text-sm leading-relaxed mb-3 max-w-lg">{profile.bio}</p>
-            ) : (
-              <p className="text-muted-foreground/50 text-sm mb-3 italic">No bio yet</p>
-            )}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
+      </div>
 
-            {(profile.skills?.length ?? 0) > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {profile.skills.map((skill) => (
-                  <span key={skill} className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-medium">
-                    {skill}
+      <div className="container mx-auto px-4 max-w-6xl">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+          {/* ── Sidebar ── */}
+          <div className="w-full md:w-[300px] shrink-0 md:-mt-20 md:sticky md:top-6 md:self-start space-y-4">
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <div className="px-5 pb-5">
+                {/* Avatar */}
+                <div className="relative -mt-10 mb-4 w-fit">
+                  <div
+                    className="w-[88px] h-[88px] rounded-full overflow-hidden border-4 border-card avatar-glow ring-2 ring-purple-500/50"
+                    style={{ background: "linear-gradient(135deg, #7C5CFF, #ec4899)" }}
+                  >
+                    {imgSrc ? (
+                      <img
+                        src={imgSrc}
+                        alt={profile.name ?? ""}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
+                        {initials}
+                      </div>
+                    )}
+                  </div>
+                  <span className="absolute bottom-1 right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-card shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+                </div>
+
+                {/* Name + handle */}
+                <h1 className="text-[1.15rem] font-bold text-foreground leading-tight mb-0.5">
+                  {profile.name || "Anonymous Creator"}
+                </h1>
+                {profile.username && (
+                  <p className="text-sm text-muted-foreground mb-2">
+                    @{profile.username}
+                  </p>
+                )}
+
+                {/* Role + Own badge */}
+                <div className="flex items-center gap-2 flex-wrap mb-5">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/25 text-purple-300 text-[11px] font-semibold tracking-wide">
+                    Creator
                   </span>
-                ))}
-              </div>
-            )}
+                  {isOwnProfile && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/25 text-blue-300 text-[11px] font-semibold">
+                      You
+                    </span>
+                  )}
+                  {(profile.rating.total > 0 && avgRating) && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-300 text-[11px] font-semibold">
+                      <Star size={10} className="fill-amber-400 text-amber-400" />
+                      {avgRating.toFixed(1)}
+                    </span>
+                  )}
+                </div>
 
-            <div className="flex flex-wrap items-center gap-3 mb-3">
-              <StarRating value={avgRating} />
-              {profile.rating.total > 0 && (
-                <span className="text-xs text-muted-foreground">({profile.rating.total} review{profile.rating.total !== 1 ? "s" : ""})</span>
-              )}
-            </div>
+                {/* Stats grid */}
+                <div className="grid grid-cols-2 gap-2 mb-5">
+                  <StatCard
+                    value={profile.completedTasksCount}
+                    label="Tasks Done"
+                  />
+                  <StatCard
+                    value={(profile.totalEarnings ?? 0).toLocaleString("en-IN")}
+                    label="Earned"
+                    prefix="₹"
+                  />
+                  <StatCard
+                    value={avgRating ? avgRating.toFixed(1) : "—"}
+                    label="Avg Rating"
+                  />
+                  <StatCard
+                    value={profile.portfolioItems?.length ?? 0}
+                    label="Portfolio"
+                  />
+                </div>
 
-            <div className="flex flex-wrap gap-3 mb-3">
-              {profile.instagramHandle && (
-                <a href={`https://instagram.com/${profile.instagramHandle}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-pink-400 hover:text-pink-300 transition-colors">
-                  <Instagram size={13} />@{profile.instagramHandle}
-                </a>
-              )}
-              {profile.youtubeHandle && (
-                <a href={`https://youtube.com/@${profile.youtubeHandle}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors">
-                  <Youtube size={13} />@{profile.youtubeHandle}
-                </a>
-              )}
-              {profile.portfolioUrl && (
-                <a href={profile.portfolioUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                  <ExternalLink size={13} />Portfolio
-                </a>
-              )}
-            </div>
+                {/* Action buttons */}
+                <div className="flex flex-col gap-2 mb-5">
+                  {isOwnProfile ? (
+                    <Button
+                      asChild
+                      size="sm"
+                      className="w-full btn-gradient text-white rounded-xl border-0 font-semibold text-xs h-9"
+                    >
+                      <Link href="/profile/edit">
+                        <Pencil size={13} className="mr-1.5" />
+                        Edit Profile
+                      </Link>
+                    </Button>
+                  ) : (
+                    userId && (
+                      <Button
+                        size="sm"
+                        className="w-full btn-gradient text-white rounded-xl border-0 font-semibold text-xs h-9"
+                        onClick={() => setInviteModalOpen(true)}
+                      >
+                        <Send size={13} className="mr-2" />
+                        Invite to a Task
+                      </Button>
+                    )
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full rounded-xl text-xs h-9"
+                    onClick={copyProfileLink}
+                  >
+                    <Share2 size={13} className="mr-1.5" />
+                    Share Profile
+                  </Button>
+                </div>
 
-            <div className="flex flex-wrap gap-2 mt-4">
-              {isOwnProfile && (
-                <Button asChild size="sm" variant="outline" className="rounded-xl text-xs">
-                  <Link href="/profile/edit"><Pencil size={13} className="mr-1.5" />Edit Profile</Link>
-                </Button>
-              )}
-              {!isOwnProfile && userId && (
-                <Button size="sm" className="btn-gradient text-white rounded-xl border-0 font-semibold text-xs" onClick={() => setInviteModalOpen(true)}>
-                  <Send size={13} className="mr-2" />Invite to a Task
-                </Button>
-              )}
-              <Button size="sm" variant="outline" className="rounded-xl text-xs" onClick={copyProfileLink}>
-                <LinkIcon size={13} className="mr-1.5" />Share Profile
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+                {/* Social links */}
+                {(profile.instagramHandle ||
+                  profile.youtubeHandle ||
+                  profile.portfolioUrl) && (
+                  <div className="space-y-2 mb-5 pb-5 border-b border-border">
+                    {profile.instagramHandle && (
+                      <a
+                        href={`https://instagram.com/${profile.instagramHandle}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-xs text-muted-foreground hover:text-pink-400 transition-colors group"
+                      >
+                        <Instagram size={13} className="text-pink-400 shrink-0" />
+                        <span className="truncate group-hover:underline">
+                          @{profile.instagramHandle}
+                        </span>
+                      </a>
+                    )}
+                    {profile.youtubeHandle && (
+                      <a
+                        href={`https://youtube.com/@${profile.youtubeHandle}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-xs text-muted-foreground hover:text-red-400 transition-colors group"
+                      >
+                        <Youtube size={13} className="text-red-400 shrink-0" />
+                        <span className="truncate group-hover:underline">
+                          @{profile.youtubeHandle}
+                        </span>
+                      </a>
+                    )}
+                    {profile.portfolioUrl && (
+                      <a
+                        href={profile.portfolioUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-xs text-muted-foreground hover:text-blue-400 transition-colors group"
+                      >
+                        <ExternalLink size={13} className="text-blue-400 shrink-0" />
+                        <span className="truncate group-hover:underline">Portfolio</span>
+                      </a>
+                    )}
+                  </div>
+                )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-card border border-border rounded-xl p-4 text-center">
-          <div className="flex items-center justify-center gap-1.5 text-green-400 mb-1">
-            <CheckCircle size={16} />
-            <span className="text-xl font-bold text-foreground">{profile.completedTasksCount}</span>
-          </div>
-          <p className="text-xs text-muted-foreground">Tasks Completed</p>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4 text-center">
-          <div className="flex items-center justify-center gap-1.5 text-purple-400 mb-1">
-            <TrendingUp size={16} />
-            <span className="text-xl font-bold text-foreground">₹{(profile.totalEarnings ?? 0).toLocaleString()}</span>
-          </div>
-          <p className="text-xs text-muted-foreground">Total Earned</p>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4 text-center col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-center gap-1.5 text-blue-400 mb-1">
-            <Briefcase size={16} />
-            <span className="text-xl font-bold text-foreground">{profile.postedTasksCount}</span>
-          </div>
-          <p className="text-xs text-muted-foreground">Tasks Posted</p>
-        </div>
-      </div>
-
-      {(profile.portfolioItems?.length ?? 0) > 0 && (
-        <div className="bg-card border border-border rounded-2xl p-6 mb-6">
-          <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
-            <Image size={16} className="text-muted-foreground" />
-            Portfolio Gallery
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {profile.portfolioItems.map((item) => (
-              <div key={item.id} className="aspect-square rounded-xl overflow-hidden border border-border bg-muted relative group">
-                <img src={portfolioSrc(item.url)} alt={item.caption ?? "Portfolio"} className="w-full h-full object-cover" />
-                {item.caption && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-xs text-white truncate">{item.caption}</p>
+                {/* Skills */}
+                {(profile.skills?.length ?? 0) > 0 && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2.5">
+                      Skills
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {profile.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="px-2.5 py-1 rounded-full bg-muted/50 border border-border text-muted-foreground text-[11px] font-medium hover:border-purple-500/40 hover:text-purple-300 transition-colors cursor-default"
+                        >
+                          {skill.charAt(0).toUpperCase() + skill.slice(1)}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      )}
 
-      {profile.recentWork.length > 0 && (
-        <div className="bg-card border border-border rounded-2xl p-6">
-          <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
-            <Briefcase size={16} className="text-muted-foreground" />
-            Recent Completed Work
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {profile.recentWork.map((task) => (
-              <Link key={task.id} href={`/tasks/${task.id}`}>
-                <div className="group rounded-xl border border-border bg-muted/30 hover:border-purple-500/30 hover:bg-purple-500/5 p-4 transition-all cursor-pointer">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">{task.title}</p>
-                    <span className="text-xs font-bold text-purple-400 shrink-0">₹{task.budget.toLocaleString()}</span>
+          {/* ── Right Content ── */}
+          <div className="flex-1 min-w-0 space-y-4 pt-4 md:pt-5">
+            {/* About */}
+            {profile.bio && (
+              <div className="bg-card border border-border rounded-2xl p-5 md:p-6">
+                <SectionHeading>About</SectionHeading>
+                <p className="text-sm text-foreground/80 leading-relaxed">
+                  {profile.bio}
+                </p>
+              </div>
+            )}
+
+            {/* Intro Drop / Activity */}
+            {profile.bio && (
+              <div className="bg-card border border-border rounded-2xl p-5 md:p-6">
+                <SectionHeading>Activity</SectionHeading>
+                <div className="rounded-xl border border-border/60 bg-[#0f0f0f] p-4">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 ring-1 ring-border">
+                      {imgSrc ? (
+                        <img
+                          src={imgSrc}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="w-full h-full flex items-center justify-center text-white text-xs font-bold"
+                          style={{
+                            background: "linear-gradient(135deg,#7C5CFF,#ec4899)",
+                          }}
+                        >
+                          {initials}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-foreground">
+                          {profile.name || "Creator"}
+                        </span>
+                        {profile.username && (
+                          <span className="text-xs text-muted-foreground">
+                            @{profile.username}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 text-[9px] font-bold tracking-widest border border-purple-500/20">
+                          DROP
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                        Intro
+                      </p>
+                    </div>
                   </div>
-                  <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${CATEGORY_COLORS[task.category] ?? CATEGORY_COLORS.other}`}>
-                    {CATEGORY_LABELS[task.category] ?? task.category}
-                  </Badge>
+
+                  <p className="text-sm text-foreground/70 leading-relaxed line-clamp-5 mb-4 pl-12">
+                    {profile.bio}
+                  </p>
+
+                  <div className="flex items-center gap-5 pl-12 pt-3 border-t border-border/40">
+                    <button className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-pink-400 transition-colors">
+                      <Heart size={13} />
+                      <span>0</span>
+                    </button>
+                    <button className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-blue-400 transition-colors">
+                      <MessageSquare size={13} />
+                      <span>0</span>
+                    </button>
+                  </div>
                 </div>
-              </Link>
-            ))}
+              </div>
+            )}
+
+            {/* Portfolio Gallery */}
+            {(profile.portfolioItems?.length ?? 0) > 0 && (
+              <div className="bg-card border border-border rounded-2xl p-5 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <SectionHeading noMargin>Portfolio</SectionHeading>
+                  <span className="text-xs text-muted-foreground">
+                    {profile.portfolioItems.length} item{profile.portfolioItems.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {profile.portfolioItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="aspect-square rounded-xl overflow-hidden border border-border bg-muted relative group cursor-zoom-in"
+                    >
+                      <img
+                        src={portfolioSrc(item.url)}
+                        alt={item.caption ?? "Portfolio"}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        {item.caption && (
+                          <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                            <p className="text-xs text-white truncate">{item.caption}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recent Work */}
+            {profile.recentWork.length > 0 && (
+              <div className="bg-card border border-border rounded-2xl p-5 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <SectionHeading noMargin>Recent Work</SectionHeading>
+                  <div className="flex items-center gap-1.5 text-xs text-green-400">
+                    <CheckCircle2 size={12} className="shrink-0" />
+                    <span>{profile.completedTasksCount} completed</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {profile.recentWork.map((task) => (
+                    <Link key={task.id} href={`/tasks/${task.id}`}>
+                      <div className="group rounded-xl border border-border bg-muted/20 hover:border-purple-500/30 hover:bg-purple-500/5 p-4 transition-all cursor-pointer">
+                        <div className="flex items-start justify-between gap-2 mb-2.5">
+                          <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                            {task.title}
+                          </p>
+                          <span className="text-xs font-bold text-purple-400 shrink-0 mt-0.5">
+                            ₹{task.budget.toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] px-2 py-0.5 ${CATEGORY_COLORS[task.category] ?? CATEGORY_COLORS.other}`}
+                        >
+                          {CATEGORY_LABELS[task.category] ?? task.category}
+                        </Badge>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Empty state */}
+            {!hasContent && (
+              <div className="bg-card border border-border rounded-2xl p-12 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mx-auto mb-4">
+                  <LayoutGrid size={24} className="text-muted-foreground/40" />
+                </div>
+                <p className="text-sm font-medium text-foreground mb-1">
+                  No content yet
+                </p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  {isOwnProfile
+                    ? "Complete your profile to showcase your work."
+                    : "This creator hasn't added content yet."}
+                </p>
+                {isOwnProfile && (
+                  <Link href="/profile/edit">
+                    <Button size="sm" variant="outline" className="rounded-xl text-xs">
+                      <Pencil size={13} className="mr-1.5" />
+                      Complete Profile
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {profile && (
         <InviteModal
@@ -257,6 +548,23 @@ export function CreatorPage() {
           creatorName={profile.name}
         />
       )}
+    </div>
+  );
+}
+
+function SectionHeading({
+  children,
+  noMargin,
+}: {
+  children: React.ReactNode;
+  noMargin?: boolean;
+}) {
+  return (
+    <div className={`flex items-center gap-2 ${noMargin ? "" : "mb-4"}`}>
+      <span className="w-3 h-3 rounded-sm bg-purple-500/80 shrink-0" />
+      <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+        {children}
+      </h2>
     </div>
   );
 }
