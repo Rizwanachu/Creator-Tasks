@@ -105,7 +105,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     ...(isSignedIn ? [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
   ];
 
-  const isOnboarding = location === "/onboarding" || location.startsWith("/onboarding?");
+  const isOnboarding = location === "/onboarding";
 
   if (isOnboarding) {
     return <>{children}</>;
