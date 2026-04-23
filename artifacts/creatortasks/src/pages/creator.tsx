@@ -210,21 +210,23 @@ export function CreatorPage() {
                       </div>
                     )}
                   </div>
-                  <span className="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-card shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+                  {profile.isAvailable && (
+                    <span className="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-card shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+                  )}
                 </div>
 
-                {/* Name + @handle + Available pill — all on one line */}
-                <h1 className="text-[1.1rem] font-bold text-foreground leading-tight mb-0.5 truncate">
-                  {profile.name || "Anonymous Creator"}
-                </h1>
-                <div className="flex items-center gap-2 flex-wrap mb-2">
+                {/* Name + @handle + Available pill — single responsive row */}
+                <div className="flex items-baseline gap-2 flex-wrap mb-2">
+                  <h1 className="text-[1.1rem] font-bold text-foreground leading-tight">
+                    {profile.name || "Anonymous Creator"}
+                  </h1>
                   {profile.username && (
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground shrink-0">
                       @{profile.username}
                     </span>
                   )}
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border shrink-0 ${
                       profile.isAvailable
                         ? "bg-emerald-500/15 border-emerald-500/25 text-emerald-400"
                         : "bg-zinc-500/15 border-zinc-500/25 text-zinc-400"
@@ -377,9 +379,10 @@ export function CreatorPage() {
             {profile.bio && (
               <div className="bg-card border border-border rounded-2xl p-5 md:p-6">
                 <SectionHeading>About</SectionHeading>
-                <p className="text-sm text-foreground/80 leading-relaxed">
-                  {profile.bio}
-                </p>
+                <div className="flex gap-3">
+                  <div className="w-0.5 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-pink-500/40 self-stretch" />
+                  <p className="text-sm text-foreground/80 leading-relaxed">{profile.bio}</p>
+                </div>
               </div>
             )}
 
