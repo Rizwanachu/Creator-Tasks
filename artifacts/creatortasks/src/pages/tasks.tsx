@@ -117,27 +117,6 @@ export function Tasks() {
         </div>
       </div>
 
-      {/* Category pill strip */}
-      <div className="border-b border-border bg-card/30 px-4 py-2.5">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.label}
-                onClick={() => setActiveCategory(cat.value)}
-                className={`flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-all whitespace-nowrap shrink-0 ${
-                  activeCategory === cat.value
-                    ? "border-purple-500/40 text-purple-400 bg-purple-500/10"
-                    : "border-border text-muted-foreground hover:text-foreground bg-transparent"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Controls bar */}
       <div className="px-4 py-3 border-b border-border/60">
         <div className="container mx-auto max-w-6xl flex items-center justify-between gap-3 flex-wrap">
@@ -188,6 +167,17 @@ export function Tasks() {
               {hasBudgetFilter && <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />}
               <ChevronDown size={10} className={`transition-transform ${showBudget ? "rotate-180" : ""}`} />
             </button>
+
+            {/* Category */}
+            <select
+              value={activeCategory ?? ""}
+              onChange={(e) => setActiveCategory((e.target.value as TaskCategory) || undefined)}
+              className="rounded-lg border border-border bg-transparent text-xs text-foreground px-2.5 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c.label} value={c.value ?? ""}>{c.label}</option>
+              ))}
+            </select>
 
             {/* Sort */}
             <select
