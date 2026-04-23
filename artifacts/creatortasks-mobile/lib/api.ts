@@ -41,3 +41,27 @@ export interface Stats {
   activeCreators: number;
   openTasks: number;
 }
+
+export interface PortfolioItem {
+  id: string;
+  userId: string;
+  url: string;
+  caption: string | null;
+  position: number | null;
+  createdAt: string;
+}
+
+export interface Profile {
+  id: string;
+  clerkId: string;
+  username: string | null;
+  name: string | null;
+  bio: string | null;
+  skills: string[];
+  portfolioUrl: string | null;
+  instagramHandle: string | null;
+  youtubeHandle: string | null;
+  avatarUrl: string | null;
+  isAvailable: boolean;
+  portfolioItems: PortfolioItem[];
+}
