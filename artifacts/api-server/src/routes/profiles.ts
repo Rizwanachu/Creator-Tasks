@@ -680,7 +680,7 @@ router.delete("/users/me/education/:id", requireAuth, async (req, res) => {
 router.get("/users/by-username/:username", async (req, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.username, ( req.params.username as string).toLowerCase()),
+      where: sql`lower(${users.username}) = ${(req.params.username as string).toLowerCase()}`,
     });
     if (!user) {
       res.status(404).json({ error: "User not found" });
@@ -698,7 +698,7 @@ router.get("/users/by-username/:username/endorsements/mine", requireAuth, async 
   try {
     const currentUser = req.dbUser!;
     const targetUser = await db.query.users.findFirst({
-      where: eq(users.username, (req.params.username as string).toLowerCase()),
+      where: sql`lower(${users.username}) = ${(req.params.username as string).toLowerCase()}`,
     });
     if (!targetUser) { res.status(404).json({ error: "User not found" }); return; }
     const rows = await db
@@ -722,7 +722,7 @@ router.post("/users/by-username/:username/skills/endorse", requireAuth, async (r
     const skill = (req.body as { skill?: string }).skill?.trim().toLowerCase();
     if (!skill) { res.status(400).json({ error: "skill is required" }); return; }
     const targetUser = await db.query.users.findFirst({
-      where: eq(users.username, (req.params.username as string).toLowerCase()),
+      where: sql`lower(${users.username}) = ${(req.params.username as string).toLowerCase()}`,
     });
     if (!targetUser) { res.status(404).json({ error: "User not found" }); return; }
     if (targetUser.id === currentUser.id) { res.status(400).json({ error: "Cannot endorse your own skills" }); return; }
@@ -759,7 +759,7 @@ router.delete("/users/by-username/:username/skills/endorse", requireAuth, async 
     const skill = (req.body as { skill?: string }).skill?.trim().toLowerCase();
     if (!skill) { res.status(400).json({ error: "skill is required" }); return; }
     const targetUser = await db.query.users.findFirst({
-      where: eq(users.username, (req.params.username as string).toLowerCase()),
+      where: sql`lower(${users.username}) = ${(req.params.username as string).toLowerCase()}`,
     });
     if (!targetUser) { res.status(404).json({ error: "User not found" }); return; }
     await db.delete(skillEndorsements).where(and(

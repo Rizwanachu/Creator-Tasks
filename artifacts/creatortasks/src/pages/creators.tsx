@@ -53,7 +53,9 @@ function CreatorCard({
     : "?";
   const avg = creator.rating.average ? parseFloat(creator.rating.average) : null;
   const imgSrc = avatarSrc(creator.avatarUrl);
-  const profileHref = `/creator/${creator.username}`;
+  const profileHref = creator.username
+    ? `/creator/${creator.username}`
+    : `/profile/${creator.clerkId}`;
   const showInvite = !!currentUserId && currentUserId !== creator.clerkId;
 
   return (
