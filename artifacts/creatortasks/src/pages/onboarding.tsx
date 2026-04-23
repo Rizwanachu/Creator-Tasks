@@ -28,6 +28,12 @@ const FOCUS_CATEGORIES = [
   { label: "Video Production" },
   { label: "Photography" },
   { label: "Sales" },
+  { label: "Writing" },
+  { label: "Voiceover" },
+  { label: "Animation" },
+  { label: "Music" },
+  { label: "Copywriting" },
+  { label: "3D" },
 ];
 
 async function uploadFile(
