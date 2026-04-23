@@ -695,6 +695,14 @@ export function OnboardingPage() {
                 continueLabel="LAUNCH INTO CREATORTASKS"
                 loading={loading}
               />
+              <button
+                type="button"
+                onClick={handleLaunch}
+                disabled={loading}
+                className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors pt-1"
+              >
+                Skip for now
+              </button>
             </div>
           )}
         </div>
