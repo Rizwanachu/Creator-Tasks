@@ -381,13 +381,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex flex-col gap-3">
-              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Platform</h4>
+              <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Explore</h4>
               <ul className="flex flex-col gap-2">
                 {[
                   { href: "/tasks", label: "Browse Tasks" },
+                  { href: "/creators", label: "Browse Creators" },
                   { href: "/leaderboard", label: "Leaderboard" },
-                  { href: "/dashboard", label: "Dashboard" },
-                  { href: "/notifications", label: "Notifications" },
+                  { href: "/messages", label: "Messages" },
                   { href: "/sign-up", label: "Sign Up Free" },
                 ].map(({ href, label }) => (
                   <li key={href}>
@@ -406,7 +406,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   { href: "/create", label: "Post a Task" },
                   { href: "/dashboard?tab=my-tasks", label: "Manage Tasks" },
                   { href: "/dashboard?tab=transactions", label: "Payments & Escrow" },
-                  { href: "/tasks", label: "How It Works" },
+                  { href: "/creators", label: "Find Creators" },
                   { href: "/contact", label: "Get Support" },
                 ].map(({ href, label }) => (
                   <li key={href}>
@@ -423,7 +423,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <ul className="flex flex-col gap-2">
                 {[
                   { href: "/tasks", label: "Apply to Tasks" },
-                  { href: "/dashboard?tab=invitations", label: "My Invitations" },
+                  { href: "/dashboard", label: "My Dashboard" },
                   { href: "/dashboard?tab=transactions", label: "Wallet & Earnings" },
                   { href: "/dashboard?tab=referral", label: "Referral Program" },
                   { href: "/leaderboard", label: "Top Creators" },

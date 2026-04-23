@@ -142,7 +142,14 @@ function RefCapture() {
 
 function ScrollToTop() {
   const [location] = useLocation();
-  useEffect(() => { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); }, [location]);
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [location]);
+  useEffect(() => {
+    const handler = () => window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    window.addEventListener("urlchange", handler);
+    return () => window.removeEventListener("urlchange", handler);
+  }, []);
   return null;
 }
 
