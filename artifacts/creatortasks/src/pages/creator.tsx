@@ -263,9 +263,9 @@ export function CreatorPage() {
                     { value: profile.completedTasksCount, label: "Tasks Done" },
                     {
                       value: `₹${(profile.totalEarnings ?? 0).toLocaleString("en-IN")}`,
-                      label: "Earned",
+                      label: "Total Earned",
                     },
-                    { value: avgRating ? avgRating.toFixed(1) : "—", label: "Rating" },
+                    { value: avgRating ? avgRating.toFixed(1) : "—", label: "Avg Rating" },
                     { value: profile.portfolioItems?.length ?? 0, label: "Portfolio" },
                   ]}
                 />
