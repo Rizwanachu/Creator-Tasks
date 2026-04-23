@@ -1,4 +1,4 @@
-import { pgTable, text, integer, uuid, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, uuid, timestamp, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -165,6 +165,16 @@ export const messages = pgTable("messages", {
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const skillEndorsements = pgTable("skill_endorsements", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  endorsedById: uuid("endorsed_by_id").notNull(),
+  endorsedUserId: uuid("endorsed_user_id").notNull(),
+  skill: text("skill").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueEndorsement: uniqueIndex("skill_endorsements_unique_idx").on(table.endorsedById, table.endorsedUserId, table.skill),
+}));
 
 export const experience = pgTable("experience", {
   id: uuid("id").defaultRandom().primaryKey(),

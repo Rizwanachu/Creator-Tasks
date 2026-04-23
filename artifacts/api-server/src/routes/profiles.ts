@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { db, users, tasks, ratings, portfolioItems, experience, education } from "@workspace/db";
+import { db, users, tasks, ratings, portfolioItems, experience, education, skillEndorsements } from "@workspace/db";
 import { eq, and, avg, count, sql, ilike, or, isNotNull, ne, desc, asc, max } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
 async function buildPublicProfile(user: typeof users.$inferSelect) {
-  const [completedTasks, postedCount, ratingStats, portfolio, expItems, eduItems] = await Promise.all([
+  const [completedTasks, postedCount, ratingStats, portfolio, expItems, eduItems, endorsementRows] = await Promise.all([
     db
       .select({ id: tasks.id, title: tasks.title, budget: tasks.budget, category: tasks.category, createdAt: tasks.createdAt })
       .from(tasks)
@@ -34,7 +34,17 @@ async function buildPublicProfile(user: typeof users.$inferSelect) {
       .from(education)
       .where(eq(education.userId, user.clerkId))
       .orderBy(asc(education.position), asc(education.createdAt)),
+    db
+      .select({ skill: skillEndorsements.skill, count: count(skillEndorsements.id) })
+      .from(skillEndorsements)
+      .where(eq(skillEndorsements.endorsedUserId, user.id))
+      .groupBy(skillEndorsements.skill),
   ]);
+
+  const skillEndorsementCounts: Record<string, number> = {};
+  for (const row of endorsementRows) {
+    skillEndorsementCounts[row.skill] = Number(row.count);
+  }
 
   return {
     id: user.id,
@@ -43,6 +53,7 @@ async function buildPublicProfile(user: typeof users.$inferSelect) {
     name: user.name,
     bio: user.bio,
     skills: user.skills ?? [],
+    skillEndorsements: skillEndorsementCounts,
     portfolioUrl: user.portfolioUrl,
     instagramHandle: user.instagramHandle,
     youtubeHandle: user.youtubeHandle,
@@ -679,6 +690,87 @@ router.get("/users/by-username/:username", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Error fetching profile by username");
     res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
+
+// GET /users/by-username/:username/endorsements/mine — current user's endorsed skills for this profile
+router.get("/users/by-username/:username/endorsements/mine", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const targetUser = await db.query.users.findFirst({
+      where: eq(users.username, (req.params.username as string).toLowerCase()),
+    });
+    if (!targetUser) { res.status(404).json({ error: "User not found" }); return; }
+    const rows = await db
+      .select({ skill: skillEndorsements.skill })
+      .from(skillEndorsements)
+      .where(and(
+        eq(skillEndorsements.endorsedById, currentUser.id),
+        eq(skillEndorsements.endorsedUserId, targetUser.id),
+      ));
+    res.json({ endorsedSkills: rows.map((r) => r.skill) });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching my endorsements");
+    res.status(500).json({ error: "Failed to fetch endorsements" });
+  }
+});
+
+// POST /users/by-username/:username/skills/endorse — endorse a skill (one per user per skill)
+router.post("/users/by-username/:username/skills/endorse", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const skill = (req.body as { skill?: string }).skill?.trim().toLowerCase();
+    if (!skill) { res.status(400).json({ error: "skill is required" }); return; }
+    const targetUser = await db.query.users.findFirst({
+      where: eq(users.username, (req.params.username as string).toLowerCase()),
+    });
+    if (!targetUser) { res.status(404).json({ error: "User not found" }); return; }
+    if (targetUser.id === currentUser.id) { res.status(400).json({ error: "Cannot endorse your own skills" }); return; }
+    if (!(targetUser.skills ?? []).map((s) => s.toLowerCase()).includes(skill)) {
+      res.status(400).json({ error: "Skill not found on this profile" }); return;
+    }
+    const existing = await db.query.skillEndorsements.findFirst({
+      where: and(
+        eq(skillEndorsements.endorsedById, currentUser.id),
+        eq(skillEndorsements.endorsedUserId, targetUser.id),
+        eq(skillEndorsements.skill, skill),
+      ),
+    });
+    if (existing) { res.status(409).json({ error: "Already endorsed" }); return; }
+    await db.insert(skillEndorsements).values({
+      endorsedById: currentUser.id,
+      endorsedUserId: targetUser.id,
+      skill,
+    });
+    res.status(201).json({ success: true });
+  } catch (err) {
+    if (typeof err === "object" && err !== null && "code" in err && (err as { code: unknown }).code === "23505") {
+      res.status(409).json({ error: "Already endorsed" }); return;
+    }
+    req.log.error({ err }, "Error endorsing skill");
+    res.status(500).json({ error: "Failed to endorse skill" });
+  }
+});
+
+// DELETE /users/by-username/:username/skills/endorse — remove an endorsement
+router.delete("/users/by-username/:username/skills/endorse", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const skill = (req.body as { skill?: string }).skill?.trim().toLowerCase();
+    if (!skill) { res.status(400).json({ error: "skill is required" }); return; }
+    const targetUser = await db.query.users.findFirst({
+      where: eq(users.username, (req.params.username as string).toLowerCase()),
+    });
+    if (!targetUser) { res.status(404).json({ error: "User not found" }); return; }
+    await db.delete(skillEndorsements).where(and(
+      eq(skillEndorsements.endorsedById, currentUser.id),
+      eq(skillEndorsements.endorsedUserId, targetUser.id),
+      eq(skillEndorsements.skill, skill),
+    ));
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Error removing endorsement");
+    res.status(500).json({ error: "Failed to remove endorsement" });
   }
 });
 

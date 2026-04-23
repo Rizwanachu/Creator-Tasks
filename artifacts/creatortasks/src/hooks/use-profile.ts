@@ -47,6 +47,7 @@ export interface UserProfile {
   name: string | null;
   bio: string | null;
   skills: string[];
+  skillEndorsements: Record<string, number>;
   portfolioUrl: string | null;
   instagramHandle: string | null;
   youtubeHandle: string | null;
@@ -390,6 +391,42 @@ export function useApplyReferral() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
       queryClient.invalidateQueries({ queryKey: ["referral"] });
+    },
+  });
+}
+
+export function useMyEndorsements(username: string | undefined) {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery<{ endorsedSkills: string[] }>({
+    queryKey: ["my-endorsements", username],
+    queryFn: () => apiFetch(`/api/users/by-username/${username}/endorsements/mine`, {}, getToken),
+    enabled: !!isSignedIn && !!username,
+    staleTime: 30_000,
+  });
+}
+
+export function useEndorseSkill(username: string | undefined) {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (skill: string) =>
+      apiFetch(`/api/users/by-username/${username}/skills/endorse`, { method: "POST", data: { skill } }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile-by-username", username] });
+      queryClient.invalidateQueries({ queryKey: ["my-endorsements", username] });
+    },
+  });
+}
+
+export function useRemoveEndorsement(username: string | undefined) {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (skill: string) =>
+      apiFetch(`/api/users/by-username/${username}/skills/endorse`, { method: "DELETE", data: { skill } }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile-by-username", username] });
+      queryClient.invalidateQueries({ queryKey: ["my-endorsements", username] });
     },
   });
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRoute } from "wouter";
-import { useProfileByUsername } from "@/hooks/use-profile";
+import { useProfileByUsername, useMyEndorsements, useEndorseSkill, useRemoveEndorsement } from "@/hooks/use-profile";
 import { useAuth } from "@clerk/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -94,11 +94,30 @@ function StatStrip({
 export function CreatorPage() {
   const [, params] = useRoute("/creator/:username");
   const username = params?.username;
-  const { userId } = useAuth();
+  const { userId, isSignedIn } = useAuth();
   const { data: profile, isLoading, error } = useProfileByUsername(username);
+  const { data: myEndorsementsData } = useMyEndorsements(username);
+  const endorseSkill = useEndorseSkill(username);
+  const removeEndorsement = useRemoveEndorsement(username);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
   const isOwnProfile = userId === profile?.clerkId;
+  const myEndorsedSkills = new Set(myEndorsementsData?.endorsedSkills ?? []);
+
+  function handleEndorseToggle(skill: string) {
+    const normalized = skill.toLowerCase();
+    if (myEndorsedSkills.has(normalized)) {
+      removeEndorsement.mutate(normalized, {
+        onSuccess: () => toast.success(`Endorsement removed`),
+        onError: (e) => toast.error(e.message),
+      });
+    } else {
+      endorseSkill.mutate(normalized, {
+        onSuccess: () => toast.success(`Endorsed "${skill.charAt(0).toUpperCase() + skill.slice(1)}"!`),
+        onError: (e) => toast.error(e.message),
+      });
+    }
+  }
 
   function copyProfileLink() {
     navigator.clipboard.writeText(window.location.href);
@@ -371,15 +390,37 @@ export function CreatorPage() {
                       Skills
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {profile.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-2.5 py-1 rounded-full bg-muted/50 border border-border text-muted-foreground text-[11px] font-medium hover:border-purple-500/40 hover:text-purple-300 transition-colors cursor-default"
-                        >
-                          {skill.charAt(0).toUpperCase() + skill.slice(1)}
-                        </span>
-                      ))}
+                      {profile.skills.map((skill) => {
+                        const normalized = skill.toLowerCase();
+                        const count = profile.skillEndorsements?.[normalized] ?? 0;
+                        const endorsed = myEndorsedSkills.has(normalized);
+                        const canEndorse = !!isSignedIn && !isOwnProfile;
+                        return (
+                          <button
+                            key={skill}
+                            type="button"
+                            disabled={!canEndorse}
+                            onClick={() => canEndorse && handleEndorseToggle(skill)}
+                            title={canEndorse ? (endorsed ? "Remove endorsement" : "Endorse this skill") : undefined}
+                            className={[
+                              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors",
+                              canEndorse ? "cursor-pointer" : "cursor-default",
+                              endorsed
+                                ? "bg-purple-500/15 border-purple-500/60 text-purple-300"
+                                : "bg-muted/50 border-border text-muted-foreground hover:border-purple-500/40 hover:text-purple-300",
+                            ].join(" ")}
+                          >
+                            <span>{skill.charAt(0).toUpperCase() + skill.slice(1)}</span>
+                            <span className={["text-[10px] font-semibold", endorsed ? "text-purple-400" : "text-muted-foreground/70"].join(" ")}>
+                              {count}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
+                    {!!isSignedIn && !isOwnProfile && (
+                      <p className="text-[10px] text-muted-foreground/50 mt-2">Click a skill to endorse it</p>
+                    )}
                   </div>
                 )}
               </div>
