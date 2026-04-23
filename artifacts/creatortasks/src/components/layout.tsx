@@ -207,7 +207,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {isSignedIn ? (
               <div className="flex items-center gap-2">
                 <NavWalletBadge />
-                <MessagesNavButton />
+                <span className="hidden md:contents"><MessagesNavButton /></span>
                 <NotificationBell />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
