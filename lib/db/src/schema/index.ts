@@ -175,6 +175,7 @@ export const experience = pgTable("experience", {
   endDate: text("end_date"),
   isCurrent: boolean("is_current").default(false),
   description: text("description"),
+  position: integer("position").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -190,5 +191,6 @@ export const education = pgTable("education", {
   grade: text("grade"),
   activities: text("activities"),
   description: text("description"),
+  position: integer("position").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });

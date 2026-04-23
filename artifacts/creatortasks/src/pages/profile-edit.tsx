@@ -1,4 +1,21 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "@clerk/react";
 import { useLocation, useSearch } from "wouter";
 import { toast } from "sonner";
@@ -22,13 +39,15 @@ import {
   useCreateExperience,
   useUpdateExperience,
   useDeleteExperience,
+  useReorderExperience,
   useMyEducation,
   useCreateEducation,
   useUpdateEducation,
   useDeleteEducation,
+  useReorderEducation,
 } from "@/hooks/use-profile";
 import type { ExperienceEntry, EducationEntry } from "@/hooks/use-profile";
-import { ArrowLeft, Camera, Plus, Instagram, Youtube, Link as LinkIcon, CreditCard, Upload, Trash2, CheckCircle2, AlertCircle, Pencil, Briefcase, GraduationCap, MapPin, Calendar } from "lucide-react";
+import { ArrowLeft, Camera, Plus, Instagram, Youtube, Link as LinkIcon, CreditCard, Upload, Trash2, CheckCircle2, AlertCircle, Pencil, Briefcase, GraduationCap, MapPin, Calendar, GripVertical } from "lucide-react";
 import { Link } from "wouter";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -85,6 +104,76 @@ function displaySkill(skill: string): string {
     .join(" ");
 }
 
+function SortableExpItem({
+  entry,
+  onEdit,
+  onDelete,
+}: {
+  entry: ExperienceEntry;
+  onEdit: (e: ExperienceEntry) => void;
+  onDelete: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: entry.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="rounded-xl border border-border bg-muted/20 p-3 flex items-start gap-2">
+      <button type="button" {...attributes} {...listeners} className="mt-1 cursor-grab active:cursor-grabbing touch-none p-0.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors shrink-0">
+        <GripVertical size={14} />
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-foreground truncate">{entry.jobTitle}</p>
+        <p className="text-xs text-muted-foreground truncate">{entry.company}{entry.location ? ` · ${entry.location}` : ""}</p>
+        <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+          {entry.startDate} — {entry.isCurrent ? "Present" : (entry.endDate ?? "—")}
+        </p>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button type="button" onClick={() => onEdit(entry)} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
+          <Pencil size={12} className="text-muted-foreground" />
+        </button>
+        <button type="button" onClick={() => onDelete(entry.id)} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-red-500/10 hover:border-red-500/30 transition-colors">
+          <Trash2 size={12} className="text-muted-foreground hover:text-red-400" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SortableEduItem({
+  entry,
+  onEdit,
+  onDelete,
+}: {
+  entry: EducationEntry;
+  onEdit: (e: EducationEntry) => void;
+  onDelete: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: entry.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="rounded-xl border border-border bg-muted/20 p-3 flex items-start gap-2">
+      <button type="button" {...attributes} {...listeners} className="mt-1 cursor-grab active:cursor-grabbing touch-none p-0.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors shrink-0">
+        <GripVertical size={14} />
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-foreground truncate">{entry.degree}{entry.fieldOfStudy ? `, ${entry.fieldOfStudy}` : ""}</p>
+        <p className="text-xs text-muted-foreground truncate">{entry.institution}</p>
+        <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+          {entry.startYear} — {entry.isCurrent ? "Present" : (entry.endYear ?? "—")}
+        </p>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button type="button" onClick={() => onEdit(entry)} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
+          <Pencil size={12} className="text-muted-foreground" />
+        </button>
+        <button type="button" onClick={() => onDelete(entry.id)} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-red-500/10 hover:border-red-500/30 transition-colors">
+          <Trash2 size={12} className="text-muted-foreground hover:text-red-400" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ProfileEditPage() {
   const { userId, getToken } = useAuth();
   const [, setLocation] = useLocation();
@@ -100,11 +189,50 @@ export function ProfileEditPage() {
   const createExperience = useCreateExperience();
   const updateExperience = useUpdateExperience();
   const deleteExperience = useDeleteExperience();
+  const reorderExperience = useReorderExperience();
 
   const { data: eduItems = [] } = useMyEducation();
   const createEducation = useCreateEducation();
   const updateEducation = useUpdateEducation();
   const deleteEducation = useDeleteEducation();
+  const reorderEducation = useReorderEducation();
+
+  const [orderedExpItems, setOrderedExpItems] = useState<ExperienceEntry[]>([]);
+  const [orderedEduItems, setOrderedEduItems] = useState<EducationEntry[]>([]);
+
+  useEffect(() => { setOrderedExpItems(expItems); }, [expItems]);
+  useEffect(() => { setOrderedEduItems(eduItems); }, [eduItems]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleExpDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setOrderedExpItems((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        const reordered = arrayMove(items, oldIndex, newIndex);
+        reorderExperience.mutate(reordered.map((i) => i.id));
+        return reordered;
+      });
+    }
+  }, [reorderExperience]);
+
+  const handleEduDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setOrderedEduItems((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        const reordered = arrayMove(items, oldIndex, newIndex);
+        reorderEducation.mutate(reordered.map((i) => i.id));
+        return reordered;
+      });
+    }
+  }, [reorderEducation]);
 
   const defaultExpForm = { jobTitle: "", company: "", location: "", startDate: "", endDate: "", isCurrent: false, description: "" };
   const defaultEduForm = { institution: "", degree: "", fieldOfStudy: "", startYear: "", endYear: "", isCurrent: false, grade: "", activities: "", description: "" };
@@ -838,30 +966,23 @@ export function ProfileEditPage() {
               Add Experience
             </Button>
           </div>
-          {expItems.length === 0 ? (
+          {orderedExpItems.length === 0 ? (
             <p className="text-xs text-muted-foreground py-2">No experience entries yet. Add your work history to stand out.</p>
           ) : (
-            <div className="space-y-3">
-              {expItems.map((entry) => (
-                <div key={entry.id} className="rounded-xl border border-border bg-muted/20 p-3 flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{entry.jobTitle}</p>
-                    <p className="text-xs text-muted-foreground truncate">{entry.company}{entry.location ? ` · ${entry.location}` : ""}</p>
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                      {entry.startDate} — {entry.isCurrent ? "Present" : (entry.endDate ?? "—")}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button type="button" onClick={() => openEditExp(entry)} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
-                      <Pencil size={12} className="text-muted-foreground" />
-                    </button>
-                    <button type="button" onClick={() => deleteExperience.mutate(entry.id, { onSuccess: () => toast.success("Removed"), onError: () => toast.error("Failed to remove") })} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-red-500/10 hover:border-red-500/30 transition-colors">
-                      <Trash2 size={12} className="text-muted-foreground hover:text-red-400" />
-                    </button>
-                  </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleExpDragEnd}>
+              <SortableContext items={orderedExpItems.map((e) => e.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-3">
+                  {orderedExpItems.map((entry) => (
+                    <SortableExpItem
+                      key={entry.id}
+                      entry={entry}
+                      onEdit={openEditExp}
+                      onDelete={(id) => deleteExperience.mutate(id, { onSuccess: () => toast.success("Removed"), onError: () => toast.error("Failed to remove") })}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
 
@@ -877,30 +998,23 @@ export function ProfileEditPage() {
               Add Education
             </Button>
           </div>
-          {eduItems.length === 0 ? (
+          {orderedEduItems.length === 0 ? (
             <p className="text-xs text-muted-foreground py-2">No education entries yet. Add your academic background to build credibility.</p>
           ) : (
-            <div className="space-y-3">
-              {eduItems.map((entry) => (
-                <div key={entry.id} className="rounded-xl border border-border bg-muted/20 p-3 flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{entry.degree}{entry.fieldOfStudy ? `, ${entry.fieldOfStudy}` : ""}</p>
-                    <p className="text-xs text-muted-foreground truncate">{entry.institution}</p>
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                      {entry.startYear} — {entry.isCurrent ? "Present" : (entry.endYear ?? "—")}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button type="button" onClick={() => openEditEdu(entry)} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
-                      <Pencil size={12} className="text-muted-foreground" />
-                    </button>
-                    <button type="button" onClick={() => deleteEducation.mutate(entry.id, { onSuccess: () => toast.success("Removed"), onError: () => toast.error("Failed to remove") })} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-red-500/10 hover:border-red-500/30 transition-colors">
-                      <Trash2 size={12} className="text-muted-foreground hover:text-red-400" />
-                    </button>
-                  </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleEduDragEnd}>
+              <SortableContext items={orderedEduItems.map((e) => e.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-3">
+                  {orderedEduItems.map((entry) => (
+                    <SortableEduItem
+                      key={entry.id}
+                      entry={entry}
+                      onEdit={openEditEdu}
+                      onDelete={(id) => deleteEducation.mutate(id, { onSuccess: () => toast.success("Removed"), onError: () => toast.error("Failed to remove") })}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
 

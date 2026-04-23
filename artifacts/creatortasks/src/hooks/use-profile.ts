@@ -20,6 +20,7 @@ export interface ExperienceEntry {
   endDate: string | null;
   isCurrent: boolean;
   description: string | null;
+  position: number;
   createdAt: string;
 }
 
@@ -34,6 +35,7 @@ export interface EducationEntry {
   grade: string | null;
   activities: string | null;
   description: string | null;
+  position: number;
   createdAt: string;
 }
 
@@ -212,7 +214,7 @@ export function useCreateExperience() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<ExperienceEntry, "id" | "createdAt">) =>
+    mutationFn: (data: Omit<ExperienceEntry, "id" | "createdAt" | "position">) =>
       apiFetch("/api/users/me/experience", { method: "POST", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-experience"] });
@@ -250,6 +252,20 @@ export function useDeleteExperience() {
   });
 }
 
+export function useReorderExperience() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      apiFetch("/api/users/me/experience/reorder", { method: "PATCH", data: { ids } }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-experience"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
+    },
+  });
+}
+
 export function useMyEducation() {
   const { getToken, isSignedIn } = useAuth();
   return useQuery<EducationEntry[]>({
@@ -263,7 +279,7 @@ export function useCreateEducation() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<EducationEntry, "id" | "createdAt">) =>
+    mutationFn: (data: Omit<EducationEntry, "id" | "createdAt" | "position">) =>
       apiFetch("/api/users/me/education", { method: "POST", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-education"] });
@@ -293,6 +309,20 @@ export function useDeleteEducation() {
   return useMutation({
     mutationFn: (id: string) =>
       apiFetch(`/api/users/me/education/${id}`, { method: "DELETE" }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-education"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
+    },
+  });
+}
+
+export function useReorderEducation() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      apiFetch("/api/users/me/education/reorder", { method: "PATCH", data: { ids } }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-education"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });

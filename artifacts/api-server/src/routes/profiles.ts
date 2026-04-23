@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, users, tasks, ratings, portfolioItems, experience, education } from "@workspace/db";
-import { eq, and, avg, count, sql, ilike, or, isNotNull, ne, desc } from "drizzle-orm";
+import { eq, and, avg, count, sql, ilike, or, isNotNull, ne, desc, asc, max } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
@@ -28,12 +28,12 @@ async function buildPublicProfile(user: typeof users.$inferSelect) {
       .select()
       .from(experience)
       .where(eq(experience.userId, user.clerkId))
-      .orderBy(desc(experience.startDate)),
+      .orderBy(asc(experience.position), asc(experience.createdAt)),
     db
       .select()
       .from(education)
       .where(eq(education.userId, user.clerkId))
-      .orderBy(desc(education.startYear)),
+      .orderBy(asc(education.position), asc(education.createdAt)),
   ]);
 
   return {
@@ -73,6 +73,7 @@ async function buildPublicProfile(user: typeof users.$inferSelect) {
       endDate: e.endDate,
       isCurrent: e.isCurrent ?? false,
       description: e.description,
+      position: e.position,
       createdAt: e.createdAt,
     })),
     education: eduItems.map((e) => ({
@@ -86,6 +87,7 @@ async function buildPublicProfile(user: typeof users.$inferSelect) {
       grade: e.grade,
       activities: e.activities,
       description: e.description,
+      position: e.position,
       createdAt: e.createdAt,
     })),
   };
@@ -352,7 +354,7 @@ router.get("/users/me/experience", requireAuth, async (req, res) => {
       .select()
       .from(experience)
       .where(eq(experience.userId, currentUser.clerkId))
-      .orderBy(desc(experience.startDate));
+      .orderBy(asc(experience.position), asc(experience.createdAt));
     res.json(items);
   } catch (err) {
     req.log.error({ err }, "Error fetching experience");
@@ -379,6 +381,11 @@ router.post("/users/me/experience", requireAuth, async (req, res) => {
     if (!isCurrent && endDate?.trim() && endDate.trim() < startDate.trim()) {
       res.status(400).json({ error: "endDate must be on or after startDate" }); return;
     }
+    const [maxPos] = await db
+      .select({ val: max(experience.position) })
+      .from(experience)
+      .where(eq(experience.userId, currentUser.clerkId));
+    const nextPosition = (maxPos?.val ?? -1) + 1;
     const [item] = await db.insert(experience).values({
       userId: currentUser.clerkId,
       jobTitle: jobTitle.trim().slice(0, 120),
@@ -388,11 +395,36 @@ router.post("/users/me/experience", requireAuth, async (req, res) => {
       endDate: isCurrent ? null : (endDate?.trim() || null),
       isCurrent: Boolean(isCurrent),
       description: description?.trim().slice(0, 1000) || null,
+      position: nextPosition,
     }).returning();
     res.json(item);
   } catch (err) {
     req.log.error({ err }, "Error creating experience");
     res.status(500).json({ error: "Failed to create experience" });
+  }
+});
+
+// PATCH /users/me/experience/reorder
+router.patch("/users/me/experience/reorder", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const { ids } = req.body as { ids?: string[] };
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ error: "ids array is required" });
+      return;
+    }
+    await Promise.all(
+      ids.map((id, index) =>
+        db
+          .update(experience)
+          .set({ position: index })
+          .where(and(eq(experience.id, id), eq(experience.userId, currentUser.clerkId)))
+      )
+    );
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Error reordering experience");
+    res.status(500).json({ error: "Failed to reorder experience" });
   }
 });
 
@@ -458,7 +490,7 @@ router.get("/users/me/education", requireAuth, async (req, res) => {
       .select()
       .from(education)
       .where(eq(education.userId, currentUser.clerkId))
-      .orderBy(desc(education.startYear));
+      .orderBy(asc(education.position), asc(education.createdAt));
     res.json(items);
   } catch (err) {
     req.log.error({ err }, "Error fetching education");
@@ -481,6 +513,11 @@ router.post("/users/me/education", requireAuth, async (req, res) => {
     if (!isCurrent && endYear && Number(endYear) < Number(startYear)) {
       res.status(400).json({ error: "endYear must be on or after startYear" }); return;
     }
+    const [maxPos] = await db
+      .select({ val: max(education.position) })
+      .from(education)
+      .where(eq(education.userId, currentUser.clerkId));
+    const nextPosition = (maxPos?.val ?? -1) + 1;
     const [item] = await db.insert(education).values({
       userId: currentUser.clerkId,
       institution: institution.trim().slice(0, 200),
@@ -492,11 +529,36 @@ router.post("/users/me/education", requireAuth, async (req, res) => {
       grade: grade?.trim().slice(0, 60) || null,
       activities: activities?.trim().slice(0, 500) || null,
       description: description?.trim().slice(0, 1000) || null,
+      position: nextPosition,
     }).returning();
     res.json(item);
   } catch (err) {
     req.log.error({ err }, "Error creating education");
     res.status(500).json({ error: "Failed to create education" });
+  }
+});
+
+// PATCH /users/me/education/reorder
+router.patch("/users/me/education/reorder", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const { ids } = req.body as { ids?: string[] };
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ error: "ids array is required" });
+      return;
+    }
+    await Promise.all(
+      ids.map((id, index) =>
+        db
+          .update(education)
+          .set({ position: index })
+          .where(and(eq(education.id, id), eq(education.userId, currentUser.clerkId)))
+      )
+    );
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Error reordering education");
+    res.status(500).json({ error: "Failed to reorder education" });
   }
 });
 
