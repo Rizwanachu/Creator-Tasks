@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWallet } from "@/hooks/use-wallet";
 import { useNotifications } from "@/hooks/use-notifications";
-import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram, Users } from "lucide-react";
+import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram, Users, Home, UserCircle2 } from "lucide-react";
 import { useUnreadMessageCount } from "@/hooks/use-chat";
 
 function NavWalletBadge() {
@@ -86,6 +86,74 @@ function Logo({ className = "w-8 h-8" }: { className?: string }) {
       className={`rounded-xl ${className}`}
       draggable={false}
     />
+  );
+}
+
+const MOBILE_NAV = [
+  { href: "/tasks", label: "Tasks", icon: Home },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/create", label: "Create", icon: PlusCircle, isCreate: true },
+  { href: "/messages", label: "Messages", icon: MessageSquare },
+  { href: "/profile/edit", label: "Profile", icon: UserCircle2 },
+] as const;
+
+function MobileBottomNav() {
+  const [location] = useLocation();
+  const unreadMessages = useUnreadMessageCount();
+  const { data: notifications } = useNotifications();
+  const unreadNotifs = notifications?.unreadCount ?? 0;
+
+  function isActive(href: string) {
+    if (href === "/tasks") return location === "/tasks" || location === "/";
+    return location.startsWith(href);
+  }
+
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-safe px-4 pb-3 pointer-events-none">
+      <div className="w-full max-w-sm pointer-events-auto flex items-center h-[62px] rounded-[24px] border border-border bg-card shadow-[0_10px_40px_-8px_rgba(0,0,0,0.25)] px-2">
+        {MOBILE_NAV.map((item) => {
+          const active = isActive(item.href);
+
+          if ("isCreate" in item && item.isCreate) {
+            return (
+              <Link key={item.href} href={item.href} className="flex-1 flex items-center justify-center">
+                <div className="w-[46px] h-[46px] rounded-[15px] bg-primary flex items-center justify-center shadow-[0_4px_14px_0px_rgba(124,92,255,0.5)] transition-transform active:scale-90">
+                  <PlusCircle size={22} className="text-white" strokeWidth={2} />
+                </div>
+              </Link>
+            );
+          }
+
+          const Icon = item.icon;
+          const hasBadge =
+            (item.href === "/messages" && unreadMessages > 0) ||
+            (item.href === "/dashboard" && unreadNotifs > 0);
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex-1 flex flex-col items-center justify-center gap-[3px] py-2 group"
+            >
+              <div className={`relative flex items-center justify-center w-10 h-8 rounded-[10px] transition-colors ${active ? "bg-primary/10" : "group-active:bg-muted"}`}>
+                <Icon
+                  size={19}
+                  strokeWidth={active ? 2.2 : 1.8}
+                  className={`transition-colors ${active ? "text-primary" : "text-muted-foreground"}`}
+                />
+                {hasBadge && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-card" />
+                )}
+              </div>
+              <span className={`text-[9.5px] font-medium leading-none tracking-wide transition-colors ${active ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                {item.label}
+              </span>
+              {active && <span className="w-1 h-1 rounded-full bg-primary" />}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
@@ -205,7 +273,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             <button
               onClick={() => setMobileOpen((v) => !v)}
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="hidden flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Toggle menu"
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -279,9 +347,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col pb-[80px] md:pb-0">
         {children}
       </main>
+
+      <MobileBottomNav />
 
       <footer className="border-t border-border bg-card/50 mt-auto">
         <div className="container mx-auto px-4 py-12">
