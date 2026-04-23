@@ -105,6 +105,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
     ...(isSignedIn ? [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
   ];
 
+  const isOnboarding = location === "/onboarding" || location.startsWith("/onboarding?");
+
+  if (isOnboarding) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border">

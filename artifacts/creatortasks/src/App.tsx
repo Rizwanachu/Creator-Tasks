@@ -38,6 +38,7 @@ import { PrivacyPage } from "@/pages/privacy";
 import { RefundPolicyPage } from "@/pages/refund-policy";
 import { ContactPage } from "@/pages/contact";
 import { MessagesPage } from "@/pages/messages";
+import { OnboardingPage } from "@/pages/onboarding";
 
 const queryClient = new QueryClient();
 
@@ -93,7 +94,7 @@ function ProfileGatedRoute({ component: Component, path }: { component: React.Co
   if (!isLoaded) return null;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (isLoading) return null;
-  if (!isComplete) return <Redirect to={`/profile/edit?next=${encodeURIComponent(path)}`} />;
+  if (!isComplete) return <Redirect to={`/onboarding?next=${encodeURIComponent(path)}`} />;
 
   return <Component />;
 }
@@ -172,6 +173,10 @@ function ClerkProviderWithRoutes() {
 
             <Route path="/notifications">
               <ProtectedRoute component={NotificationsPage} />
+            </Route>
+
+            <Route path="/onboarding">
+              <ProtectedRoute component={OnboardingPage} />
             </Route>
 
             <Route path="/profile/edit">

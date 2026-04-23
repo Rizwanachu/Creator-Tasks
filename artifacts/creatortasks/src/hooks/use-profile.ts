@@ -98,6 +98,15 @@ export function useProfileComplete(clerkId: string | undefined) {
   return { isComplete, completionPercent, isLoading, profile };
 }
 
+export function useCheckUsername(handle: string) {
+  return useQuery<{ available: boolean; reason?: string }>({
+    queryKey: ["check-username", handle.trim().toLowerCase()],
+    queryFn: () => apiFetch(`/api/users/check-username?handle=${encodeURIComponent(handle.trim().toLowerCase())}`),
+    enabled: /^[a-z0-9_]{3,20}$/.test(handle.trim().toLowerCase()),
+    staleTime: 10_000,
+  });
+}
+
 export function useUpdateProfile() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
@@ -113,6 +122,7 @@ export function useUpdateProfile() {
       upiId?: string;
       avatarUrl?: string;
       isAvailable?: boolean;
+      username?: string;
     }) => apiFetch("/api/users/me", { method: "PUT", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });

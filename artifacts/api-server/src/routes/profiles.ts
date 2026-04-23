@@ -97,6 +97,23 @@ router.get("/users/me", requireAuth, async (req, res) => {
   }
 });
 
+// GET /users/check-username — check if a username is available
+router.get("/users/check-username", async (req, res) => {
+  const handle = (req.query.handle as string ?? "").trim().toLowerCase();
+  const valid = /^[a-z0-9_]{3,20}$/.test(handle);
+  if (!valid) {
+    res.json({ available: false, reason: "Username must be 3-20 characters and contain only letters, numbers, or underscores." });
+    return;
+  }
+  try {
+    const existing = await db.query.users.findFirst({ where: eq(users.username, handle) });
+    res.json({ available: !existing });
+  } catch (err) {
+    req.log.error({ err }, "Error checking username");
+    res.status(500).json({ error: "Failed to check username" });
+  }
+});
+
 // PUT /users/me — update own profile
 router.put("/users/me", requireAuth, async (req, res) => {
   try {
@@ -110,6 +127,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
       upiId,
       avatarUrl,
       isAvailable,
+      username,
     } = req.body as {
       name?: string;
       bio?: string;
@@ -120,6 +138,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
       upiId?: string;
       avatarUrl?: string;
       isAvailable?: boolean;
+      username?: string;
     };
     const currentUser = req.dbUser!;
 
@@ -161,6 +180,13 @@ router.put("/users/me", requireAuth, async (req, res) => {
     if (upiId !== undefined) updateData.upiId = upiId.trim() || null;
     if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl.trim() || null;
     if (isAvailable !== undefined) updateData.isAvailable = Boolean(isAvailable);
+    if (username !== undefined && !currentUser.username) {
+      const cleaned = username.trim().toLowerCase();
+      if (/^[a-z0-9_]{3,20}$/.test(cleaned)) {
+        const taken = await db.query.users.findFirst({ where: eq(users.username, cleaned) });
+        if (!taken) updateData.username = cleaned;
+      }
+    }
 
     const [updated] = await db
       .update(users)
@@ -171,6 +197,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
     res.json({
       id: updated.id,
       clerkId: updated.clerkId,
+      username: updated.username,
       name: updated.name,
       bio: updated.bio,
       skills: updated.skills ?? [],
