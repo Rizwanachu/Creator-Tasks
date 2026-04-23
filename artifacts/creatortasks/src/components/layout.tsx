@@ -89,19 +89,20 @@ function Logo({ className = "w-8 h-8" }: { className?: string }) {
   );
 }
 
-const MOBILE_NAV = [
-  { href: "/tasks", label: "Tasks", icon: Home },
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/create", label: "Create", icon: PlusCircle, isCreate: true },
-  { href: "/messages", label: "Messages", icon: MessageSquare },
-  { href: "/profile/edit", label: "Profile", icon: UserCircle2 },
-] as const;
-
 function MobileBottomNav() {
   const [location] = useLocation();
+  const { user } = useUser();
   const unreadMessages = useUnreadMessageCount();
   const { data: notifications } = useNotifications();
   const unreadNotifs = notifications?.unreadCount ?? 0;
+
+  const MOBILE_NAV = [
+    { href: "/tasks", label: "Tasks", icon: Home },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/create", label: "Create", icon: PlusCircle, isCreate: true },
+    { href: "/messages", label: "Messages", icon: MessageSquare },
+    { href: user?.id ? `/profile/${user.id}` : "/sign-in", label: "Profile", icon: UserCircle2 },
+  ] as const;
 
   function isActive(href: string) {
     if (href === "/tasks") return location === "/tasks" || location === "/";
