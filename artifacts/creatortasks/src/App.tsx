@@ -94,7 +94,7 @@ function ProfileGatedRoute({ component: Component, path }: { component: React.Co
   if (!isLoaded) return null;
   if (!isSignedIn) return <Redirect to="/sign-in" />;
   if (isLoading) return null;
-  if (!isComplete) return <Redirect to="/onboarding" />;
+  if (!isComplete) return <Redirect to={`/onboarding?next=${encodeURIComponent(path)}`} />;
 
   return <Component />;
 }

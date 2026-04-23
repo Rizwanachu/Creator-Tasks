@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@clerk/react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useCheckUsername, useUpdateProfile, useAddPortfolioItem } from "@/hooks/use-profile";
+import { useCheckUsername, useUpdateProfile, useAddPortfolioItem, useMyProfile } from "@/hooks/use-profile";
 import {
   Check,
   X,
@@ -129,11 +129,15 @@ interface PendingPortfolioItem {
 export function OnboardingPage() {
   const { getToken } = useAuth();
   const [, setLocation] = useLocation();
+  const search = useSearch();
+
+  const { data: existingProfile } = useMyProfile();
+  const existingUsername = existingProfile?.username ?? null;
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Step 1 — username
+  // Step 1 — username (pre-fill + lock if the user already has one)
   const [username, setUsername] = useState("");
 
   // Step 2 — core focus
@@ -272,7 +276,9 @@ export function OnboardingPage() {
       }
 
       toast.success("Welcome to CreatorTasks! 🎉");
-      setLocation("/tasks");
+      const params = new URLSearchParams(search);
+      const nextPath = params.get("next");
+      setLocation(nextPath && nextPath.startsWith("/") ? nextPath : "/tasks");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
@@ -322,37 +328,48 @@ export function OnboardingPage() {
           {/* ── Step 1: Username ── */}
           {step === 0 && (
             <div className="space-y-4">
-              <div className="relative">
-                <Input
-                  placeholder="e.g. creator_raj"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                  className="rounded-xl h-12 text-base pr-10"
-                  maxLength={20}
-                  autoFocus
-                />
-                {username.length >= 3 && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {checkingUsername ? (
-                      <span className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin block" />
-                    ) : isUsernameAvailable ? (
-                      <Check size={16} className="text-green-400" />
-                    ) : (
-                      <X size={16} className="text-red-400" />
+              {existingUsername ? (
+                /* User already has a username — show it locked */
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted border border-border">
+                  <span className="text-muted-foreground text-sm">@</span>
+                  <span className="font-semibold text-foreground flex-1">{existingUsername}</span>
+                  <Check size={16} className="text-green-400 shrink-0" />
+                </div>
+              ) : (
+                <>
+                  <div className="relative">
+                    <Input
+                      placeholder="e.g. creator_raj"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                      className="rounded-xl h-12 text-base pr-10"
+                      maxLength={20}
+                      autoFocus
+                    />
+                    {username.length >= 3 && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                        {checkingUsername ? (
+                          <span className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin block" />
+                        ) : isUsernameAvailable ? (
+                          <Check size={16} className="text-green-400" />
+                        ) : (
+                          <X size={16} className="text-red-400" />
+                        )}
+                      </span>
                     )}
-                  </span>
-                )}
-              </div>
+                  </div>
 
-              {username.length >= 3 && !checkingUsername && (
-                <p className={`text-xs font-medium ${isUsernameAvailable ? "text-green-400" : "text-red-400"}`}>
-                  {isUsernameAvailable
-                    ? "✓ Available!"
-                    : usernameCheck?.reason ?? "Username is taken or invalid"}
-                </p>
+                  {username.length >= 3 && !checkingUsername && (
+                    <p className={`text-xs font-medium ${isUsernameAvailable ? "text-green-400" : "text-red-400"}`}>
+                      {isUsernameAvailable
+                        ? "✓ Available!"
+                        : usernameCheck?.reason ?? "Username is taken or invalid"}
+                    </p>
+                  )}
+                </>
               )}
 
-              {isUsernameAvailable && (
+              {!existingUsername && isUsernameAvailable && (
                 <Button
                   variant="outline"
                   className="w-full rounded-xl h-11 font-semibold tracking-wide text-sm border-primary/40 text-primary hover:bg-primary/10"
@@ -365,7 +382,7 @@ export function OnboardingPage() {
               <NavButtons
                 showBack={false}
                 onContinue={next}
-                continueDisabled={!isUsernameAvailable}
+                continueDisabled={!existingUsername && !isUsernameAvailable}
               />
             </div>
           )}
