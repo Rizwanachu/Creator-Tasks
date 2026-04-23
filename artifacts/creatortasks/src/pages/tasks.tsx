@@ -172,7 +172,7 @@ export function Tasks() {
             <select
               value={activeCategory ?? ""}
               onChange={(e) => setActiveCategory((e.target.value as TaskCategory) || undefined)}
-              className="rounded-lg border border-border bg-transparent text-xs text-foreground px-2.5 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-28 rounded-lg border border-border bg-transparent text-xs text-foreground px-2.5 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring"
             >
               {CATEGORIES.map((c) => (
                 <option key={c.label} value={c.value ?? ""}>{c.label}</option>
