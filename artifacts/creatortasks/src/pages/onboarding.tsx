@@ -119,6 +119,13 @@ function NavButtons({
   );
 }
 
+interface PendingPortfolioItem {
+  title: string;
+  description: string;
+  file: File;
+  preview: string;
+}
+
 export function OnboardingPage() {
   const { getToken } = useAuth();
   const [, setLocation] = useLocation();
@@ -126,24 +133,36 @@ export function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  // Step 1 — username
   const [username, setUsername] = useState("");
   const [debouncedUsername, setDebouncedUsername] = useState("");
+
+  // Step 2 — core focus
   const [focusCategories, setFocusCategories] = useState<string[]>([]);
+
+  // Step 3 — skills
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
+
+  // Step 4 — story (display name, bio, avatar — avatar kept as File until launch)
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
-  const [avatarPath, setAvatarPath] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Step 5 — social links
   const [instagramHandle, setInstagramHandle] = useState("");
   const [youtubeHandle, setYoutubeHandle] = useState("");
   const [upiId, setUpiId] = useState("");
-  const [portfolioItems, setPortfolioItems] = useState<{ title: string; description: string; url: string }[]>([]);
+
+  // Step 6 — portfolio (files kept locally until launch)
+  const [pendingPortfolioItems, setPendingPortfolioItems] = useState<PendingPortfolioItem[]>([]);
   const [portfolioTitle, setPortfolioTitle] = useState("");
   const [portfolioDesc, setPortfolioDesc] = useState("");
   const [portfolioFile, setPortfolioFile] = useState<File | null>(null);
-  const [uploadingPortfolio, setUploadingPortfolio] = useState(false);
+
+  // Step 7 — first drop (separate from step 4 bio)
+  const [firstDropText, setFirstDropText] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [hashtagInput, setHashtagInput] = useState("");
 
@@ -153,6 +172,7 @@ export function OnboardingPage() {
   const updateProfile = useUpdateProfile();
   const addPortfolioItem = useAddPortfolioItem();
 
+  // Debounce username for availability check
   useEffect(() => {
     const t = setTimeout(() => setDebouncedUsername(username), 500);
     return () => clearTimeout(t);
@@ -160,8 +180,8 @@ export function OnboardingPage() {
 
   const { data: usernameCheck, isFetching: checkingUsername } = useCheckUsername(debouncedUsername);
 
-  const isUsernameValid = /^[a-z0-9_]{3,20}$/.test(username.trim().toLowerCase());
-  const isUsernameAvailable = isUsernameValid && !checkingUsername && usernameCheck?.available === true;
+  const isUsernameFormatValid = /^[a-z0-9_]{3,20}$/.test(username.trim().toLowerCase());
+  const isUsernameAvailable = isUsernameFormatValid && !checkingUsername && usernameCheck?.available === true;
 
   function addSkill(val: string) {
     const trimmed = val.trim().toLowerCase();
@@ -170,69 +190,71 @@ export function OnboardingPage() {
   }
 
   function addHashtag(val: string) {
-    const trimmed = val.replace(/^#/, "").trim().toLowerCase();
-    if (trimmed && !hashtags.includes(trimmed)) setHashtags((p) => [...p, trimmed]);
+    const parts = val.split(/[\s#,]+/).map((s) => s.replace(/^#/, "").trim().toLowerCase()).filter(Boolean);
+    setHashtags((prev) => {
+      const next = [...prev];
+      for (const p of parts) { if (p && !next.includes(p)) next.push(p); }
+      return next;
+    });
     setHashtagInput("");
   }
 
-  async function handleAvatarSelect(file: File) {
+  function handleAvatarSelect(file: File) {
     if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
       toast.error("Please select an image file under 5MB");
       return;
     }
+    setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
-    setUploadingAvatar(true);
-    try {
-      const path = await uploadFile(file, getToken, "avatar");
-      setAvatarPath(path);
-    } catch {
-      toast.error("Failed to upload photo");
-      setAvatarPreview(null);
-    } finally {
-      setUploadingAvatar(false);
-    }
   }
 
-  async function handleAddPortfolioItem() {
+  function handleAddPortfolioItem() {
     if (!portfolioFile) return;
-    setUploadingPortfolio(true);
-    try {
-      const path = await uploadFile(portfolioFile, getToken, "portfolio");
-      setPortfolioItems((p) => [...p, { title: portfolioTitle, description: portfolioDesc, url: path }]);
-      setPortfolioTitle("");
-      setPortfolioDesc("");
-      setPortfolioFile(null);
-      toast.success("Item added to portfolio!");
-    } catch {
-      toast.error("Failed to upload file");
-    } finally {
-      setUploadingPortfolio(false);
-    }
+    const preview = URL.createObjectURL(portfolioFile);
+    setPendingPortfolioItems((p) => [...p, {
+      title: portfolioTitle,
+      description: portfolioDesc,
+      file: portfolioFile,
+      preview,
+    }]);
+    setPortfolioTitle("");
+    setPortfolioDesc("");
+    setPortfolioFile(null);
   }
 
   async function handleLaunch() {
     setLoading(true);
     try {
+      // Upload avatar if selected
+      let avatarPath: string | undefined;
+      if (avatarFile) {
+        avatarPath = await uploadFile(avatarFile, getToken, "avatar");
+      }
+
+      // Merge all skills sources
       const allSkills = [...new Set([
         ...focusCategories.map((c) => c.toLowerCase()),
         ...skills,
         ...hashtags,
       ])].slice(0, 15);
 
+      // Save profile
       await updateProfile.mutateAsync({
         username: username.trim().toLowerCase() || undefined,
         name: name.trim() || username.trim() || undefined,
-        bio: bio.trim() || undefined,
+        bio: (firstDropText.trim() || bio.trim()) || undefined,
         skills: allSkills,
         instagramHandle: instagramHandle.trim() || undefined,
         youtubeHandle: youtubeHandle.trim() || undefined,
         upiId: upiId.trim() || undefined,
-        avatarUrl: avatarPath ?? undefined,
+        avatarUrl: avatarPath,
       });
 
-      for (const item of portfolioItems) {
+      // Upload and save portfolio items
+      for (const item of pendingPortfolioItems) {
+        const url = await uploadFile(item.file, getToken, "portfolio");
         await addPortfolioItem.mutateAsync({
-          url: item.url,
+          url,
           caption: [item.title, item.description].filter(Boolean).join(" — ") || undefined,
         });
       }
@@ -248,16 +270,6 @@ export function OnboardingPage() {
 
   function next() { setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1)); }
   function back() { setStep((s) => Math.max(s - 1, 0)); }
-
-  const stepLabel = [
-    "Let's set up your profile",
-    "Tell us about your work",
-    "What are your skills?",
-    "Your story",
-    "Stay connected",
-    "Showcase your work",
-    "Ready to launch",
-  ][step];
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-10">
@@ -331,8 +343,8 @@ export function OnboardingPage() {
               {isUsernameAvailable && (
                 <Button
                   variant="outline"
-                  className="w-full rounded-xl h-11 font-semibold tracking-wide text-sm"
-                  onClick={() => {}}
+                  className="w-full rounded-xl h-11 font-semibold tracking-wide text-sm border-primary/40 text-primary hover:bg-primary/10"
+                  onClick={next}
                 >
                   KEEP THIS HANDLE
                 </Button>
@@ -418,33 +430,25 @@ export function OnboardingPage() {
             <div className="space-y-5">
               {/* Avatar */}
               <div className="flex items-center gap-4">
-                <div className="relative shrink-0">
-                  <div
-                    className="w-16 h-16 rounded-2xl overflow-hidden border border-border bg-muted cursor-pointer"
-                    onClick={() => avatarInputRef.current?.click()}
-                  >
-                    {avatarPreview ? (
-                      <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-bold text-lg">
-                        {name ? name[0].toUpperCase() : "?"}
-                      </div>
-                    )}
-                    {uploadingAvatar && (
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl">
-                        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin block" />
-                      </div>
-                    )}
-                  </div>
+                <div
+                  className="relative w-16 h-16 rounded-2xl overflow-hidden border border-border bg-muted cursor-pointer shrink-0"
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-bold text-lg">
+                      {name ? name[0].toUpperCase() : "?"}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <button
                     type="button"
                     onClick={() => avatarInputRef.current?.click()}
                     className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-                    disabled={uploadingAvatar}
                   >
-                    {avatarPreview ? "✓ Photo uploaded" : "Upload photo"}
+                    {avatarPreview ? "✓ Photo selected" : "Upload photo"}
                   </button>
                   <p className="text-xs text-muted-foreground mt-0.5">JPG or PNG, max 5MB</p>
                 </div>
@@ -567,34 +571,30 @@ export function OnboardingPage() {
                 variant="ghost"
                 className="w-full rounded-xl border border-dashed border-border h-11 text-sm text-muted-foreground hover:text-primary hover:border-primary/40"
                 onClick={handleAddPortfolioItem}
-                disabled={!portfolioFile || uploadingPortfolio}
+                disabled={!portfolioFile}
               >
-                {uploadingPortfolio ? (
-                  <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <><Plus size={14} className="mr-1.5" /> Add to Portfolio</>
-                )}
+                <Plus size={14} className="mr-1.5" /> Add to Portfolio
               </Button>
 
-              {portfolioItems.length > 0 && (
+              {pendingPortfolioItems.length > 0 && (
                 <div className="space-y-2 pt-1">
-                  {portfolioItems.map((item, i) => (
+                  {pendingPortfolioItems.map((item, i) => (
                     <div
                       key={i}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted border border-border"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center shrink-0 text-muted-foreground">
-                        <Upload size={13} />
+                      <div className="w-8 h-8 rounded-lg overflow-hidden border border-border shrink-0">
+                        <img src={item.preview} alt="" className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{item.title || "Portfolio item"}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{item.title || item.file.name}</p>
                         {item.description && (
                           <p className="text-xs text-muted-foreground truncate">{item.description}</p>
                         )}
                       </div>
                       <button
                         type="button"
-                        onClick={() => setPortfolioItems((p) => p.filter((_, j) => j !== i))}
+                        onClick={() => setPendingPortfolioItems((p) => p.filter((_, j) => j !== i))}
                         className="text-muted-foreground/60 hover:text-red-400 transition-colors shrink-0"
                       >
                         <X size={14} />
@@ -608,7 +608,7 @@ export function OnboardingPage() {
             </div>
           )}
 
-          {/* ── Step 7: First drop ── */}
+          {/* ── Step 7: First drop (separate from bio) ── */}
           {step === 6 && (
             <div className="space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center mb-2">
@@ -617,8 +617,8 @@ export function OnboardingPage() {
 
               <Textarea
                 placeholder="Hey CreatorTasks! I'm a video editor specialising in brand storytelling..."
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
+                value={firstDropText}
+                onChange={(e) => setFirstDropText(e.target.value)}
                 maxLength={500}
                 className="min-h-[120px] resize-none rounded-xl text-sm"
               />
@@ -627,16 +627,16 @@ export function OnboardingPage() {
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">#</span>
                   <Input
-                    placeholder="VideoEditing #Design #Available"
+                    placeholder="VideoEditing Design Available"
                     value={hashtagInput}
                     onChange={(e) => setHashtagInput(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        hashtagInput.split(/[\s#]+/).filter(Boolean).forEach(addHashtag);
-                        setHashtagInput("");
+                        if (hashtagInput.trim()) addHashtag(hashtagInput);
                       }
                     }}
+                    onBlur={() => { if (hashtagInput.trim()) addHashtag(hashtagInput); }}
                     className="pl-6 rounded-xl h-11 text-sm"
                   />
                 </div>

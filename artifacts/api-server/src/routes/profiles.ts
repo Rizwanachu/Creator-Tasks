@@ -106,7 +106,7 @@ router.get("/users/check-username", async (req, res) => {
     return;
   }
   try {
-    const existing = await db.query.users.findFirst({ where: eq(users.username, handle) });
+    const existing = await db.query.users.findFirst({ where: ilike(users.username, handle) });
     res.json({ available: !existing });
   } catch (err) {
     req.log.error({ err }, "Error checking username");
@@ -183,7 +183,7 @@ router.put("/users/me", requireAuth, async (req, res) => {
     if (username !== undefined && !currentUser.username) {
       const cleaned = username.trim().toLowerCase();
       if (/^[a-z0-9_]{3,20}$/.test(cleaned)) {
-        const taken = await db.query.users.findFirst({ where: eq(users.username, cleaned) });
+        const taken = await db.query.users.findFirst({ where: ilike(users.username, cleaned) });
         if (!taken) updateData.username = cleaned;
       }
     }
