@@ -16,6 +16,9 @@ import {
   LayoutGrid,
   CheckCircle2,
   Share2,
+  Briefcase,
+  GraduationCap,
+  MapPin,
 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -43,6 +46,14 @@ function portfolioSrc(objectPath: string): string {
   )
     return objectPath;
   return `${API_BASE}/api/storage${objectPath}`;
+}
+
+function formatExpDate(yearMonth: string): string {
+  const [year, month] = yearMonth.split("-");
+  if (!year) return yearMonth;
+  if (!month) return year;
+  const date = new Date(Number(year), Number(month) - 1, 1);
+  return date.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -155,7 +166,9 @@ export function CreatorPage() {
   const hasContent =
     !!profile.bio ||
     (profile.portfolioItems?.length ?? 0) > 0 ||
-    profile.recentWork.length > 0;
+    profile.recentWork.length > 0 ||
+    (profile.experience?.length ?? 0) > 0 ||
+    (profile.education?.length ?? 0) > 0;
 
   return (
     <div className="min-h-screen pb-16">
@@ -475,6 +488,88 @@ export function CreatorPage() {
                           </div>
                         )}
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Experience */}
+            {(profile.experience?.length ?? 0) > 0 && (
+              <div className="bg-card border border-border rounded-2xl p-5 md:p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Briefcase size={13} className="text-purple-400" />
+                  <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Experience</h2>
+                </div>
+                <div className="space-y-5">
+                  {profile.experience.map((entry, idx) => (
+                    <div key={entry.id} className="relative pl-4">
+                      <div className={`absolute left-0 top-1.5 w-2 h-2 rounded-full border-2 ${idx === 0 ? "bg-purple-500 border-purple-500" : "bg-transparent border-muted-foreground/40"}`} />
+                      {idx < profile.experience.length - 1 && (
+                        <div className="absolute left-[3px] top-4 bottom-[-1.25rem] w-px bg-border" />
+                      )}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground leading-tight">{entry.jobTitle}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{entry.company}</p>
+                          <div className="flex items-center gap-3 mt-1 flex-wrap">
+                            <span className="text-[11px] text-muted-foreground/60">
+                              {formatExpDate(entry.startDate)} — {entry.isCurrent ? "Present" : (entry.endDate ? formatExpDate(entry.endDate) : "—")}
+                            </span>
+                            {entry.location && (
+                              <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground/60">
+                                <MapPin size={10} />
+                                {entry.location}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {idx === 0 && entry.isCurrent && (
+                          <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-400">Current</span>
+                        )}
+                      </div>
+                      {entry.description && (
+                        <p className="text-xs text-foreground/60 leading-relaxed mt-2 line-clamp-3">{entry.description}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Education */}
+            {(profile.education?.length ?? 0) > 0 && (
+              <div className="bg-card border border-border rounded-2xl p-5 md:p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <GraduationCap size={13} className="text-purple-400" />
+                  <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Education</h2>
+                </div>
+                <div className="space-y-4">
+                  {profile.education.map((entry) => (
+                    <div key={entry.id} className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground leading-tight">{entry.degree}{entry.fieldOfStudy ? `, ${entry.fieldOfStudy}` : ""}</p>
+                          <p className="text-xs text-purple-300/80 mt-0.5">{entry.institution}</p>
+                          <div className="flex items-center gap-3 mt-1 flex-wrap">
+                            <span className="text-[11px] text-muted-foreground/60">
+                              {entry.startYear} — {entry.isCurrent ? "Present" : (entry.endYear ?? "—")}
+                            </span>
+                            {entry.grade && (
+                              <span className="text-[11px] text-amber-400/80 font-medium">{entry.grade}</span>
+                            )}
+                          </div>
+                        </div>
+                        {entry.isCurrent && (
+                          <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/25 text-blue-300">Studying</span>
+                        )}
+                      </div>
+                      {entry.description && (
+                        <p className="text-xs text-foreground/60 leading-relaxed mt-2 line-clamp-3">{entry.description}</p>
+                      )}
+                      {entry.activities && (
+                        <p className="text-[11px] text-muted-foreground/50 mt-1.5">Activities: {entry.activities}</p>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -6,8 +6,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMyProfile, useUpdateProfile, useAddPortfolioItem, useDeletePortfolioItem } from "@/hooks/use-profile";
-import { ArrowLeft, Camera, Plus, Instagram, Youtube, Link as LinkIcon, CreditCard, Upload, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  useMyProfile,
+  useUpdateProfile,
+  useAddPortfolioItem,
+  useDeletePortfolioItem,
+  useMyExperience,
+  useCreateExperience,
+  useUpdateExperience,
+  useDeleteExperience,
+  useMyEducation,
+  useCreateEducation,
+  useUpdateEducation,
+  useDeleteEducation,
+} from "@/hooks/use-profile";
+import type { ExperienceEntry, EducationEntry } from "@/hooks/use-profile";
+import { ArrowLeft, Camera, Plus, Instagram, Youtube, Link as LinkIcon, CreditCard, Upload, Trash2, CheckCircle2, AlertCircle, Pencil, Briefcase, GraduationCap, MapPin, Calendar } from "lucide-react";
 import { Link } from "wouter";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -74,6 +95,27 @@ export function ProfileEditPage() {
   const updateProfile = useUpdateProfile();
   const addPortfolioItem = useAddPortfolioItem();
   const deletePortfolioItem = useDeletePortfolioItem();
+
+  const { data: expItems = [] } = useMyExperience();
+  const createExperience = useCreateExperience();
+  const updateExperience = useUpdateExperience();
+  const deleteExperience = useDeleteExperience();
+
+  const { data: eduItems = [] } = useMyEducation();
+  const createEducation = useCreateEducation();
+  const updateEducation = useUpdateEducation();
+  const deleteEducation = useDeleteEducation();
+
+  const defaultExpForm = { jobTitle: "", company: "", location: "", startDate: "", endDate: "", isCurrent: false, description: "" };
+  const defaultEduForm = { institution: "", degree: "", fieldOfStudy: "", startYear: "", endYear: "", isCurrent: false, grade: "", activities: "", description: "" };
+
+  const [expModalOpen, setExpModalOpen] = useState(false);
+  const [editingExp, setEditingExp] = useState<ExperienceEntry | null>(null);
+  const [expForm, setExpForm] = useState(defaultExpForm);
+
+  const [eduModalOpen, setEduModalOpen] = useState(false);
+  const [editingEdu, setEditingEdu] = useState<EducationEntry | null>(null);
+  const [eduForm, setEduForm] = useState(defaultEduForm);
 
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
@@ -214,6 +256,104 @@ export function ProfileEditPage() {
     }
     setSkills((prev) => [...prev, trimmed]);
     setCustomSkillInput("");
+  };
+
+  const openAddExp = () => {
+    setEditingExp(null);
+    setExpForm(defaultExpForm);
+    setExpModalOpen(true);
+  };
+
+  const openEditExp = (entry: ExperienceEntry) => {
+    setEditingExp(entry);
+    setExpForm({
+      jobTitle: entry.jobTitle,
+      company: entry.company,
+      location: entry.location ?? "",
+      startDate: entry.startDate,
+      endDate: entry.endDate ?? "",
+      isCurrent: entry.isCurrent,
+      description: entry.description ?? "",
+    });
+    setExpModalOpen(true);
+  };
+
+  const handleSaveExp = () => {
+    if (!expForm.jobTitle.trim() || !expForm.company.trim() || !expForm.startDate.trim()) {
+      toast.error("Job title, company, and start date are required");
+      return;
+    }
+    const data = {
+      jobTitle: expForm.jobTitle,
+      company: expForm.company,
+      location: expForm.location || null,
+      startDate: expForm.startDate,
+      endDate: expForm.isCurrent ? null : (expForm.endDate || null),
+      isCurrent: expForm.isCurrent,
+      description: expForm.description || null,
+    };
+    if (editingExp) {
+      updateExperience.mutate({ id: editingExp.id, ...data }, {
+        onSuccess: () => { toast.success("Experience updated"); setExpModalOpen(false); },
+        onError: () => toast.error("Failed to update experience"),
+      });
+    } else {
+      createExperience.mutate(data, {
+        onSuccess: () => { toast.success("Experience added"); setExpModalOpen(false); },
+        onError: () => toast.error("Failed to add experience"),
+      });
+    }
+  };
+
+  const openAddEdu = () => {
+    setEditingEdu(null);
+    setEduForm(defaultEduForm);
+    setEduModalOpen(true);
+  };
+
+  const openEditEdu = (entry: EducationEntry) => {
+    setEditingEdu(entry);
+    setEduForm({
+      institution: entry.institution,
+      degree: entry.degree,
+      fieldOfStudy: entry.fieldOfStudy ?? "",
+      startYear: String(entry.startYear),
+      endYear: entry.endYear ? String(entry.endYear) : "",
+      isCurrent: entry.isCurrent,
+      grade: entry.grade ?? "",
+      activities: entry.activities ?? "",
+      description: entry.description ?? "",
+    });
+    setEduModalOpen(true);
+  };
+
+  const handleSaveEdu = () => {
+    if (!eduForm.institution.trim() || !eduForm.degree.trim() || !eduForm.startYear.trim()) {
+      toast.error("Institution, degree, and start year are required");
+      return;
+    }
+    const data = {
+      institution: eduForm.institution,
+      degree: eduForm.degree,
+      fieldOfStudy: eduForm.fieldOfStudy || null,
+      startYear: Number(eduForm.startYear),
+      endYear: eduForm.isCurrent ? null : (eduForm.endYear ? Number(eduForm.endYear) : null),
+      isCurrent: eduForm.isCurrent,
+      grade: eduForm.grade || null,
+      activities: eduForm.activities || null,
+      description: eduForm.description || null,
+    };
+    if (editingEdu) {
+      updateEducation.mutate({ id: editingEdu.id, ...data }, {
+        onSuccess: () => { toast.success("Education updated"); setEduModalOpen(false); },
+        onError: () => toast.error("Failed to update education"),
+      });
+    } else {
+      createEducation.mutate(data, {
+        onSuccess: () => { toast.success("Education added"); setEduModalOpen(false); },
+        onError: () => toast.error("Failed to add education"),
+      });
+    }
   };
 
   const handleSave = () => {
@@ -686,6 +826,84 @@ export function ProfileEditPage() {
           />
         </div>
 
+        {/* Experience Section */}
+        <div className="bg-card border border-border rounded-2xl p-5 md:p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Briefcase size={15} className="text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-foreground">Experience</h2>
+            </div>
+            <Button type="button" variant="outline" size="sm" className="rounded-xl text-xs" onClick={openAddExp}>
+              <Plus size={13} className="mr-1.5" />
+              Add Experience
+            </Button>
+          </div>
+          {expItems.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-2">No experience entries yet. Add your work history to stand out.</p>
+          ) : (
+            <div className="space-y-3">
+              {expItems.map((entry) => (
+                <div key={entry.id} className="rounded-xl border border-border bg-muted/20 p-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{entry.jobTitle}</p>
+                    <p className="text-xs text-muted-foreground truncate">{entry.company}{entry.location ? ` · ${entry.location}` : ""}</p>
+                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                      {entry.startDate} — {entry.isCurrent ? "Present" : (entry.endDate ?? "—")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button type="button" onClick={() => openEditExp(entry)} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
+                      <Pencil size={12} className="text-muted-foreground" />
+                    </button>
+                    <button type="button" onClick={() => deleteExperience.mutate(entry.id, { onSuccess: () => toast.success("Removed"), onError: () => toast.error("Failed to remove") })} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-red-500/10 hover:border-red-500/30 transition-colors">
+                      <Trash2 size={12} className="text-muted-foreground hover:text-red-400" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Education Section */}
+        <div className="bg-card border border-border rounded-2xl p-5 md:p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <GraduationCap size={15} className="text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-foreground">Education</h2>
+            </div>
+            <Button type="button" variant="outline" size="sm" className="rounded-xl text-xs" onClick={openAddEdu}>
+              <Plus size={13} className="mr-1.5" />
+              Add Education
+            </Button>
+          </div>
+          {eduItems.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-2">No education entries yet. Add your academic background to build credibility.</p>
+          ) : (
+            <div className="space-y-3">
+              {eduItems.map((entry) => (
+                <div key={entry.id} className="rounded-xl border border-border bg-muted/20 p-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{entry.degree}{entry.fieldOfStudy ? `, ${entry.fieldOfStudy}` : ""}</p>
+                    <p className="text-xs text-muted-foreground truncate">{entry.institution}</p>
+                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                      {entry.startYear} — {entry.isCurrent ? "Present" : (entry.endYear ?? "—")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button type="button" onClick={() => openEditEdu(entry)} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
+                      <Pencil size={12} className="text-muted-foreground" />
+                    </button>
+                    <button type="button" onClick={() => deleteEducation.mutate(entry.id, { onSuccess: () => toast.success("Removed"), onError: () => toast.error("Failed to remove") })} className="w-7 h-7 rounded-lg border border-border flex items-center justify-center hover:bg-red-500/10 hover:border-red-500/30 transition-colors">
+                      <Trash2 size={12} className="text-muted-foreground hover:text-red-400" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Save button */}
         <div className="flex gap-3 pb-4">
           <Button
@@ -704,6 +922,136 @@ export function ProfileEditPage() {
           </Button>
         </div>
       </div>
+
+      {/* ── Experience Modal ── */}
+      <Dialog open={expModalOpen} onOpenChange={setExpModalOpen}>
+        <DialogContent className="bg-[#141414] border-border rounded-2xl max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">{editingExp ? "Edit Experience" : "Add Experience"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Job Title <span className="text-red-400">*</span></label>
+                <Input placeholder="e.g. Content Creator" value={expForm.jobTitle} onChange={(e) => setExpForm((f) => ({ ...f, jobTitle: e.target.value }))} className="rounded-xl h-10 text-sm" maxLength={120} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Company <span className="text-red-400">*</span></label>
+                <Input placeholder="e.g. Freelance" value={expForm.company} onChange={(e) => setExpForm((f) => ({ ...f, company: e.target.value }))} className="rounded-xl h-10 text-sm" maxLength={120} />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1"><MapPin size={11} /> Location (optional)</label>
+              <Input placeholder="e.g. Mumbai, India" value={expForm.location} onChange={(e) => setExpForm((f) => ({ ...f, location: e.target.value }))} className="rounded-xl h-10 text-sm" maxLength={100} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1"><Calendar size={11} /> Start Date <span className="text-red-400">*</span></label>
+                <Input type="month" value={expForm.startDate} onChange={(e) => setExpForm((f) => ({ ...f, startDate: e.target.value }))} className="rounded-xl h-10 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1"><Calendar size={11} /> End Date</label>
+                <Input type="month" value={expForm.endDate} onChange={(e) => setExpForm((f) => ({ ...f, endDate: e.target.value }))} disabled={expForm.isCurrent} className="rounded-xl h-10 text-sm disabled:opacity-40" />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <div
+                role="switch"
+                aria-checked={expForm.isCurrent}
+                onClick={() => setExpForm((f) => ({ ...f, isCurrent: !f.isCurrent, endDate: !f.isCurrent ? "" : f.endDate }))}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${expForm.isCurrent ? "bg-purple-500" : "bg-muted"}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${expForm.isCurrent ? "translate-x-4" : "translate-x-0"}`} />
+              </div>
+              <span className="text-xs text-muted-foreground">I am currently working in this role</span>
+            </label>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Description (optional)</label>
+              <Textarea placeholder="What did you work on? Key achievements, tools used..." value={expForm.description} onChange={(e) => setExpForm((f) => ({ ...f, description: e.target.value }))} className="rounded-xl text-sm min-h-[80px] resize-none" maxLength={1000} />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" className="rounded-xl" onClick={() => setExpModalOpen(false)}>Cancel</Button>
+            <Button
+              className="btn-gradient border-0 text-white rounded-xl"
+              onClick={handleSaveExp}
+              disabled={createExperience.isPending || updateExperience.isPending}
+            >
+              {createExperience.isPending || updateExperience.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Education Modal ── */}
+      <Dialog open={eduModalOpen} onOpenChange={setEduModalOpen}>
+        <DialogContent className="bg-[#141414] border-border rounded-2xl max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">{editingEdu ? "Edit Education" : "Add Education"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Institution <span className="text-red-400">*</span></label>
+              <Input placeholder="e.g. Mumbai University" value={eduForm.institution} onChange={(e) => setEduForm((f) => ({ ...f, institution: e.target.value }))} className="rounded-xl h-10 text-sm" maxLength={200} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Degree <span className="text-red-400">*</span></label>
+                <Input placeholder="e.g. Bachelor of Arts" value={eduForm.degree} onChange={(e) => setEduForm((f) => ({ ...f, degree: e.target.value }))} className="rounded-xl h-10 text-sm" maxLength={200} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Field of Study</label>
+                <Input placeholder="e.g. Mass Communication" value={eduForm.fieldOfStudy} onChange={(e) => setEduForm((f) => ({ ...f, fieldOfStudy: e.target.value }))} className="rounded-xl h-10 text-sm" maxLength={120} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Start Year <span className="text-red-400">*</span></label>
+                <Input type="number" min={1950} max={2099} placeholder="2020" value={eduForm.startYear} onChange={(e) => setEduForm((f) => ({ ...f, startYear: e.target.value }))} className="rounded-xl h-10 text-sm" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">End Year</label>
+                <Input type="number" min={1950} max={2099} placeholder="2024" value={eduForm.endYear} onChange={(e) => setEduForm((f) => ({ ...f, endYear: e.target.value }))} disabled={eduForm.isCurrent} className="rounded-xl h-10 text-sm disabled:opacity-40" />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <div
+                role="switch"
+                aria-checked={eduForm.isCurrent}
+                onClick={() => setEduForm((f) => ({ ...f, isCurrent: !f.isCurrent, endYear: !f.isCurrent ? "" : f.endYear }))}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${eduForm.isCurrent ? "bg-purple-500" : "bg-muted"}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${eduForm.isCurrent ? "translate-x-4" : "translate-x-0"}`} />
+              </div>
+              <span className="text-xs text-muted-foreground">I am currently studying here</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Grade (optional)</label>
+                <Input placeholder="e.g. 8.5 CGPA / First Class" value={eduForm.grade} onChange={(e) => setEduForm((f) => ({ ...f, grade: e.target.value }))} className="rounded-xl h-10 text-sm" maxLength={60} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Activities (optional)</label>
+                <Input placeholder="e.g. Drama Club, Photography" value={eduForm.activities} onChange={(e) => setEduForm((f) => ({ ...f, activities: e.target.value }))} className="rounded-xl h-10 text-sm" maxLength={500} />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Description (optional)</label>
+              <Textarea placeholder="What did you study? Notable projects, clubs..." value={eduForm.description} onChange={(e) => setEduForm((f) => ({ ...f, description: e.target.value }))} className="rounded-xl text-sm min-h-[80px] resize-none" maxLength={1000} />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" className="rounded-xl" onClick={() => setEduModalOpen(false)}>Cancel</Button>
+            <Button
+              className="btn-gradient border-0 text-white rounded-xl"
+              onClick={handleSaveEdu}
+              disabled={createEducation.isPending || updateEducation.isPending}
+            >
+              {createEducation.isPending || updateEducation.isPending ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

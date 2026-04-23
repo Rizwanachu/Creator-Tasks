@@ -1,31 +1,40 @@
 import { Router } from "express";
-import { db, users, tasks, ratings, portfolioItems } from "@workspace/db";
+import { db, users, tasks, ratings, portfolioItems, experience, education } from "@workspace/db";
 import { eq, and, avg, count, sql, ilike, or, isNotNull, ne, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
 async function buildPublicProfile(user: typeof users.$inferSelect) {
-  const completedTasks = await db
-    .select({ id: tasks.id, title: tasks.title, budget: tasks.budget, category: tasks.category, createdAt: tasks.createdAt })
-    .from(tasks)
-    .where(and(eq(tasks.workerId, user.id), eq(tasks.status, "completed")));
-
-  const postedCount = await db
-    .select({ count: count(tasks.id) })
-    .from(tasks)
-    .where(eq(tasks.creatorId, user.id));
-
-  const ratingStats = await db
-    .select({ avg: avg(ratings.score), total: count(ratings.id) })
-    .from(ratings)
-    .where(eq(ratings.ratingFor, user.id));
-
-  const portfolio = await db
-    .select()
-    .from(portfolioItems)
-    .where(eq(portfolioItems.userId, user.clerkId))
-    .orderBy(portfolioItems.createdAt);
+  const [completedTasks, postedCount, ratingStats, portfolio, expItems, eduItems] = await Promise.all([
+    db
+      .select({ id: tasks.id, title: tasks.title, budget: tasks.budget, category: tasks.category, createdAt: tasks.createdAt })
+      .from(tasks)
+      .where(and(eq(tasks.workerId, user.id), eq(tasks.status, "completed"))),
+    db
+      .select({ count: count(tasks.id) })
+      .from(tasks)
+      .where(eq(tasks.creatorId, user.id)),
+    db
+      .select({ avg: avg(ratings.score), total: count(ratings.id) })
+      .from(ratings)
+      .where(eq(ratings.ratingFor, user.id)),
+    db
+      .select()
+      .from(portfolioItems)
+      .where(eq(portfolioItems.userId, user.clerkId))
+      .orderBy(portfolioItems.createdAt),
+    db
+      .select()
+      .from(experience)
+      .where(eq(experience.userId, user.clerkId))
+      .orderBy(desc(experience.startDate)),
+    db
+      .select()
+      .from(education)
+      .where(eq(education.userId, user.clerkId))
+      .orderBy(desc(education.startYear)),
+  ]);
 
   return {
     id: user.id,
@@ -54,6 +63,30 @@ async function buildPublicProfile(user: typeof users.$inferSelect) {
       url: p.url,
       caption: p.caption,
       createdAt: p.createdAt,
+    })),
+    experience: expItems.map((e) => ({
+      id: e.id,
+      jobTitle: e.jobTitle,
+      company: e.company,
+      location: e.location,
+      startDate: e.startDate,
+      endDate: e.endDate,
+      isCurrent: e.isCurrent ?? false,
+      description: e.description,
+      createdAt: e.createdAt,
+    })),
+    education: eduItems.map((e) => ({
+      id: e.id,
+      institution: e.institution,
+      degree: e.degree,
+      fieldOfStudy: e.fieldOfStudy,
+      startYear: e.startYear,
+      endYear: e.endYear,
+      isCurrent: e.isCurrent ?? false,
+      grade: e.grade,
+      activities: e.activities,
+      description: e.description,
+      createdAt: e.createdAt,
     })),
   };
 }
@@ -306,6 +339,207 @@ router.get("/users/me/portfolio", requireAuth, async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Error fetching portfolio");
     res.status(500).json({ error: "Failed to fetch portfolio" });
+  }
+});
+
+// ── Experience CRUD ─────────────────────────────────────────────────────────
+
+// GET /users/me/experience
+router.get("/users/me/experience", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const items = await db
+      .select()
+      .from(experience)
+      .where(eq(experience.userId, currentUser.clerkId))
+      .orderBy(desc(experience.startDate));
+    res.json(items);
+  } catch (err) {
+    req.log.error({ err }, "Error fetching experience");
+    res.status(500).json({ error: "Failed to fetch experience" });
+  }
+});
+
+// POST /users/me/experience
+router.post("/users/me/experience", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const { jobTitle, company, location, startDate, endDate, isCurrent, description } = req.body as {
+      jobTitle?: string;
+      company?: string;
+      location?: string;
+      startDate?: string;
+      endDate?: string;
+      isCurrent?: boolean;
+      description?: string;
+    };
+    if (!jobTitle?.trim()) { res.status(400).json({ error: "jobTitle is required" }); return; }
+    if (!company?.trim()) { res.status(400).json({ error: "company is required" }); return; }
+    if (!startDate?.trim()) { res.status(400).json({ error: "startDate is required" }); return; }
+    const [item] = await db.insert(experience).values({
+      userId: currentUser.clerkId,
+      jobTitle: jobTitle.trim().slice(0, 120),
+      company: company.trim().slice(0, 120),
+      location: location?.trim().slice(0, 100) || null,
+      startDate: startDate.trim(),
+      endDate: isCurrent ? null : (endDate?.trim() || null),
+      isCurrent: Boolean(isCurrent),
+      description: description?.trim().slice(0, 1000) || null,
+    }).returning();
+    res.json(item);
+  } catch (err) {
+    req.log.error({ err }, "Error creating experience");
+    res.status(500).json({ error: "Failed to create experience" });
+  }
+});
+
+// PUT /users/me/experience/:id
+router.put("/users/me/experience/:id", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const { id } = req.params;
+    const existing = await db.query.experience.findFirst({
+      where: and(eq(experience.id, id), eq(experience.userId, currentUser.clerkId)),
+    });
+    if (!existing) { res.status(404).json({ error: "Experience entry not found" }); return; }
+    const { jobTitle, company, location, startDate, endDate, isCurrent, description } = req.body as {
+      jobTitle?: string; company?: string; location?: string;
+      startDate?: string; endDate?: string; isCurrent?: boolean; description?: string;
+    };
+    if (!jobTitle?.trim()) { res.status(400).json({ error: "jobTitle is required" }); return; }
+    if (!company?.trim()) { res.status(400).json({ error: "company is required" }); return; }
+    if (!startDate?.trim()) { res.status(400).json({ error: "startDate is required" }); return; }
+    const [updated] = await db.update(experience).set({
+      jobTitle: jobTitle.trim().slice(0, 120),
+      company: company.trim().slice(0, 120),
+      location: location?.trim().slice(0, 100) || null,
+      startDate: startDate.trim(),
+      endDate: isCurrent ? null : (endDate?.trim() || null),
+      isCurrent: Boolean(isCurrent),
+      description: description?.trim().slice(0, 1000) || null,
+    }).where(eq(experience.id, id)).returning();
+    res.json(updated);
+  } catch (err) {
+    req.log.error({ err }, "Error updating experience");
+    res.status(500).json({ error: "Failed to update experience" });
+  }
+});
+
+// DELETE /users/me/experience/:id
+router.delete("/users/me/experience/:id", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const { id } = req.params;
+    const existing = await db.query.experience.findFirst({
+      where: and(eq(experience.id, id), eq(experience.userId, currentUser.clerkId)),
+    });
+    if (!existing) { res.status(404).json({ error: "Experience entry not found" }); return; }
+    await db.delete(experience).where(eq(experience.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Error deleting experience");
+    res.status(500).json({ error: "Failed to delete experience" });
+  }
+});
+
+// ── Education CRUD ───────────────────────────────────────────────────────────
+
+// GET /users/me/education
+router.get("/users/me/education", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const items = await db
+      .select()
+      .from(education)
+      .where(eq(education.userId, currentUser.clerkId))
+      .orderBy(desc(education.startYear));
+    res.json(items);
+  } catch (err) {
+    req.log.error({ err }, "Error fetching education");
+    res.status(500).json({ error: "Failed to fetch education" });
+  }
+});
+
+// POST /users/me/education
+router.post("/users/me/education", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const { institution, degree, fieldOfStudy, startYear, endYear, isCurrent, grade, activities, description } = req.body as {
+      institution?: string; degree?: string; fieldOfStudy?: string;
+      startYear?: number; endYear?: number; isCurrent?: boolean;
+      grade?: string; activities?: string; description?: string;
+    };
+    if (!institution?.trim()) { res.status(400).json({ error: "institution is required" }); return; }
+    if (!degree?.trim()) { res.status(400).json({ error: "degree is required" }); return; }
+    if (!startYear) { res.status(400).json({ error: "startYear is required" }); return; }
+    const [item] = await db.insert(education).values({
+      userId: currentUser.clerkId,
+      institution: institution.trim().slice(0, 200),
+      degree: degree.trim().slice(0, 200),
+      fieldOfStudy: fieldOfStudy?.trim().slice(0, 120) || null,
+      startYear: Number(startYear),
+      endYear: isCurrent ? null : (endYear ? Number(endYear) : null),
+      isCurrent: Boolean(isCurrent),
+      grade: grade?.trim().slice(0, 60) || null,
+      activities: activities?.trim().slice(0, 500) || null,
+      description: description?.trim().slice(0, 1000) || null,
+    }).returning();
+    res.json(item);
+  } catch (err) {
+    req.log.error({ err }, "Error creating education");
+    res.status(500).json({ error: "Failed to create education" });
+  }
+});
+
+// PUT /users/me/education/:id
+router.put("/users/me/education/:id", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const { id } = req.params;
+    const existing = await db.query.education.findFirst({
+      where: and(eq(education.id, id), eq(education.userId, currentUser.clerkId)),
+    });
+    if (!existing) { res.status(404).json({ error: "Education entry not found" }); return; }
+    const { institution, degree, fieldOfStudy, startYear, endYear, isCurrent, grade, activities, description } = req.body as {
+      institution?: string; degree?: string; fieldOfStudy?: string;
+      startYear?: number; endYear?: number; isCurrent?: boolean;
+      grade?: string; activities?: string; description?: string;
+    };
+    if (!institution?.trim()) { res.status(400).json({ error: "institution is required" }); return; }
+    if (!degree?.trim()) { res.status(400).json({ error: "degree is required" }); return; }
+    if (!startYear) { res.status(400).json({ error: "startYear is required" }); return; }
+    const [updated] = await db.update(education).set({
+      institution: institution.trim().slice(0, 200),
+      degree: degree.trim().slice(0, 200),
+      fieldOfStudy: fieldOfStudy?.trim().slice(0, 120) || null,
+      startYear: Number(startYear),
+      endYear: isCurrent ? null : (endYear ? Number(endYear) : null),
+      isCurrent: Boolean(isCurrent),
+      grade: grade?.trim().slice(0, 60) || null,
+      activities: activities?.trim().slice(0, 500) || null,
+      description: description?.trim().slice(0, 1000) || null,
+    }).where(eq(education.id, id)).returning();
+    res.json(updated);
+  } catch (err) {
+    req.log.error({ err }, "Error updating education");
+    res.status(500).json({ error: "Failed to update education" });
+  }
+});
+
+// DELETE /users/me/education/:id
+router.delete("/users/me/education/:id", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const { id } = req.params;
+    const existing = await db.query.education.findFirst({
+      where: and(eq(education.id, id), eq(education.userId, currentUser.clerkId)),
+    });
+    if (!existing) { res.status(404).json({ error: "Education entry not found" }); return; }
+    await db.delete(education).where(eq(education.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Error deleting education");
+    res.status(500).json({ error: "Failed to delete education" });
   }
 });
 

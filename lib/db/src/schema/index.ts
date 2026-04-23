@@ -164,3 +164,31 @@ export const messages = pgTable("messages", {
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const experience = pgTable("experience", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("clerk_id").notNull(),
+  jobTitle: text("job_title").notNull(),
+  company: text("company").notNull(),
+  location: text("location"),
+  startDate: text("start_date").notNull(),
+  endDate: text("end_date"),
+  isCurrent: boolean("is_current").default(false),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const education = pgTable("education", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("clerk_id").notNull(),
+  institution: text("institution").notNull(),
+  degree: text("degree").notNull(),
+  fieldOfStudy: text("field_of_study"),
+  startYear: integer("start_year").notNull(),
+  endYear: integer("end_year"),
+  isCurrent: boolean("is_current").default(false),
+  grade: text("grade"),
+  activities: text("activities"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});

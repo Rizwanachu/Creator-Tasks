@@ -11,6 +11,32 @@ export interface PortfolioItem {
   createdAt: string;
 }
 
+export interface ExperienceEntry {
+  id: string;
+  jobTitle: string;
+  company: string;
+  location: string | null;
+  startDate: string;
+  endDate: string | null;
+  isCurrent: boolean;
+  description: string | null;
+  createdAt: string;
+}
+
+export interface EducationEntry {
+  id: string;
+  institution: string;
+  degree: string;
+  fieldOfStudy: string | null;
+  startYear: number;
+  endYear: number | null;
+  isCurrent: boolean;
+  grade: string | null;
+  activities: string | null;
+  description: string | null;
+  createdAt: string;
+}
+
 export interface UserProfile {
   id: string;
   clerkId: string;
@@ -39,6 +65,8 @@ export interface UserProfile {
     createdAt: string;
   }>;
   portfolioItems: PortfolioItem[];
+  experience: ExperienceEntry[];
+  education: EducationEntry[];
 }
 
 /** Represents the authenticated /users/me response — includes private fields (upiId) */
@@ -167,6 +195,102 @@ export function useDeletePortfolioItem() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+    },
+  });
+}
+
+export function useMyExperience() {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery<ExperienceEntry[]>({
+    queryKey: ["my-experience"],
+    queryFn: () => apiFetch("/api/users/me/experience", {}, getToken),
+    enabled: !!isSignedIn,
+  });
+}
+
+export function useCreateExperience() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Omit<ExperienceEntry, "id" | "createdAt">) =>
+      apiFetch("/api/users/me/experience", { method: "POST", data }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-experience"] });
+      queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
+    },
+  });
+}
+
+export function useUpdateExperience() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<ExperienceEntry> & { id: string }) =>
+      apiFetch(`/api/users/me/experience/${id}`, { method: "PUT", data }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-experience"] });
+      queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
+    },
+  });
+}
+
+export function useDeleteExperience() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/api/users/me/experience/${id}`, { method: "DELETE" }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-experience"] });
+      queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
+    },
+  });
+}
+
+export function useMyEducation() {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery<EducationEntry[]>({
+    queryKey: ["my-education"],
+    queryFn: () => apiFetch("/api/users/me/education", {}, getToken),
+    enabled: !!isSignedIn,
+  });
+}
+
+export function useCreateEducation() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Omit<EducationEntry, "id" | "createdAt">) =>
+      apiFetch("/api/users/me/education", { method: "POST", data }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-education"] });
+      queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
+    },
+  });
+}
+
+export function useUpdateEducation() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<EducationEntry> & { id: string }) =>
+      apiFetch(`/api/users/me/education/${id}`, { method: "PUT", data }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-education"] });
+      queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
+    },
+  });
+}
+
+export function useDeleteEducation() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/api/users/me/education/${id}`, { method: "DELETE" }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-education"] });
+      queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
     },
   });
 }
