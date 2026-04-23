@@ -58,6 +58,7 @@ router.get("/tasks", async (req, res) => {
         createdAt: tasks.createdAt,
         creatorName: users.name,
         creatorClerkId: users.clerkId,
+        creatorUsername: users.username,
       })
       .from(tasks)
       .leftJoin(users, eq(tasks.creatorId, users.id))
@@ -154,6 +155,7 @@ router.get("/tasks/:id", async (req, res) => {
         createdAt: tasks.createdAt,
         creatorName: users.name,
         creatorClerkId: users.clerkId,
+        creatorUsername: users.username,
       })
       .from(tasks)
       .leftJoin(users, eq(tasks.creatorId, users.id))

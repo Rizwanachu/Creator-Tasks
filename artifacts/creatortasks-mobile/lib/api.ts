@@ -33,6 +33,25 @@ export interface Task {
   flagged: boolean;
   createdAt: string;
   creatorName?: string;
+  creatorUsername?: string | null;
+}
+
+export interface PublicProfile {
+  id: string;
+  clerkId: string;
+  username: string | null;
+  name: string | null;
+  bio: string | null;
+  skills: string[];
+  skillEndorsements: Record<string, number>;
+  portfolioUrl: string | null;
+  instagramHandle: string | null;
+  youtubeHandle: string | null;
+  avatarUrl: string | null;
+  isAvailable: boolean;
+  completedTasksCount: number;
+  rating: { average: string | null; total: number };
+  portfolioItems: PortfolioItem[];
 }
 
 export interface Stats {

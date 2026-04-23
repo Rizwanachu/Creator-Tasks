@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { Feather } from "@expo/vector-icons";
@@ -39,6 +39,7 @@ export default function TaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const isWeb = Platform.OS === "web";
   const bottomPad = isWeb ? 34 : insets.bottom + 20;
 
@@ -108,10 +109,23 @@ export default function TaskDetailScreen() {
 
         <View style={styles.metaRow}>
           <View style={styles.metaItem}>
-            <Feather name="user" size={13} color={colors.mutedForeground} />
-            <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
-              {task.creatorName ?? "Creator"}
-            </Text>
+            <Feather name="user" size={13} color={task.creatorUsername ? colors.primary : colors.mutedForeground} />
+            {task.creatorUsername ? (
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push(`/creator/${encodeURIComponent(task.creatorUsername!)}`);
+                }}
+              >
+                <Text style={[styles.metaText, styles.creatorLink, { color: colors.primary }]}>
+                  {task.creatorName ?? "Creator"}
+                </Text>
+              </Pressable>
+            ) : (
+              <Text style={[styles.metaText, { color: colors.mutedForeground }]}>
+                {task.creatorName ?? "Creator"}
+              </Text>
+            )}
           </View>
           <View style={styles.metaItem}>
             <Feather name="clock" size={13} color={colors.mutedForeground} />
@@ -248,6 +262,9 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     fontFamily: "Inter_400Regular",
+  },
+  creatorLink: {
+    textDecorationLine: "underline",
   },
   budgetRow: {
     flexDirection: "row",
