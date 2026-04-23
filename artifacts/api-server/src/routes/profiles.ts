@@ -423,7 +423,7 @@ router.put("/users/me/experience/:id", requireAuth, async (req, res) => {
       endDate: isCurrent ? null : (endDate?.trim() || null),
       isCurrent: Boolean(isCurrent),
       description: description?.trim().slice(0, 1000) || null,
-    }).where(eq(experience.id, id)).returning();
+    }).where(and(eq(experience.id, id), eq(experience.userId, currentUser.clerkId))).returning();
     res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Error updating experience");
@@ -440,7 +440,7 @@ router.delete("/users/me/experience/:id", requireAuth, async (req, res) => {
       where: and(eq(experience.id, id), eq(experience.userId, currentUser.clerkId)),
     });
     if (!existing) { res.status(404).json({ error: "Experience entry not found" }); return; }
-    await db.delete(experience).where(eq(experience.id, id));
+    await db.delete(experience).where(and(eq(experience.id, id), eq(experience.userId, currentUser.clerkId)));
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Error deleting experience");
@@ -530,7 +530,7 @@ router.put("/users/me/education/:id", requireAuth, async (req, res) => {
       grade: grade?.trim().slice(0, 60) || null,
       activities: activities?.trim().slice(0, 500) || null,
       description: description?.trim().slice(0, 1000) || null,
-    }).where(eq(education.id, id)).returning();
+    }).where(and(eq(education.id, id), eq(education.userId, currentUser.clerkId))).returning();
     res.json(updated);
   } catch (err) {
     req.log.error({ err }, "Error updating education");
@@ -547,7 +547,7 @@ router.delete("/users/me/education/:id", requireAuth, async (req, res) => {
       where: and(eq(education.id, id), eq(education.userId, currentUser.clerkId)),
     });
     if (!existing) { res.status(404).json({ error: "Education entry not found" }); return; }
-    await db.delete(education).where(eq(education.id, id));
+    await db.delete(education).where(and(eq(education.id, id), eq(education.userId, currentUser.clerkId)));
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Error deleting education");
