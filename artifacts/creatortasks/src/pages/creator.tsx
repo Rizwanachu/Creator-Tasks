@@ -11,8 +11,6 @@ import {
   Instagram,
   Youtube,
   Pencil,
-  MessageSquare,
-  Heart,
   LayoutGrid,
   CheckCircle2,
   Share2,
@@ -448,68 +446,6 @@ export function CreatorPage() {
                 <div className="flex gap-3">
                   <div className="w-0.5 shrink-0 rounded-full bg-gradient-to-b from-purple-500 to-pink-500/40 self-stretch" />
                   <p className="text-sm text-foreground/80 leading-relaxed">{profile.bio}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Intro Drop */}
-            {profile.bio && (
-              <div className="bg-card border border-border rounded-2xl p-5 md:p-6">
-                <SectionHeading>Intro Drop</SectionHeading>
-                <div className="rounded-xl border border-border/60 bg-[#0f0f0f] p-4">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 ring-1 ring-border">
-                      {imgSrc ? (
-                        <img
-                          src={imgSrc}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-center justify-center text-white text-xs font-bold"
-                          style={{
-                            background: "linear-gradient(135deg,#7C5CFF,#ec4899)",
-                          }}
-                        >
-                          {initials}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-foreground">
-                          {profile.name || "Creator"}
-                        </span>
-                        {profile.username && (
-                          <span className="text-xs text-muted-foreground">
-                            @{profile.username}
-                          </span>
-                        )}
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 text-[9px] font-bold tracking-widest border border-purple-500/20">
-                          DROP
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground/50 mt-0.5">
-                        Intro · pinned
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-sm text-foreground/70 leading-relaxed line-clamp-5 mb-4 pl-12">
-                    {profile.bio}
-                  </p>
-
-                  <div className="flex items-center gap-5 pl-12 pt-3 border-t border-border/40">
-                    <button className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-pink-400 transition-colors">
-                      <Heart size={13} />
-                      <span>0</span>
-                    </button>
-                    <button className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-blue-400 transition-colors">
-                      <MessageSquare size={13} />
-                      <span>0</span>
-                    </button>
-                  </div>
                 </div>
               </div>
             )}
