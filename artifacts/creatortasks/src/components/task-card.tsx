@@ -93,7 +93,18 @@ export function TaskCard({ task, disableActions }: { task: Task; disableActions?
   };
 
   return (
-    <div className="group card-lit bg-card border border-border rounded-2xl p-6 card-glow transition-all duration-300 flex flex-col h-full relative">
+    <div className="group card-lit bg-card border border-border rounded-2xl overflow-hidden card-glow transition-all duration-300 flex flex-col h-full relative">
+      {task.imageUrl && (
+        <div className="w-full h-36 overflow-hidden shrink-0">
+          <img
+            src={`/api/storage${task.imageUrl}`}
+            alt="Task reference"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        </div>
+      )}
+
+      <div className="flex flex-col flex-1 p-6">
       {task.flagged && (
         <div className="absolute top-3 right-3 text-orange-500" title="This task has been flagged">
           <AlertCircle size={14} />
@@ -208,6 +219,7 @@ export function TaskCard({ task, disableActions }: { task: Task; disableActions?
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

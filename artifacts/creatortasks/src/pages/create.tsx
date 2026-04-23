@@ -134,7 +134,8 @@ function TaskPreview({
   description,
   budget,
   category,
-}: Partial<TaskFormValues>) {
+  imagePreview,
+}: Partial<TaskFormValues> & { imagePreview?: string | null }) {
   const cat = CATEGORIES.find((c) => c.value === category) ?? CATEGORIES[0];
   const hasTitle = !!(title && title.length >= 3);
   const hasDesc = !!(description && description.length >= 10);
@@ -211,10 +212,16 @@ function TaskPreview({
         </AnimatedPreviewSection>
 
         <AnimatedPreviewSection animKey={descKey}>
-          <p className={`text-sm leading-relaxed line-clamp-3 mb-5 ${hasDesc ? "text-muted-foreground" : "text-muted-foreground/50"}`}>
+          <p className={`text-sm leading-relaxed line-clamp-3 mb-4 ${hasDesc ? "text-muted-foreground" : "text-muted-foreground/50"}`}>
             {hasDesc ? description : "Your description will appear here as creators see it..."}
           </p>
         </AnimatedPreviewSection>
+
+        {imagePreview && (
+          <div className="mb-4 rounded-lg overflow-hidden border border-border">
+            <img src={imagePreview} alt="Reference" className="w-full object-cover max-h-36" />
+          </div>
+        )}
 
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <div className="flex items-center gap-1.5 text-xs text-zinc-500">
@@ -794,6 +801,7 @@ export function CreateTask() {
               description={watched.description}
               budget={watched.budget}
               category={watched.category}
+              imagePreview={taskImagePreview}
             />
           </div>
         </div>
