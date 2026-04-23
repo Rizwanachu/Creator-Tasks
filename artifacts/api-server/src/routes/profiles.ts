@@ -23,7 +23,7 @@ async function buildPublicProfile(user: typeof users.$inferSelect) {
       .select()
       .from(portfolioItems)
       .where(eq(portfolioItems.userId, user.clerkId))
-      .orderBy(portfolioItems.createdAt),
+      .orderBy(asc(portfolioItems.position), asc(portfolioItems.createdAt)),
     db
       .select()
       .from(experience)
@@ -62,6 +62,7 @@ async function buildPublicProfile(user: typeof users.$inferSelect) {
       userId: p.userId,
       url: p.url,
       caption: p.caption,
+      position: p.position,
       createdAt: p.createdAt,
     })),
     experience: expItems.map((e) => ({
@@ -105,7 +106,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
     }
     const portfolio = await db.select().from(portfolioItems)
       .where(eq(portfolioItems.userId, user.clerkId))
-      .orderBy(portfolioItems.createdAt);
+      .orderBy(asc(portfolioItems.position), asc(portfolioItems.createdAt));
 
     res.json({
       id: user.id,
@@ -125,6 +126,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
         userId: p.userId,
         url: p.url,
         caption: p.caption,
+        position: p.position,
         createdAt: p.createdAt,
       })),
     });
@@ -293,16 +295,47 @@ router.post("/users/me/portfolio", requireAuth, async (req, res) => {
       return;
     }
 
+    const maxPosResult = await db
+      .select({ maxPos: max(portfolioItems.position) })
+      .from(portfolioItems)
+      .where(eq(portfolioItems.userId, currentUser.clerkId));
+    const nextPosition = (maxPosResult[0]?.maxPos ?? -1) + 1;
+
     const [item] = await db.insert(portfolioItems).values({
       userId: currentUser.clerkId,
       url: url.trim(),
       caption: caption?.trim().slice(0, 200) || null,
+      position: nextPosition,
     }).returning();
 
     res.json(item);
   } catch (err) {
     req.log.error({ err }, "Error adding portfolio item");
     res.status(500).json({ error: "Failed to add portfolio item" });
+  }
+});
+
+// PATCH /users/me/portfolio/reorder — reorder portfolio items
+router.patch("/users/me/portfolio/reorder", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const { ids } = req.body as { ids: string[] };
+    if (!Array.isArray(ids) || ids.some((id) => typeof id !== "string")) {
+      res.status(400).json({ error: "ids must be an array of strings" });
+      return;
+    }
+    await Promise.all(
+      ids.map((id, index) =>
+        db
+          .update(portfolioItems)
+          .set({ position: index })
+          .where(and(eq(portfolioItems.id, id), eq(portfolioItems.userId, currentUser.clerkId)))
+      )
+    );
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Error reordering portfolio");
+    res.status(500).json({ error: "Failed to reorder portfolio" });
   }
 });
 
@@ -336,7 +369,7 @@ router.get("/users/me/portfolio", requireAuth, async (req, res) => {
     const items = await db.select()
       .from(portfolioItems)
       .where(eq(portfolioItems.userId, currentUser.clerkId))
-      .orderBy(portfolioItems.createdAt);
+      .orderBy(asc(portfolioItems.position), asc(portfolioItems.createdAt));
     res.json(items);
   } catch (err) {
     req.log.error({ err }, "Error fetching portfolio");

@@ -27,6 +27,7 @@ export const portfolioItems = pgTable("portfolio_items", {
   userId: text("owner_clerk_id").notNull(),
   url: text("image_object_path").notNull(),
   caption: text("caption"),
+  position: integer("position").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

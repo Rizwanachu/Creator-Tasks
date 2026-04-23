@@ -13,6 +13,7 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
+  rectSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -35,6 +36,7 @@ import {
   useUpdateProfile,
   useAddPortfolioItem,
   useDeletePortfolioItem,
+  useReorderPortfolio,
   useMyExperience,
   useCreateExperience,
   useUpdateExperience,
@@ -46,7 +48,7 @@ import {
   useDeleteEducation,
   useReorderEducation,
 } from "@/hooks/use-profile";
-import type { ExperienceEntry, EducationEntry } from "@/hooks/use-profile";
+import type { ExperienceEntry, EducationEntry, PortfolioItem } from "@/hooks/use-profile";
 import { ArrowLeft, Camera, Plus, Instagram, Youtube, Link as LinkIcon, CreditCard, Upload, Trash2, CheckCircle2, AlertCircle, Pencil, Briefcase, GraduationCap, MapPin, Calendar, GripVertical } from "lucide-react";
 import { Link } from "wouter";
 
@@ -174,6 +176,46 @@ function SortableEduItem({
   );
 }
 
+function SortablePortfolioItem({
+  item,
+  imageUrl,
+  onDelete,
+}: {
+  item: PortfolioItem;
+  imageUrl: string;
+  onDelete: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-muted">
+      <img src={imageUrl} alt={item.caption ?? "Portfolio"} className="w-full h-full object-cover" />
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md bg-black/50 hover:bg-black/70 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none transition-colors z-10"
+      >
+        <GripVertical size={12} className="text-white/70" />
+      </button>
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <button
+          type="button"
+          onClick={() => onDelete(item.id)}
+          className="w-9 h-9 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center transition-colors"
+        >
+          <Trash2 size={15} className="text-white" />
+        </button>
+      </div>
+      {item.caption && (
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 p-2">
+          <p className="text-xs text-white truncate">{item.caption}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ProfileEditPage() {
   const { userId, getToken } = useAuth();
   const [, setLocation] = useLocation();
@@ -184,6 +226,7 @@ export function ProfileEditPage() {
   const updateProfile = useUpdateProfile();
   const addPortfolioItem = useAddPortfolioItem();
   const deletePortfolioItem = useDeletePortfolioItem();
+  const reorderPortfolio = useReorderPortfolio();
 
   const { data: expItems = [] } = useMyExperience();
   const createExperience = useCreateExperience();
@@ -197,9 +240,11 @@ export function ProfileEditPage() {
   const deleteEducation = useDeleteEducation();
   const reorderEducation = useReorderEducation();
 
+  const [orderedPortfolioItems, setOrderedPortfolioItems] = useState<PortfolioItem[]>([]);
   const [orderedExpItems, setOrderedExpItems] = useState<ExperienceEntry[]>([]);
   const [orderedEduItems, setOrderedEduItems] = useState<EducationEntry[]>([]);
 
+  useEffect(() => { setOrderedPortfolioItems(profile?.portfolioItems ?? []); }, [profile?.portfolioItems]);
   useEffect(() => { setOrderedExpItems(expItems); }, [expItems]);
   useEffect(() => { setOrderedEduItems(eduItems); }, [eduItems]);
 
@@ -233,6 +278,19 @@ export function ProfileEditPage() {
       });
     }
   }, [reorderEducation]);
+
+  const handlePortfolioDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setOrderedPortfolioItems((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        const reordered = arrayMove(items, oldIndex, newIndex);
+        reorderPortfolio.mutate(reordered.map((i) => i.id));
+        return reordered;
+      });
+    }
+  }, [reorderPortfolio]);
 
   const defaultExpForm = { jobTitle: "", company: "", location: "", startDate: "", endDate: "", isCurrent: false, description: "" };
   const defaultEduForm = { institution: "", degree: "", fieldOfStudy: "", startYear: "", endYear: "", isCurrent: false, grade: "", activities: "", description: "" };
@@ -898,47 +956,36 @@ export function ProfileEditPage() {
               <p className="text-xs text-muted-foreground/60 mt-1">PNG, JPG, WebP — max 10MB</p>
             </button>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {profile?.portfolioItems?.map((item) => (
-                <div key={item.id} className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-muted">
-                  <img
-                    src={portfolioImageUrl(item.url)}
-                    alt={item.caption ?? "Portfolio"}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        deletePortfolioItem.mutate(item.id, {
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePortfolioDragEnd}>
+              <SortableContext items={orderedPortfolioItems.map((p) => p.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {orderedPortfolioItems.map((item) => (
+                    <SortablePortfolioItem
+                      key={item.id}
+                      item={item}
+                      imageUrl={portfolioImageUrl(item.url) ?? ""}
+                      onDelete={(id) =>
+                        deletePortfolioItem.mutate(id, {
                           onSuccess: () => toast.success("Removed"),
                           onError: () => toast.error("Failed to remove"),
-                        });
-                      }}
-                      className="w-9 h-9 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center transition-colors"
+                        })
+                      }
+                    />
+                  ))}
+                  {orderedPortfolioItems.length < 12 && (
+                    <button
+                      type="button"
+                      onClick={() => portfolioInputRef.current?.click()}
+                      disabled={uploadingPortfolio}
+                      className="aspect-square rounded-xl border-2 border-dashed border-border hover:border-purple-500/30 flex flex-col items-center justify-center gap-2 transition-colors group"
                     >
-                      <Trash2 size={15} className="text-white" />
+                      <Plus size={20} className="text-muted-foreground/40 group-hover:text-purple-400 transition-colors" />
+                      <span className="text-xs text-muted-foreground/60">Add more</span>
                     </button>
-                  </div>
-                  {item.caption && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 p-2">
-                      <p className="text-xs text-white truncate">{item.caption}</p>
-                    </div>
                   )}
                 </div>
-              ))}
-              {(profile?.portfolioItems?.length ?? 0) < 12 && (
-                <button
-                  type="button"
-                  onClick={() => portfolioInputRef.current?.click()}
-                  disabled={uploadingPortfolio}
-                  className="aspect-square rounded-xl border-2 border-dashed border-border hover:border-purple-500/30 flex flex-col items-center justify-center gap-2 transition-colors group"
-                >
-                  <Plus size={20} className="text-muted-foreground/40 group-hover:text-purple-400 transition-colors" />
-                  <span className="text-xs text-muted-foreground/60">Add more</span>
-                </button>
-              )}
-            </div>
+              </SortableContext>
+            </DndContext>
           )}
 
           <input

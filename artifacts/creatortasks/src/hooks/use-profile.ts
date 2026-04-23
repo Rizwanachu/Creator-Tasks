@@ -8,6 +8,7 @@ export interface PortfolioItem {
   userId?: string;
   url: string;
   caption: string | null;
+  position: number;
   createdAt: string;
 }
 
@@ -194,6 +195,20 @@ export function useDeletePortfolioItem() {
   return useMutation({
     mutationFn: (id: string) =>
       apiFetch(`/api/users/me/portfolio/${id}`, { method: "DELETE" }, getToken),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["my-profile"] });
+    },
+  });
+}
+
+export function useReorderPortfolio() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      apiFetch("/api/users/me/portfolio/reorder", { method: "PATCH", data: { ids } }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["my-profile"] });
