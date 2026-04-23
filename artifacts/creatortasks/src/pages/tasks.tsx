@@ -143,16 +143,6 @@ export function Tasks() {
 
           {/* Right side controls */}
           <div className="flex items-center gap-2">
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-red-500/30 text-red-400 bg-red-500/5 hover:bg-red-500/10 transition-all whitespace-nowrap"
-              >
-                <X size={10} />
-                Clear
-              </button>
-            )}
-
             {/* Budget toggle */}
             <button
               onClick={() => setShowBudget((v) => !v)}
@@ -191,6 +181,19 @@ export function Tasks() {
             </select>
           </div>
         </div>
+
+        {/* Clear filters row */}
+        {hasActiveFilters && (
+          <div className="container mx-auto max-w-6xl mt-2">
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-red-500/30 text-red-400 bg-red-500/5 hover:bg-red-500/10 transition-all"
+            >
+              <X size={10} />
+              Clear filters
+            </button>
+          </div>
+        )}
 
         {/* Budget range (expandable) */}
         {showBudget && (
