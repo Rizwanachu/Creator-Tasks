@@ -168,6 +168,10 @@ export function OnboardingPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const portfolioInputRef = useRef<HTMLInputElement>(null);
 
+  // Refs to track latest object URLs so cleanup always revokes current values
+  const avatarPreviewRef = useRef<string | null>(null);
+  const pendingPortfolioItemsRef = useRef<PendingPortfolioItem[]>([]);
+
   const updateProfile = useUpdateProfile();
   const addPortfolioItem = useAddPortfolioItem();
 
@@ -204,13 +208,16 @@ export function OnboardingPage() {
     });
   }
 
-  // Revoke object URLs on unmount to prevent memory leaks
+  // Keep refs in sync with latest state so the unmount cleanup can revoke all current object URLs
+  useEffect(() => { avatarPreviewRef.current = avatarPreview; }, [avatarPreview]);
+  useEffect(() => { pendingPortfolioItemsRef.current = pendingPortfolioItems; }, [pendingPortfolioItems]);
+
+  // Revoke all current object URLs on unmount to prevent memory leaks
   useEffect(() => {
     return () => {
-      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
-      for (const item of pendingPortfolioItems) URL.revokeObjectURL(item.preview);
+      if (avatarPreviewRef.current) URL.revokeObjectURL(avatarPreviewRef.current);
+      for (const item of pendingPortfolioItemsRef.current) URL.revokeObjectURL(item.preview);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleAddPortfolioItem() {

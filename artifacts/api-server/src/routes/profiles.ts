@@ -74,6 +74,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
     res.json({
       id: user.id,
       clerkId: user.clerkId,
+      username: user.username,
       name: user.name,
       bio: user.bio,
       skills: user.skills ?? [],

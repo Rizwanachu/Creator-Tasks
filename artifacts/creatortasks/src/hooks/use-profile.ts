@@ -44,6 +44,7 @@ export interface UserProfile {
 export interface PrivateProfile {
   id: string;
   clerkId: string;
+  username: string | null;
   name: string | null;
   bio: string | null;
   skills: string[];
