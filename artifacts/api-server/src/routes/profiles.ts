@@ -183,10 +183,16 @@ router.put("/users/me", requireAuth, async (req, res) => {
     if (isAvailable !== undefined) updateData.isAvailable = Boolean(isAvailable);
     if (username !== undefined && !currentUser.username) {
       const cleaned = username.trim().toLowerCase();
-      if (/^[a-z0-9_]{3,20}$/.test(cleaned)) {
-        const taken = await db.query.users.findFirst({ where: sql`lower(${users.username}) = ${cleaned}` });
-        if (!taken) updateData.username = cleaned;
+      if (!/^[a-z0-9_]{3,20}$/.test(cleaned)) {
+        res.status(400).json({ error: "Invalid username format. Use 3-20 characters: letters, numbers, or underscores." });
+        return;
       }
+      const taken = await db.query.users.findFirst({ where: sql`lower(${users.username}) = ${cleaned}` });
+      if (taken) {
+        res.status(409).json({ error: "That username is already taken. Please choose another." });
+        return;
+      }
+      updateData.username = cleaned;
     }
 
     const [updated] = await db
