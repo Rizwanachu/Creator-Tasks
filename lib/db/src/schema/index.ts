@@ -44,6 +44,7 @@ export const tasks = pgTable("tasks", {
   workerId: uuid("worker_id"),
   deadline: timestamp("deadline"),
   attachmentUrl: text("attachment_url"),
+  imageUrl: text("image_url"),
   flagged: boolean("flagged").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({

@@ -18,7 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { WalletModal } from "@/components/wallet-modal";
-import { Zap, Clock, Users, Lock, Sparkles, Wallet, AlertTriangle } from "lucide-react";
+import { Zap, Clock, Users, Lock, Sparkles, Wallet, AlertTriangle, ImagePlus, X as XIcon, Loader2 } from "lucide-react";
+import { useAuth } from "@clerk/react";
 
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -271,10 +272,55 @@ export function CreateTask() {
   const { data: wallet } = useWallet();
   const createOrder = useCreateDepositOrder();
   const verifyDeposit = useVerifyDeposit();
+  const { getToken } = useAuth();
 
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
   const [pendingSubmitData, setPendingSubmitData] = useState<TaskFormValues | null>(null);
+
+  const [taskImagePath, setTaskImagePath] = useState<string | null>(null);
+  const [taskImagePreview, setTaskImagePreview] = useState<string | null>(null);
+  const [taskImageUploading, setTaskImageUploading] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleImageSelect(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image files are supported");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be under 10 MB");
+      return;
+    }
+    setTaskImagePreview(URL.createObjectURL(file));
+    setTaskImagePath(null);
+    setTaskImageUploading(true);
+    try {
+      const token = await getToken();
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("purpose", "task-image");
+      const res = await fetch("/api/storage/uploads/file", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const { objectPath } = await res.json();
+      setTaskImagePath(objectPath);
+    } catch {
+      toast.error("Image upload failed — try again");
+      setTaskImagePreview(null);
+    } finally {
+      setTaskImageUploading(false);
+    }
+  }
+
+  function removeTaskImage() {
+    setTaskImagePath(null);
+    setTaskImagePreview(null);
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  }
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -311,6 +357,7 @@ export function CreateTask() {
       category: actualCategory as import("@/hooks/use-tasks").TaskCategory,
       deadline: data.deadline || undefined,
       attachmentUrl: data.attachmentUrl || undefined,
+      imageUrl: taskImagePath || undefined,
     }, {
       onSuccess: () => {
         toast.success("Task posted! Budget locked in escrow.");
@@ -610,6 +657,56 @@ export function CreateTask() {
                     </FormItem>
                   )}
                 />
+
+                {/* Reference Image (optional) */}
+                <div className="space-y-2">
+                  <label className="text-foreground text-sm font-semibold">Reference Image (optional)</label>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageSelect(file);
+                    }}
+                  />
+                  {taskImagePreview ? (
+                    <div className="relative group rounded-xl overflow-hidden border border-border w-full aspect-video bg-muted">
+                      <img
+                        src={taskImagePreview}
+                        alt="Task reference"
+                        className="w-full h-full object-cover"
+                      />
+                      {taskImageUploading && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center gap-2 text-white text-sm">
+                          <Loader2 size={18} className="animate-spin" />
+                          Uploading…
+                        </div>
+                      )}
+                      {!taskImageUploading && (
+                        <button
+                          type="button"
+                          onClick={removeTaskImage}
+                          className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors"
+                          aria-label="Remove image"
+                        >
+                          <XIcon size={13} />
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => imageInputRef.current?.click()}
+                      className="w-full h-32 rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground group"
+                    >
+                      <ImagePlus size={22} className="group-hover:text-primary transition-colors" />
+                      <span className="text-sm font-medium">Add a reference image</span>
+                      <span className="text-xs opacity-60">PNG, JPG, WebP — max 10 MB</span>
+                    </button>
+                  )}
+                </div>
 
                 {/* Attachment URL (optional) */}
                 <FormField

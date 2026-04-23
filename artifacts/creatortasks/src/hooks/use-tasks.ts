@@ -20,6 +20,7 @@ export interface Task {
   submissionContent: string | null;
   submissionUrl: string | null;
   attachmentUrl: string | null;
+  imageUrl: string | null;
   deadline: string | null;
   flagged: boolean;
   createdAt: string;
@@ -74,6 +75,7 @@ export function useCreateTask() {
       category: TaskCategory;
       deadline?: string;
       attachmentUrl?: string;
+      imageUrl?: string;
     }) => apiFetch("/api/tasks", { method: "POST", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });

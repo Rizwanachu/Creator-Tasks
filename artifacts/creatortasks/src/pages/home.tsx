@@ -15,7 +15,7 @@ const FAKE_TASKS: Task[] = [
     description: "Need someone to edit a 30s clip from my recent podcast. Add dynamic captions, B-roll, and sound effects to make it engaging for TikTok.",
     budget: 2500, category: "reels", status: "open", revisionNote: null, revisionCount: 0,
     creatorId: "user_fake", workerId: null, creatorClerkId: null, workerClerkId: null,
-    submissionContent: null, submissionUrl: null, attachmentUrl: null, deadline: null, flagged: false,
+    submissionContent: null, submissionUrl: null, attachmentUrl: null, imageUrl: null, deadline: null, flagged: false,
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), creatorName: "Alex M.",
   },
   {
@@ -24,7 +24,7 @@ const FAKE_TASKS: Task[] = [
     description: "I need 5 attention-grabbing hooks for a Twitter thread about generative AI tools. They need to create curiosity without being clickbait.",
     budget: 1000, category: "hooks", status: "open", revisionNote: null, revisionCount: 0,
     creatorId: "user_fake", workerId: null, creatorClerkId: null, workerClerkId: null,
-    submissionContent: null, submissionUrl: null, attachmentUrl: null, deadline: null, flagged: false,
+    submissionContent: null, submissionUrl: null, attachmentUrl: null, imageUrl: null, deadline: null, flagged: false,
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), creatorName: "Sarah K.",
   },
   {
@@ -33,7 +33,7 @@ const FAKE_TASKS: Task[] = [
     description: "Looking for a bold, high-contrast thumbnail for a React tutorial. Needs to show the end result clearly and have large readable text.",
     budget: 1500, category: "thumbnails", status: "open", revisionNote: null, revisionCount: 0,
     creatorId: "user_fake", workerId: null, creatorClerkId: null, workerClerkId: null,
-    submissionContent: null, submissionUrl: null, attachmentUrl: null, deadline: null, flagged: false,
+    submissionContent: null, submissionUrl: null, attachmentUrl: null, imageUrl: null, deadline: null, flagged: false,
     createdAt: new Date(Date.now() - 11 * 60 * 60 * 1000).toISOString(), creatorName: "DevTips",
   },
 ];

@@ -53,6 +53,7 @@ router.get("/tasks", async (req, res) => {
         workerId: tasks.workerId,
         deadline: tasks.deadline,
         attachmentUrl: tasks.attachmentUrl,
+        imageUrl: tasks.imageUrl,
         flagged: tasks.flagged,
         createdAt: tasks.createdAt,
         creatorName: users.name,
@@ -148,6 +149,7 @@ router.get("/tasks/:id", async (req, res) => {
         workerId: tasks.workerId,
         deadline: tasks.deadline,
         attachmentUrl: tasks.attachmentUrl,
+        imageUrl: tasks.imageUrl,
         flagged: tasks.flagged,
         createdAt: tasks.createdAt,
         creatorName: users.name,
@@ -193,13 +195,14 @@ router.get("/tasks/:id", async (req, res) => {
 
 router.post("/tasks", requireAuth, async (req, res) => {
   try {
-    const { title, description, budget, category, deadline, attachmentUrl } = req.body as {
+    const { title, description, budget, category, deadline, attachmentUrl, imageUrl } = req.body as {
       title?: string;
       description?: string;
       budget?: unknown;
       category?: unknown;
       deadline?: string;
       attachmentUrl?: string;
+      imageUrl?: string;
     };
 
     if (!title || !description || !budget) {
@@ -278,6 +281,7 @@ router.post("/tasks", requireAuth, async (req, res) => {
           creatorId: currentUser.id,
           deadline: deadlineDate,
           attachmentUrl: attachmentUrl?.trim() || null,
+          imageUrl: imageUrl?.trim() || null,
         })
         .returning();
     });
