@@ -190,6 +190,7 @@ export function CreatorPage() {
     ? parseFloat(profile.rating.average)
     : null;
   const imgSrc = avatarSrc(profile.avatarUrl);
+  const handle = profile.username ? profile.username.toUpperCase() : "";
 
   const hasContent =
     !!profile.bio ||
@@ -212,6 +213,17 @@ export function CreatorPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(124,92,255,0.5)_0%,transparent_55%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(236,72,153,0.35)_0%,transparent_55%)]" />
         <div className="absolute inset-0 bg-black/20" />
+
+        {handle && (
+          <div className="absolute inset-0 flex items-center justify-end overflow-hidden pointer-events-none select-none">
+            <span
+              className="text-white/[0.07] font-black tracking-tighter leading-none pr-6"
+              style={{ fontSize: "clamp(3.5rem, 12vw, 9rem)" }}
+            >
+              #{handle}
+            </span>
+          </div>
+        )}
 
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
       </div>
