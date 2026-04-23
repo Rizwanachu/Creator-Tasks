@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 import { useProfileByUsername, useMyEndorsements, useEndorseSkill, useRemoveEndorsement } from "@/hooks/use-profile";
 import { useAuth } from "@clerk/react";
@@ -19,6 +19,8 @@ import {
   Briefcase,
   GraduationCap,
   MapPin,
+  X,
+  ZoomIn,
 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -100,6 +102,16 @@ export function CreatorPage() {
   const endorseSkill = useEndorseSkill(username);
   const removeEndorsement = useRemoveEndorsement(username);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [lightboxItem, setLightboxItem] = useState<{ url: string; caption?: string | null } | null>(null);
+
+  useEffect(() => {
+    if (!lightboxItem) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightboxItem(null);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [lightboxItem]);
 
   const isOwnProfile = userId === profile?.clerkId;
   const myEndorsedSkills = new Set(myEndorsementsData?.endorsedSkills ?? []);
@@ -521,6 +533,7 @@ export function CreatorPage() {
                     <div
                       key={item.id}
                       className="aspect-square rounded-xl overflow-hidden border border-border bg-muted relative group cursor-zoom-in"
+                      onClick={() => setLightboxItem({ url: portfolioSrc(item.url) ?? item.url, caption: item.caption })}
                     >
                       <img
                         src={portfolioSrc(item.url)}
@@ -528,6 +541,9 @@ export function CreatorPage() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute top-2 right-2">
+                          <ZoomIn size={14} className="text-white/80" />
+                        </div>
                         {item.caption && (
                           <div className="absolute bottom-0 left-0 right-0 p-2.5">
                             <p className="text-xs text-white truncate">{item.caption}</p>
@@ -692,6 +708,36 @@ export function CreatorPage() {
           inviteClerkId={profile.clerkId}
           creatorName={profile.name}
         />
+      )}
+
+      {lightboxItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
+          onClick={() => setLightboxItem(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors bg-black/40 rounded-full p-2"
+            onClick={() => setLightboxItem(null)}
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+          <div
+            className="relative max-w-4xl max-h-[90vh] flex flex-col items-center gap-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={lightboxItem.url}
+              alt={lightboxItem.caption ?? "Portfolio image"}
+              className="max-h-[80vh] max-w-full object-contain rounded-xl shadow-2xl"
+            />
+            {lightboxItem.caption && (
+              <p className="text-sm text-white/90 text-center max-w-lg px-2">
+                {lightboxItem.caption}
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
