@@ -376,6 +376,9 @@ router.post("/users/me/experience", requireAuth, async (req, res) => {
     if (!jobTitle?.trim()) { res.status(400).json({ error: "jobTitle is required" }); return; }
     if (!company?.trim()) { res.status(400).json({ error: "company is required" }); return; }
     if (!startDate?.trim()) { res.status(400).json({ error: "startDate is required" }); return; }
+    if (!isCurrent && endDate?.trim() && endDate.trim() < startDate.trim()) {
+      res.status(400).json({ error: "endDate must be on or after startDate" }); return;
+    }
     const [item] = await db.insert(experience).values({
       userId: currentUser.clerkId,
       jobTitle: jobTitle.trim().slice(0, 120),
@@ -409,6 +412,9 @@ router.put("/users/me/experience/:id", requireAuth, async (req, res) => {
     if (!jobTitle?.trim()) { res.status(400).json({ error: "jobTitle is required" }); return; }
     if (!company?.trim()) { res.status(400).json({ error: "company is required" }); return; }
     if (!startDate?.trim()) { res.status(400).json({ error: "startDate is required" }); return; }
+    if (!isCurrent && endDate?.trim() && endDate.trim() < startDate.trim()) {
+      res.status(400).json({ error: "endDate must be on or after startDate" }); return;
+    }
     const [updated] = await db.update(experience).set({
       jobTitle: jobTitle.trim().slice(0, 120),
       company: company.trim().slice(0, 120),
@@ -472,6 +478,9 @@ router.post("/users/me/education", requireAuth, async (req, res) => {
     if (!institution?.trim()) { res.status(400).json({ error: "institution is required" }); return; }
     if (!degree?.trim()) { res.status(400).json({ error: "degree is required" }); return; }
     if (!startYear) { res.status(400).json({ error: "startYear is required" }); return; }
+    if (!isCurrent && endYear && Number(endYear) < Number(startYear)) {
+      res.status(400).json({ error: "endYear must be on or after startYear" }); return;
+    }
     const [item] = await db.insert(education).values({
       userId: currentUser.clerkId,
       institution: institution.trim().slice(0, 200),
@@ -508,6 +517,9 @@ router.put("/users/me/education/:id", requireAuth, async (req, res) => {
     if (!institution?.trim()) { res.status(400).json({ error: "institution is required" }); return; }
     if (!degree?.trim()) { res.status(400).json({ error: "degree is required" }); return; }
     if (!startYear) { res.status(400).json({ error: "startYear is required" }); return; }
+    if (!isCurrent && endYear && Number(endYear) < Number(startYear)) {
+      res.status(400).json({ error: "endYear must be on or after startYear" }); return;
+    }
     const [updated] = await db.update(education).set({
       institution: institution.trim().slice(0, 200),
       degree: degree.trim().slice(0, 200),

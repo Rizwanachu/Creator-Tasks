@@ -216,6 +216,7 @@ export function useCreateExperience() {
       apiFetch("/api/users/me/experience", { method: "POST", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-experience"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
     },
   });
@@ -229,6 +230,7 @@ export function useUpdateExperience() {
       apiFetch(`/api/users/me/experience/${id}`, { method: "PUT", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-experience"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
     },
   });
@@ -242,6 +244,7 @@ export function useDeleteExperience() {
       apiFetch(`/api/users/me/experience/${id}`, { method: "DELETE" }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-experience"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
     },
   });
@@ -264,6 +267,7 @@ export function useCreateEducation() {
       apiFetch("/api/users/me/education", { method: "POST", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-education"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
     },
   });
@@ -277,6 +281,7 @@ export function useUpdateEducation() {
       apiFetch(`/api/users/me/education/${id}`, { method: "PUT", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-education"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
     },
   });
@@ -290,6 +295,7 @@ export function useDeleteEducation() {
       apiFetch(`/api/users/me/education/${id}`, { method: "DELETE" }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-education"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["profile-by-username"] });
     },
   });
