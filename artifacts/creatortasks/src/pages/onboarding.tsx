@@ -645,10 +645,6 @@ export function OnboardingPage() {
           {/* ── Step 7: First drop (separate from bio) ── */}
           {step === 6 && (
             <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center mb-2">
-                <Zap size={22} className="text-amber-400" fill="currentColor" />
-              </div>
-
               <Textarea
                 placeholder="Hey CreatorTasks! I'm a video editor specialising in brand storytelling..."
                 value={firstDropText}
