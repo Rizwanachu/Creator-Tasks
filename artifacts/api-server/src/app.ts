@@ -13,9 +13,9 @@ const app: Express = express();
 // the entire pino-http block out of the serverless bundle.
 if (process.env.NODE_ENV !== "production") {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const pinoHttp = require("pino-http") as typeof import("pino-http");
+  const pinoHttp = (require("pino-http") as { default: typeof import("pino-http").default }).default ?? require("pino-http");
   app.use(
-    pinoHttp({
+    (pinoHttp as typeof import("pino-http").default)({
       logger: logger as any,
       serializers: {
         req(req) {

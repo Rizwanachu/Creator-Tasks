@@ -47,8 +47,10 @@ export function useToggleBookmark(taskId: string) {
 export interface LeaderboardEntry {
   id: string;
   clerkId: string;
+  username: string | null;
   name: string | null;
   bio: string | null;
+  avatarUrl: string | null;
   totalEarnings: number | null;
   completedTasksCount: number;
   lastCompletedAt: string | null;

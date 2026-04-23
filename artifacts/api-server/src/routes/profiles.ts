@@ -307,7 +307,7 @@ router.post("/users/me/portfolio", requireAuth, async (req, res) => {
 // DELETE /users/me/portfolio/:id — remove portfolio item
 router.delete("/users/me/portfolio/:id", requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const currentUser = req.dbUser!;
 
     const item = await db.query.portfolioItems.findFirst({
@@ -400,7 +400,7 @@ router.post("/users/me/experience", requireAuth, async (req, res) => {
 router.put("/users/me/experience/:id", requireAuth, async (req, res) => {
   try {
     const currentUser = req.dbUser!;
-    const { id } = req.params;
+    const id = req.params.id as string;
     const existing = await db.query.experience.findFirst({
       where: and(eq(experience.id, id), eq(experience.userId, currentUser.clerkId)),
     });
@@ -435,7 +435,7 @@ router.put("/users/me/experience/:id", requireAuth, async (req, res) => {
 router.delete("/users/me/experience/:id", requireAuth, async (req, res) => {
   try {
     const currentUser = req.dbUser!;
-    const { id } = req.params;
+    const id = req.params.id as string;
     const existing = await db.query.experience.findFirst({
       where: and(eq(experience.id, id), eq(experience.userId, currentUser.clerkId)),
     });
@@ -504,7 +504,7 @@ router.post("/users/me/education", requireAuth, async (req, res) => {
 router.put("/users/me/education/:id", requireAuth, async (req, res) => {
   try {
     const currentUser = req.dbUser!;
-    const { id } = req.params;
+    const id = req.params.id as string;
     const existing = await db.query.education.findFirst({
       where: and(eq(education.id, id), eq(education.userId, currentUser.clerkId)),
     });
@@ -542,7 +542,7 @@ router.put("/users/me/education/:id", requireAuth, async (req, res) => {
 router.delete("/users/me/education/:id", requireAuth, async (req, res) => {
   try {
     const currentUser = req.dbUser!;
-    const { id } = req.params;
+    const id = req.params.id as string;
     const existing = await db.query.education.findFirst({
       where: and(eq(education.id, id), eq(education.userId, currentUser.clerkId)),
     });
@@ -559,7 +559,7 @@ router.delete("/users/me/education/:id", requireAuth, async (req, res) => {
 router.get("/users/by-username/:username", async (req, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.username, req.params.username.toLowerCase()),
+      where: eq(users.username, ( req.params.username as string).toLowerCase()),
     });
     if (!user) {
       res.status(404).json({ error: "User not found" });
@@ -577,7 +577,7 @@ router.get("/users/by-username/:username", async (req, res) => {
 router.get("/users/:clerkId", async (req, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.params.clerkId),
+      where: eq(users.clerkId, req.params.clerkId as string),
     });
     if (!user) {
       res.status(404).json({ error: "User not found" });

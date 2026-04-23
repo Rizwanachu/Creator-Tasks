@@ -43,7 +43,7 @@ router.put("/notifications/:id/read", requireAuth, async (req, res) => {
       .update(notifications)
       .set({ isRead: true })
       .where(
-        and(eq(notifications.id, req.params.id), eq(notifications.userId, currentUser.id)),
+        and(eq(notifications.id, req.params.id as string), eq(notifications.userId, currentUser.id)),
       );
     res.json({ success: true });
   } catch (err) {

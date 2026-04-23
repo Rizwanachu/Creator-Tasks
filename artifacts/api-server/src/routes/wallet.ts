@@ -237,7 +237,7 @@ router.post("/wallet/withdraw", requireAuth, async (req, res) => {
     const [{ openDisputes }] = await db
       .select({ openDisputes: count() })
       .from(disputes)
-      .where(and(eq(disputes.raisedBy, currentUser.id), eq(disputes.status, "open")));
+      .where(and(eq(disputes.reportedBy, currentUser.id), eq(disputes.status, "open")));
     if (openDisputes > 0) {
       res.status(403).json({
         error: "You have open dispute(s). Withdrawals are blocked until all disputes are resolved.",

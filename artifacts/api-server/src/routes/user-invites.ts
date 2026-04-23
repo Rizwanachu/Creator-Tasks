@@ -8,7 +8,7 @@ const router = Router();
 
 router.post("/tasks/:id/invite", requireAuth, async (req, res) => {
   try {
-    const taskId = req.params.id;
+    const taskId = req.params.id as string;
     const { workerClerkId } = req.body as { workerClerkId?: string };
     const currentUser = req.dbUser!;
 
@@ -77,7 +77,7 @@ router.post("/tasks/:id/invite", requireAuth, async (req, res) => {
 
 router.get("/tasks/:id/invites", requireAuth, async (req, res) => {
   try {
-    const taskId = req.params.id;
+    const taskId = req.params.id as string;
     const currentUser = req.dbUser!;
 
     const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
@@ -140,7 +140,7 @@ router.get("/invites", requireAuth, async (req, res) => {
 
 router.post("/invites/:id/accept", requireAuth, async (req, res) => {
   try {
-    const inviteId = req.params.id;
+    const inviteId = req.params.id as string;
     const currentUser = req.dbUser!;
 
     const invite = await db.query.invites.findFirst({ where: eq(invites.id, inviteId) });
@@ -218,7 +218,7 @@ router.post("/invites/:id/accept", requireAuth, async (req, res) => {
 
 router.post("/invites/:id/decline", requireAuth, async (req, res) => {
   try {
-    const inviteId = req.params.id;
+    const inviteId = req.params.id as string;
     const currentUser = req.dbUser!;
 
     const invite = await db.query.invites.findFirst({ where: eq(invites.id, inviteId) });

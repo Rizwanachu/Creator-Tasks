@@ -17,7 +17,7 @@ function isAdmin(user: { clerkId?: string; email?: string | null }) {
 // POST /tasks/:id/dispute — flag/report a task
 router.post("/tasks/:id/dispute", requireAuth, async (req, res) => {
   try {
-    const taskId = req.params.id;
+    const taskId = req.params.id as string;
     const { reason } = req.body as { reason?: string };
     const currentUser = req.dbUser!;
 
@@ -128,7 +128,7 @@ router.post("/admin/disputes/:id/resolve", requireAuth, async (req, res) => {
     const [dispute] = await db
       .update(disputes)
       .set({ status: "resolved", adminNote: adminNote ?? null, resolvedAt: new Date() })
-      .where(eq(disputes.id, req.params.id))
+      .where(eq(disputes.id, req.params.id as string))
       .returning();
 
     if (!dispute) {
@@ -141,7 +141,7 @@ router.post("/admin/disputes/:id/resolve", requireAuth, async (req, res) => {
     }
 
     // Notify the person who filed the dispute
-    const d = await db.query.disputes.findFirst({ where: eq(disputes.id, req.params.id) });
+    const d = await db.query.disputes.findFirst({ where: eq(disputes.id, req.params.id as string) });
     if (d) {
       await createNotification(d.reportedBy, "dispute_resolved", `Your dispute has been resolved by admin.`, d.taskId ?? undefined);
     }

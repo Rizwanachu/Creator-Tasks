@@ -185,7 +185,7 @@ router.get("/conversations/:id", requireAuth, async (req, res) => {
   try {
     const me = req.dbUser!;
     const conv = await db.query.conversations.findFirst({
-      where: eq(conversations.id, req.params.id),
+      where: eq(conversations.id, req.params.id as string),
     });
 
     if (!conv) {

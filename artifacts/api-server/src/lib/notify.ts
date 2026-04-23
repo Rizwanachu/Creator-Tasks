@@ -11,7 +11,13 @@ type NotifType =
   | "wallet_credited"
   | "dispute_opened"
   | "dispute_resolved"
-  | "referral_commission";
+  | "referral_commission"
+  | "application_received"
+  | "application_accepted"
+  | "application_rejected"
+  | "task_invite"
+  | "invite_accepted"
+  | "invite_declined";
 
 export async function createNotification(
   userId: string,

@@ -308,7 +308,7 @@ export function CreateTask() {
       title: data.title,
       description: data.description,
       budget: data.budget,
-      category: actualCategory,
+      category: actualCategory as import("@/hooks/use-tasks").TaskCategory,
       deadline: data.deadline || undefined,
       attachmentUrl: data.attachmentUrl || undefined,
     }, {

@@ -26,7 +26,7 @@ router.get("/bookmarks", requireAuth, async (req, res) => {
 router.post("/bookmarks/:taskId", requireAuth, async (req, res) => {
   try {
     const userId = req.dbUser!.id;
-    const { taskId } = req.params;
+    const taskId = req.params.taskId as string;
 
     const existing = await db.query.bookmarks.findFirst({
       where: and(eq(bookmarks.userId, userId), eq(bookmarks.taskId, taskId)),
@@ -46,7 +46,7 @@ router.post("/bookmarks/:taskId", requireAuth, async (req, res) => {
 router.delete("/bookmarks/:taskId", requireAuth, async (req, res) => {
   try {
     const userId = req.dbUser!.id;
-    const { taskId } = req.params;
+    const taskId = req.params.taskId as string;
     await db.delete(bookmarks).where(
       and(eq(bookmarks.userId, userId), eq(bookmarks.taskId, taskId))
     );
@@ -60,7 +60,7 @@ router.delete("/bookmarks/:taskId", requireAuth, async (req, res) => {
 router.get("/bookmarks/check/:taskId", requireAuth, async (req, res) => {
   try {
     const userId = req.dbUser!.id;
-    const { taskId } = req.params;
+    const taskId = req.params.taskId as string;
     const existing = await db.query.bookmarks.findFirst({
       where: and(eq(bookmarks.userId, userId), eq(bookmarks.taskId, taskId)),
     });

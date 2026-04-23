@@ -8,7 +8,7 @@ const router = Router();
 
 router.post("/tasks/:id/apply", requireAuth, async (req, res) => {
   try {
-    const taskId = req.params.id;
+    const taskId = req.params.id as string;
     const { message, portfolioUrl } = req.body as { message?: string; portfolioUrl?: string };
     const currentUser = req.dbUser!;
 
@@ -76,7 +76,7 @@ router.post("/tasks/:id/apply", requireAuth, async (req, res) => {
 
 router.get("/tasks/:id/applications", requireAuth, async (req, res) => {
   try {
-    const taskId = req.params.id;
+    const taskId = req.params.id as string;
     const currentUser = req.dbUser!;
 
     const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
@@ -138,7 +138,7 @@ router.get("/tasks/:id/applications", requireAuth, async (req, res) => {
 
 router.post("/applications/:id/accept", requireAuth, async (req, res) => {
   try {
-    const applicationId = req.params.id;
+    const applicationId = req.params.id as string;
     const currentUser = req.dbUser!;
 
     const application = await db.query.applications.findFirst({
@@ -223,7 +223,7 @@ router.post("/applications/:id/accept", requireAuth, async (req, res) => {
 
 router.post("/applications/:id/reject", requireAuth, async (req, res) => {
   try {
-    const applicationId = req.params.id;
+    const applicationId = req.params.id as string;
     const currentUser = req.dbUser!;
 
     const application = await db.query.applications.findFirst({
@@ -266,7 +266,7 @@ router.post("/applications/:id/reject", requireAuth, async (req, res) => {
 
 router.get("/tasks/:id/my-application", requireAuth, async (req, res) => {
   try {
-    const taskId = req.params.id;
+    const taskId = req.params.id as string;
     const currentUser = req.dbUser!;
 
     const application = await db.query.applications.findFirst({

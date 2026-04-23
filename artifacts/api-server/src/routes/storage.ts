@@ -16,7 +16,7 @@ import { logger } from "../lib/logger";
 async function compressImage(buffer: Buffer, maxDimension: number): Promise<Buffer> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const sharp = require("sharp") as typeof import("sharp").default;
+    const sharp = require("sharp") as typeof import("sharp");
     return await (sharp(buffer) as any)
       .rotate()
       .resize(maxDimension, maxDimension, { fit: "inside", withoutEnlargement: true })
@@ -137,7 +137,7 @@ router.post(
  */
 router.get("/storage/public-objects/*filePath", async (req: Request, res: Response) => {
   try {
-    const raw = req.params.filePath;
+    const raw = req.params.filePath as string;
     const filePath = Array.isArray(raw) ? raw.join("/") : raw;
     const file = await objectStorageService.searchPublicObject(filePath);
     if (!file) {
@@ -171,7 +171,7 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
  */
 router.get("/storage/objects/*path", async (req: Request, res: Response) => {
   try {
-    const raw = req.params.path;
+    const raw = req.params.path as string;
     const wildcardPath = Array.isArray(raw) ? raw.join("/") : raw;
 
     if (!wildcardPath.startsWith("avatars/") && !wildcardPath.startsWith("portfolio/")) {

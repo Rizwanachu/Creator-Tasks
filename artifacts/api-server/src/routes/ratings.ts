@@ -8,7 +8,7 @@ const router = Router();
 // POST /tasks/:id/rate — rate the other party after task completion
 router.post("/tasks/:id/rate", requireAuth, async (req, res) => {
   try {
-    const taskId = req.params.id;
+    const taskId = req.params.id as string;
     const { score, comment } = req.body as { score?: unknown; comment?: string };
     const currentUser = req.dbUser!;
 
@@ -62,7 +62,7 @@ router.post("/tasks/:id/rate", requireAuth, async (req, res) => {
 router.get("/users/:clerkId/ratings", async (req, res) => {
   try {
     const user = await db.query.users.findFirst({
-      where: eq(users.clerkId, req.params.clerkId),
+      where: eq(users.clerkId, req.params.clerkId as string),
     });
     if (!user) {
       res.status(404).json({ error: "User not found" });

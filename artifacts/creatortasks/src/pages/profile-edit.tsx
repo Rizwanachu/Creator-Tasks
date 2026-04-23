@@ -925,7 +925,7 @@ export function ProfileEditPage() {
 
       {/* ── Experience Modal ── */}
       <Dialog open={expModalOpen} onOpenChange={setExpModalOpen}>
-        <DialogContent className="bg-[#141414] border-border rounded-2xl max-w-lg">
+        <DialogContent className="bg-[#141414] border-border rounded-2xl max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingExp ? "Edit Experience" : "Add Experience"}</DialogTitle>
           </DialogHeader>
@@ -985,7 +985,7 @@ export function ProfileEditPage() {
 
       {/* ── Education Modal ── */}
       <Dialog open={eduModalOpen} onOpenChange={setEduModalOpen}>
-        <DialogContent className="bg-[#141414] border-border rounded-2xl max-w-lg">
+        <DialogContent className="bg-[#141414] border-border rounded-2xl max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="text-foreground">{editingEdu ? "Edit Education" : "Add Education"}</DialogTitle>
           </DialogHeader>

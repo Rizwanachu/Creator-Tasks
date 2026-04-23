@@ -39,7 +39,7 @@ function makeConsoleLogger(): Logger {
 export const logger: Logger =
   process.env.NODE_ENV !== "production"
     ? // eslint-disable-next-line @typescript-eslint/no-var-requires
-      (require("pino") as typeof import("pino").default)({
+      (require("pino") as typeof import("pino"))({
         level: process.env.LOG_LEVEL ?? "info",
         redact: [
           "req.headers.authorization",

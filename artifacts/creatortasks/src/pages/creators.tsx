@@ -218,7 +218,7 @@ export function CreatorsPage() {
   const [sort, setSort] = useState<"most_active" | "top_rated" | "newest">("most_active");
   const [available, setAvailable] = useState(false);
 
-  const skillTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const skillTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 400);
