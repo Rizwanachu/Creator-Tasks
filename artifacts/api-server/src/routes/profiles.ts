@@ -39,6 +39,7 @@ async function buildPublicProfile(user: typeof users.$inferSelect) {
     youtubeHandle: user.youtubeHandle,
     avatarUrl: user.avatarUrl,
     totalEarnings: user.totalEarnings ?? 0,
+    isAvailable: user.isAvailable ?? true,
     referralCode: user.referralCode,
     completedTasksCount: completedTasks.length,
     postedTasksCount: postedCount[0]?.count ?? 0,

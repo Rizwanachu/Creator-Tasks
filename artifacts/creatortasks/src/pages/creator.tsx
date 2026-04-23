@@ -6,19 +6,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
   Star,
-  Briefcase,
   Send,
   ExternalLink,
   Instagram,
   Youtube,
   Pencil,
-  Link as LinkIcon,
   MessageSquare,
   Heart,
   LayoutGrid,
   CheckCircle2,
-  TrendingUp,
-  ImageIcon,
   Share2,
 } from "lucide-react";
 import { Link } from "wouter";
@@ -62,22 +58,24 @@ const CATEGORY_COLORS: Record<string, string> = {
   other: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
 };
 
-function StatCard({
-  value,
-  label,
-  prefix,
+function StatStrip({
+  stats,
 }: {
-  value: string | number;
-  label: string;
-  prefix?: string;
+  stats: Array<{ value: string | number; label: string }>;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-3 px-2 bg-muted/30 rounded-xl border border-border/60 hover:border-purple-500/20 hover:bg-purple-500/5 transition-colors">
-      <p className="text-sm font-bold text-foreground leading-none">
-        {prefix}
-        {value}
-      </p>
-      <p className="text-[10px] text-muted-foreground mt-1 leading-none">{label}</p>
+    <div className="flex items-stretch divide-x divide-border/60 bg-muted/30 rounded-xl border border-border/60 overflow-hidden mb-5">
+      {stats.map((s, i) => (
+        <div
+          key={i}
+          className="flex-1 flex flex-col items-center justify-center py-3 px-2 hover:bg-purple-500/5 transition-colors"
+        >
+          <p className="text-sm font-bold text-foreground leading-none">{s.value}</p>
+          <p className="text-[10px] text-muted-foreground mt-1 leading-none whitespace-nowrap">
+            {s.label}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }
@@ -104,14 +102,11 @@ export function CreatorPage() {
           <div className="flex flex-col md:flex-row gap-6">
             <div className="w-full md:w-[300px] shrink-0 md:-mt-16 space-y-4">
               <div className="bg-card border border-border rounded-2xl p-5 space-y-4 pt-16 md:pt-5">
-                <Skeleton className="w-20 h-20 rounded-full -mt-12 md:-mt-14" />
+                <Skeleton className="w-[100px] h-[100px] rounded-full -mt-12 md:-mt-14" />
                 <Skeleton className="h-5 w-36" />
                 <Skeleton className="h-4 w-24" />
-                <div className="grid grid-cols-2 gap-2">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-14 rounded-xl" />
-                  ))}
-                </div>
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-12 w-full rounded-xl" />
                 <Skeleton className="h-9 w-full rounded-xl" />
                 <Skeleton className="h-9 w-full rounded-xl" />
               </div>
@@ -198,9 +193,9 @@ export function CreatorPage() {
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
               <div className="px-5 pb-5">
                 {/* Avatar */}
-                <div className="relative -mt-10 mb-4 w-fit">
+                <div className="relative -mt-12 mb-4 w-fit">
                   <div
-                    className="w-[88px] h-[88px] rounded-full overflow-hidden border-4 border-card avatar-glow ring-2 ring-purple-500/50"
+                    className="w-[100px] h-[100px] rounded-full overflow-hidden border-4 border-card avatar-glow ring-2 ring-purple-500/50"
                     style={{ background: "linear-gradient(135deg, #7C5CFF, #ec4899)" }}
                   >
                     {imgSrc ? (
@@ -215,21 +210,35 @@ export function CreatorPage() {
                       </div>
                     )}
                   </div>
-                  <span className="absolute bottom-1 right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-card shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+                  <span className="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-card shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
                 </div>
 
-                {/* Name + handle */}
-                <h1 className="text-[1.15rem] font-bold text-foreground leading-tight mb-0.5">
+                {/* Name + @handle + Available pill — all on one line */}
+                <h1 className="text-[1.1rem] font-bold text-foreground leading-tight mb-0.5 truncate">
                   {profile.name || "Anonymous Creator"}
                 </h1>
-                {profile.username && (
-                  <p className="text-sm text-muted-foreground mb-2">
-                    @{profile.username}
-                  </p>
-                )}
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  {profile.username && (
+                    <span className="text-sm text-muted-foreground">
+                      @{profile.username}
+                    </span>
+                  )}
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                      profile.isAvailable
+                        ? "bg-emerald-500/15 border-emerald-500/25 text-emerald-400"
+                        : "bg-zinc-500/15 border-zinc-500/25 text-zinc-400"
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${profile.isAvailable ? "bg-emerald-400" : "bg-zinc-500"}`}
+                    />
+                    {profile.isAvailable ? "Available" : "Unavailable"}
+                  </span>
+                </div>
 
-                {/* Role + Own badge */}
-                <div className="flex items-center gap-2 flex-wrap mb-5">
+                {/* Creator role chip + extras below */}
+                <div className="flex items-center gap-2 flex-wrap mb-4">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/25 text-purple-300 text-[11px] font-semibold tracking-wide">
                     Creator
                   </span>
@@ -238,7 +247,7 @@ export function CreatorPage() {
                       You
                     </span>
                   )}
-                  {(profile.rating.total > 0 && avgRating) && (
+                  {profile.rating.total > 0 && avgRating && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-300 text-[11px] font-semibold">
                       <Star size={10} className="fill-amber-400 text-amber-400" />
                       {avgRating.toFixed(1)}
@@ -246,26 +255,18 @@ export function CreatorPage() {
                   )}
                 </div>
 
-                {/* Stats grid */}
-                <div className="grid grid-cols-2 gap-2 mb-5">
-                  <StatCard
-                    value={profile.completedTasksCount}
-                    label="Tasks Done"
-                  />
-                  <StatCard
-                    value={(profile.totalEarnings ?? 0).toLocaleString("en-IN")}
-                    label="Earned"
-                    prefix="₹"
-                  />
-                  <StatCard
-                    value={avgRating ? avgRating.toFixed(1) : "—"}
-                    label="Avg Rating"
-                  />
-                  <StatCard
-                    value={profile.portfolioItems?.length ?? 0}
-                    label="Portfolio"
-                  />
-                </div>
+                {/* Stats — horizontal strip with dividers */}
+                <StatStrip
+                  stats={[
+                    { value: profile.completedTasksCount, label: "Tasks Done" },
+                    {
+                      value: `₹${(profile.totalEarnings ?? 0).toLocaleString("en-IN")}`,
+                      label: "Earned",
+                    },
+                    { value: avgRating ? avgRating.toFixed(1) : "—", label: "Rating" },
+                    { value: profile.portfolioItems?.length ?? 0, label: "Portfolio" },
+                  ]}
+                />
 
                 {/* Action buttons */}
                 <div className="flex flex-col gap-2 mb-5">
@@ -382,10 +383,10 @@ export function CreatorPage() {
               </div>
             )}
 
-            {/* Intro Drop / Activity */}
+            {/* Intro Drop */}
             {profile.bio && (
               <div className="bg-card border border-border rounded-2xl p-5 md:p-6">
-                <SectionHeading>Activity</SectionHeading>
+                <SectionHeading>Intro Drop</SectionHeading>
                 <div className="rounded-xl border border-border/60 bg-[#0f0f0f] p-4">
                   <div className="flex items-start gap-3 mb-3">
                     <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 ring-1 ring-border">
@@ -420,8 +421,8 @@ export function CreatorPage() {
                           DROP
                         </span>
                       </div>
-                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                        Intro
+                      <p className="text-[10px] text-muted-foreground/50 mt-0.5">
+                        Intro · pinned
                       </p>
                     </div>
                   </div>

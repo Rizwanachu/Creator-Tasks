@@ -23,6 +23,7 @@ export interface UserProfile {
   youtubeHandle: string | null;
   avatarUrl: string | null;
   totalEarnings: number;
+  isAvailable: boolean;
   referralCode: string | null;
   completedTasksCount: number;
   postedTasksCount: number;
