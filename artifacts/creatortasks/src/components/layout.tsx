@@ -93,12 +93,10 @@ function MobileBottomNav() {
   const [location] = useLocation();
   const { user } = useUser();
   const unreadMessages = useUnreadMessageCount();
-  const { data: notifications } = useNotifications();
-  const unreadNotifs = notifications?.unreadCount ?? 0;
 
   const MOBILE_NAV = [
     { href: "/tasks", label: "Tasks", icon: Home },
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/creators", label: "Creators", icon: Users },
     { href: "/create", label: "Create", icon: PlusCircle, isCreate: true },
     { href: "/messages", label: "Messages", icon: MessageSquare },
     { href: user?.id ? `/profile/${user.id}` : "/sign-in", label: "Profile", icon: UserCircle2 },
@@ -126,9 +124,7 @@ function MobileBottomNav() {
           }
 
           const Icon = item.icon;
-          const hasBadge =
-            (item.href === "/messages" && unreadMessages > 0) ||
-            (item.href === "/dashboard" && unreadNotifs > 0);
+          const hasBadge = item.href === "/messages" && unreadMessages > 0;
 
           return (
             <Link
