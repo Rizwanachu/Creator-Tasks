@@ -232,10 +232,11 @@ router.post("/users/me/portfolio", requireAuth, async (req, res) => {
       return;
     }
 
-    const isStoragePath = url.startsWith("/objects/portfolio/");
+    const isStoragePath = url.startsWith("/objects/");
     const isExternalUrl = url.startsWith("http://") || url.startsWith("https://");
-    if (!isStoragePath && !isExternalUrl) {
-      res.status(400).json({ error: "Portfolio url must be a storage path (/objects/portfolio/...) or an http(s) URL" });
+    const isDataUrl = url.startsWith("data:");
+    if (!isStoragePath && !isExternalUrl && !isDataUrl) {
+      res.status(400).json({ error: "Portfolio url must be a storage path, http(s) URL, or data URL" });
       return;
     }
     if (isExternalUrl) {
