@@ -512,7 +512,12 @@ export function CreatorPage() {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {profile.portfolioItems.map((item) => (
+                  {[...profile.portfolioItems]
+                    .sort((a, b) =>
+                      (a.position ?? Infinity) - (b.position ?? Infinity) ||
+                      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                    )
+                    .map((item) => (
                     <div
                       key={item.id}
                       className="aspect-square rounded-xl overflow-hidden border border-border bg-muted relative group cursor-zoom-in"
