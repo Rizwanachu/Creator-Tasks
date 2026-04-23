@@ -251,16 +251,13 @@ export function CreatorsPage() {
 
   return (
     <>
-    <div className="container mx-auto px-4 py-10 max-w-6xl">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
-            <Users size={18} className="text-purple-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Browse Creators</h1>
-        </div>
-        <p className="text-muted-foreground text-sm ml-[52px]">Discover talented creators on the platform and invite them to your tasks.</p>
+    <div className="border-b border-border bg-card/60 px-4 py-5 md:py-7">
+      <div className="container mx-auto max-w-6xl">
+        <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">Browse Creators</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">Discover talented creators on the platform and invite them to your tasks.</p>
       </div>
+    </div>
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
 
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
