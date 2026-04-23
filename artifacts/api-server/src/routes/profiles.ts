@@ -320,8 +320,23 @@ router.patch("/users/me/portfolio/reorder", requireAuth, async (req, res) => {
   try {
     const currentUser = req.dbUser!;
     const { ids } = req.body as { ids: string[] };
-    if (!Array.isArray(ids) || ids.some((id) => typeof id !== "string")) {
-      res.status(400).json({ error: "ids must be an array of strings" });
+    if (!Array.isArray(ids) || ids.length === 0 || ids.some((id) => typeof id !== "string")) {
+      res.status(400).json({ error: "ids must be a non-empty array of strings" });
+      return;
+    }
+    const uniqueIds = new Set(ids);
+    if (uniqueIds.size !== ids.length) {
+      res.status(400).json({ error: "ids must not contain duplicates" });
+      return;
+    }
+    const existing = await db
+      .select({ id: portfolioItems.id })
+      .from(portfolioItems)
+      .where(eq(portfolioItems.userId, currentUser.clerkId));
+    const existingIds = new Set(existing.map((p) => p.id));
+    const invalid = ids.filter((id) => !existingIds.has(id));
+    if (invalid.length > 0) {
+      res.status(400).json({ error: "Some ids do not belong to your portfolio" });
       return;
     }
     await Promise.all(
