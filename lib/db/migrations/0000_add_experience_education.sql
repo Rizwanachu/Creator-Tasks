@@ -1,6 +1,7 @@
--- Additive migration: add experience and education tables
--- Safe to run on existing databases (tables will be created fresh)
-CREATE TABLE IF NOT EXISTS "experience" (
+-- Delta migration: add experience and education tables
+-- Applies to: existing databases that have all other tables (users, tasks, etc.)
+-- Tables created: experience, education
+CREATE TABLE "experience" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"clerk_id" text NOT NULL,
 	"job_title" text NOT NULL,
@@ -13,7 +14,7 @@ CREATE TABLE IF NOT EXISTS "experience" (
 	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "education" (
+CREATE TABLE "education" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"clerk_id" text NOT NULL,
 	"institution" text NOT NULL,
