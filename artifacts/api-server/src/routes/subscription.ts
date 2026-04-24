@@ -1,4 +1,5 @@
 import { Router } from "express";
+import crypto from "crypto";
 import { db, users, subscriptions } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
@@ -105,6 +106,51 @@ router.post("/subscription/create", requireAuth, async (req, res) => {
       return;
     }
     res.status(500).json({ error: "Failed to create subscription" });
+  }
+});
+
+router.post("/subscription/confirm", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature } = req.body as {
+      razorpay_payment_id?: string;
+      razorpay_subscription_id?: string;
+      razorpay_signature?: string;
+    };
+
+    if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature) {
+      res.status(400).json({ error: "Missing Razorpay confirmation fields" });
+      return;
+    }
+
+    const keySecret = process.env["RAZORPAY_KEY_SECRET"];
+    if (!keySecret) {
+      res.status(503).json({ error: "Payment system not configured" });
+      return;
+    }
+
+    const expectedSignature = crypto
+      .createHmac("sha256", keySecret)
+      .update(`${razorpay_payment_id}|${razorpay_subscription_id}`)
+      .digest("hex");
+
+    if (expectedSignature !== razorpay_signature) {
+      res.status(400).json({ error: "Signature verification failed" });
+      return;
+    }
+
+    // Signature verified — immediately grant Pro (webhook will set accurate proUntil later)
+    const provisionalProUntil = new Date(Date.now() + 32 * 24 * 60 * 60 * 1000); // ~1 month
+    await db
+      .update(users)
+      .set({ isPro: true, proUntil: provisionalProUntil })
+      .where(eq(users.id, currentUser.id));
+
+    req.log.info({ userId: currentUser.id, razorpay_subscription_id }, "subscription.confirm: Pro granted immediately");
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Error confirming subscription");
+    res.status(500).json({ error: "Failed to confirm subscription" });
   }
 });
 

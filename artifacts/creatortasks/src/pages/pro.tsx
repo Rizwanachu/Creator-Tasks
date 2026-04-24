@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSubscription, useCreateSubscription } from "@/hooks/use-subscription";
+import { useSubscription, useCreateSubscription, useConfirmSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -75,6 +75,7 @@ export function ProPage() {
   const queryClient = useQueryClient();
   const { data: sub, isLoading } = useSubscription();
   const createSub = useCreateSubscription();
+  const confirmSub = useConfirmSubscription();
   const [subscribing, setSubscribing] = useState(false);
 
   const isPro = sub?.isPro ?? false;
@@ -96,9 +97,18 @@ export function ProPage() {
         subscription_id: data.subscriptionId,
         name: "CreatorTasks Pro",
         description: "₹299/month — Pro subscription",
-        handler: () => {
-          queryClient.invalidateQueries({ queryKey: ["subscription"] });
-          queryClient.invalidateQueries({ queryKey: ["me"] });
+        handler: async (response: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string }) => {
+          try {
+            await confirmSub.mutateAsync({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_subscription_id: response.razorpay_subscription_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+          } catch {
+            // Confirm failed — still invalidate queries so webhook-driven update is picked up
+            queryClient.invalidateQueries({ queryKey: ["subscription"] });
+            queryClient.invalidateQueries({ queryKey: ["me"] });
+          }
           toast.success("Welcome to Pro! Your badge is active.");
           navigate("/dashboard?tab=subscription");
         },

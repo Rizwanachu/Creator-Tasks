@@ -132,6 +132,30 @@ router.get("/tasks/my-posted", requireAuth, async (req, res) => {
   }
 });
 
+router.get("/tasks/daily-limit", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const posterIsActivePro = !!(currentUser.isPro && (!currentUser.proUntil || currentUser.proUntil > new Date()));
+
+    if (posterIsActivePro) {
+      res.json({ used: 0, limit: null, isPro: true });
+      return;
+    }
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const [{ value: tasksToday }] = await db
+      .select({ value: count() })
+      .from(tasks)
+      .where(and(eq(tasks.creatorId, currentUser.id), gte(tasks.createdAt, todayStart)));
+
+    res.json({ used: Number(tasksToday), limit: 2, isPro: false });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching daily limit");
+    res.status(500).json({ error: "Failed to fetch daily limit" });
+  }
+});
+
 router.get("/tasks/:id", async (req, res) => {
   try {
     const id = String(req.params.id);
@@ -192,31 +216,6 @@ router.get("/tasks/:id", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Error fetching task");
     res.status(500).json({ error: "Failed to fetch task" });
-  }
-});
-
-router.get("/tasks/daily-limit", requireAuth, async (req, res) => {
-  try {
-    const currentUser = req.user!;
-    const poster = await db.query.users.findFirst({ where: eq(users.id, currentUser.id) });
-    const posterIsActivePro = !!(poster?.isPro && (!poster.proUntil || poster.proUntil > new Date()));
-
-    if (posterIsActivePro) {
-      res.json({ used: 0, limit: null, isPro: true });
-      return;
-    }
-
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const [{ value: tasksToday }] = await db
-      .select({ value: count() })
-      .from(tasks)
-      .where(and(eq(tasks.creatorId, currentUser.id), gte(tasks.createdAt, todayStart)));
-
-    res.json({ used: Number(tasksToday), limit: 2, isPro: false });
-  } catch (err) {
-    req.log.error({ err }, "Error fetching daily limit");
-    res.status(500).json({ error: "Failed to fetch daily limit" });
   }
 });
 
