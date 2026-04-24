@@ -116,122 +116,133 @@ export function TaskCard({ task, disableActions }: { task: Task; disableActions?
         </div>
       )}
 
-      <div className="flex flex-col flex-1 p-6">
-      {task.flagged && (
-        <div className="absolute top-3 right-3 text-orange-500" title="This task has been flagged">
-          <AlertCircle size={14} />
-        </div>
-      )}
-
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge
-            variant="outline"
-            className={`text-xs font-medium ${CATEGORY_COLORS[task.category] ?? CATEGORY_COLORS.other}`}
-          >
-            {CATEGORY_LABELS[task.category] ?? task.category}
-          </Badge>
-          {isTrending && task.status === "open" && (
-            <Badge variant="outline" className="text-xs font-medium bg-orange-500/8 text-orange-500 border-orange-500/20 flex items-center gap-1">
-              <Flame size={10} />
-              Trending
-            </Badge>
-          )}
-          {dl && (
-            <Badge
-              variant="outline"
-              className={`text-xs font-medium flex items-center gap-1 ${
-                dl.expired
-                  ? "bg-red-500/10 text-red-500 border-red-500/20"
-                  : dl.urgent
-                  ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-                  : "bg-blue-500/10 text-blue-500 border-blue-500/20"
-              }`}
-            >
-              <Timer size={10} />
-              {dl.label}
-            </Badge>
-          )}
-        </div>
-        <span className="font-bold text-purple-600 dark:text-purple-400 text-sm tabular-nums shrink-0">₹{task.budget.toLocaleString()}</span>
-      </div>
-
-      <h3 className="font-semibold text-[15px] text-foreground line-clamp-2 mb-2 leading-snug group-hover:text-primary transition-colors duration-200">
-        {task.title}
-      </h3>
-
-      <p className="text-muted-foreground text-sm line-clamp-2 mb-6 flex-1 leading-relaxed">
-        {task.description}
-      </p>
-
-      {task.status === "open" && (
-        <div className="flex items-center gap-3 mb-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Eye size={11} />
-            {viewers} viewing
-          </span>
-          <span className="w-1 h-1 rounded-full bg-border" />
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            Available
-          </span>
-        </div>
-      )}
-
-      <div className="mt-auto pt-4 border-t border-border">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-1 min-w-0">
-            <Badge
-              variant="outline"
-              className={`text-xs w-fit ${STATUS_COLORS[task.status] ?? ""}`}
-            >
-              {STATUS_LABELS[task.status] ?? task.status}
-            </Badge>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              {task.creatorName && <span className="truncate">{task.creatorName}</span>}
-              {task.creatorName && <span>·</span>}
-              <Clock size={10} />
-              <span>{timeAgo(task.createdAt)}</span>
-            </div>
+      <div className="flex flex-col flex-1 p-4">
+        {task.flagged && (
+          <div className="absolute top-3 right-3 text-orange-500" title="This task has been flagged">
+            <AlertCircle size={14} />
           </div>
+        )}
 
-          {!disableActions && (
-            <div className="flex gap-2 shrink-0">
-              {userId && !isCreator && (
-                <button
-                  onClick={handleBookmark}
-                  title={bookmarked ? "Remove bookmark" : "Bookmark task"}
-                  className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-200 ${
-                    bookmarked
-                      ? "border-purple-500/40 bg-purple-500/10 text-purple-400"
-                      : "border-border bg-muted/50 text-muted-foreground hover:border-purple-500/30 hover:text-purple-400"
-                  }`}
-                >
-                  <Bookmark size={13} className={bookmarked ? "fill-current" : ""} />
-                </button>
-              )}
-              {task.status === "open" && userId && !isCreator && (
+        {/* Top row: category + budget */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge
+              variant="outline"
+              className={`text-xs font-medium ${CATEGORY_COLORS[task.category] ?? CATEGORY_COLORS.other}`}
+            >
+              {CATEGORY_LABELS[task.category] ?? task.category}
+            </Badge>
+            {isTrending && task.status === "open" && (
+              <Badge variant="outline" className="text-xs font-medium bg-orange-500/8 text-orange-500 border-orange-500/20 flex items-center gap-1">
+                <Flame size={10} />
+                Trending
+              </Badge>
+            )}
+            {dl && (
+              <Badge
+                variant="outline"
+                className={`text-xs font-medium flex items-center gap-1 ${
+                  dl.expired
+                    ? "bg-red-500/10 text-red-500 border-red-500/20"
+                    : dl.urgent
+                    ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                    : "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                }`}
+              >
+                <Timer size={10} />
+                {dl.label}
+              </Badge>
+            )}
+          </div>
+          <span className="font-bold text-purple-600 dark:text-purple-400 text-sm tabular-nums shrink-0">
+            ₹{task.budget.toLocaleString()}
+          </span>
+        </div>
+
+        {/* Title */}
+        <h3 className="font-semibold text-[15px] text-foreground line-clamp-2 mb-1.5 leading-snug group-hover:text-primary transition-colors duration-200">
+          {task.title}
+        </h3>
+
+        {/* Description */}
+        <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed flex-1">
+          {task.description}
+        </p>
+
+        {/* Footer */}
+        <div className="mt-3 pt-3 border-t border-border">
+          <div className="flex items-center justify-between gap-2">
+            {/* Left: status + meta */}
+            <div className="flex items-center gap-2 min-w-0">
+              <Badge
+                variant="outline"
+                className={`text-xs shrink-0 ${STATUS_COLORS[task.status] ?? ""}`}
+              >
+                {STATUS_LABELS[task.status] ?? task.status}
+              </Badge>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground min-w-0">
+                {task.creatorName && (
+                  <span className="truncate max-w-[80px]">{task.creatorName}</span>
+                )}
+                {task.creatorName && <span className="shrink-0">·</span>}
+                <Clock size={10} className="shrink-0" />
+                <span className="shrink-0">{timeAgo(task.createdAt)}</span>
+              </div>
+            </div>
+
+            {/* Right: actions */}
+            {!disableActions && (
+              <div className="flex items-center gap-1.5 shrink-0">
+                {userId && !isCreator && (
+                  <button
+                    onClick={handleBookmark}
+                    title={bookmarked ? "Remove bookmark" : "Bookmark task"}
+                    className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all duration-200 ${
+                      bookmarked
+                        ? "border-purple-500/40 bg-purple-500/10 text-purple-400"
+                        : "border-border bg-muted/50 text-muted-foreground hover:border-purple-500/30 hover:text-purple-400"
+                    }`}
+                  >
+                    <Bookmark size={12} className={bookmarked ? "fill-current" : ""} />
+                  </button>
+                )}
+                {task.status === "open" && userId && !isCreator && (
+                  <Button
+                    asChild
+                    size="sm"
+                    className="btn-gradient text-white rounded-lg text-xs px-2.5 h-7 border-0"
+                  >
+                    <Link href={`/tasks/${task.id}`}>Apply</Link>
+                  </Button>
+                )}
                 <Button
                   asChild
                   size="sm"
-                  className="btn-gradient text-white rounded-xl text-xs px-3 border-0"
+                  className="bg-muted hover:bg-muted/70 border border-border hover:border-primary/30 rounded-lg text-muted-foreground hover:text-foreground text-xs px-2.5 h-7 transition-all duration-200"
                 >
-                  <Link href={`/tasks/${task.id}`}>Apply Now</Link>
+                  <Link href={`/tasks/${task.id}`}>
+                    {isCreator ? "Manage" : isWorker ? "My Work" : "View"}
+                  </Link>
                 </Button>
-              )}
-              <Button
-                asChild
-                size="sm"
-                className="bg-muted hover:bg-muted/70 border border-border hover:border-primary/30 rounded-xl text-muted-foreground hover:text-foreground text-xs px-3 transition-all duration-200"
-              >
-                <Link href={`/tasks/${task.id}`}>
-                  {isCreator ? "Manage" : isWorker ? "My Work" : "View"}
-                </Link>
-              </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Viewing / availability — only on open tasks */}
+          {task.status === "open" && (
+            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Eye size={10} />
+                {viewers} viewing
+              </span>
+              <span className="w-1 h-1 rounded-full bg-border" />
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                Available
+              </span>
             </div>
           )}
         </div>
-      </div>
       </div>
     </div>
   );
