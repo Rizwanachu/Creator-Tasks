@@ -269,11 +269,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </DropdownMenu>
               </div>
             ) : (
-              <div className="hidden md:flex items-center gap-3">
-                <Link href="/sign-in" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <div className="flex items-center gap-2 md:gap-3">
+                <Link
+                  href="/sign-in"
+                  className="hidden sm:inline-flex text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2"
+                >
                   Sign In
                 </Link>
-                <Button asChild className="btn-gradient text-white rounded-xl text-sm px-4 py-2 h-auto font-semibold border-0">
+                <Button
+                  asChild
+                  className="btn-gradient text-white rounded-xl text-xs sm:text-sm px-3 sm:px-4 py-2 h-auto font-semibold border-0"
+                >
                   <Link href="/sign-up">Sign Up</Link>
                 </Button>
               </div>
