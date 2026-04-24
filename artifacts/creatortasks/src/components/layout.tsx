@@ -172,6 +172,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   ];
 
   const isOnboarding = location === "/onboarding" || location.startsWith("/onboarding?");
+  const isMessages = location === "/messages" || location.startsWith("/messages/") || location.startsWith("/messages?");
 
   if (isOnboarding) {
     return <>{children}</>;
@@ -362,13 +363,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <main className={`flex-1 flex flex-col md:pb-0 ${isSignedIn ? "pb-[80px]" : ""}`}>
+      <main className={`flex-1 flex flex-col md:pb-0 ${isSignedIn && !isMessages ? "pb-[80px]" : ""}`}>
         {children}
       </main>
 
-      {isSignedIn && <MobileBottomNav />}
+      {isSignedIn && !isMessages && <MobileBottomNav />}
 
-      <footer className={`border-t border-border bg-card/50 mt-auto ${isSignedIn ? "hidden md:block" : ""}`}>
+      <footer className={`border-t border-border bg-card/50 mt-auto ${isSignedIn ? "hidden md:block" : ""} ${isMessages ? "hidden md:block" : ""}`}>
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-2 md:grid-cols-6 gap-10">
             <div className="col-span-2 flex flex-col gap-4">

@@ -255,7 +255,7 @@ function ChatPanel({
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 border-t border-border bg-card/50 shrink-0">
+      <div className="px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)] border-t border-border bg-card shrink-0 sticky bottom-0">
         {warned && (
           <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-400">
             <AlertTriangle size={12} />
