@@ -49,7 +49,7 @@ import {
   useReorderEducation,
 } from "@/hooks/use-profile";
 import type { ExperienceEntry, EducationEntry, PortfolioItem } from "@/hooks/use-profile";
-import { ArrowLeft, Camera, Plus, Instagram, Youtube, Link as LinkIcon, CreditCard, Upload, Trash2, CheckCircle2, AlertCircle, Pencil, Briefcase, GraduationCap, MapPin, Calendar, GripVertical } from "lucide-react";
+import { ArrowLeft, Camera, Plus, Instagram, Youtube, Link as LinkIcon, CreditCard, Upload, Trash2, CheckCircle2, AlertCircle, Pencil, Briefcase, GraduationCap, MapPin, Calendar, GripVertical, ImageOff } from "lucide-react";
 import { Link } from "wouter";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -187,9 +187,25 @@ function SortablePortfolioItem({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
+  const [loadError, setLoadError] = React.useState(false);
+  React.useEffect(() => { setLoadError(false); }, [imageUrl]);
   return (
     <div ref={setNodeRef} style={style} className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-muted">
-      <img src={imageUrl} alt={item.caption ?? "Portfolio"} className="w-full h-full object-cover" />
+      {loadError || !imageUrl ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-muted-foreground p-2 text-center">
+          <ImageOff size={20} className="opacity-60" />
+          <span className="text-[10px] leading-tight opacity-70">Image unavailable</span>
+        </div>
+      ) : (
+        <img
+          src={imageUrl}
+          alt={item.caption ?? "Portfolio"}
+          className="w-full h-full object-cover"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setLoadError(true)}
+        />
+      )}
       <button
         type="button"
         {...attributes}
