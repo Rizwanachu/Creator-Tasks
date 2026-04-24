@@ -1,7 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
 import { db, users, subscriptions } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import Razorpay from "razorpay";
 
@@ -147,7 +147,8 @@ router.post("/subscription/confirm", requireAuth, async (req, res) => {
       return;
     }
 
-    // Verify that this subscription was created by and belongs to the current user
+    // Verify that this subscription was created by and belongs to the current user,
+    // and that it hasn't already been confirmed (prevents replay attacks).
     const pendingSub = await db.query.subscriptions.findFirst({
       where: eq(subscriptions.razorpaySubscriptionId, razorpay_subscription_id),
     });
@@ -170,13 +171,34 @@ router.post("/subscription/confirm", requireAuth, async (req, res) => {
       return;
     }
 
-    // Signature verified + ownership verified — immediately grant Pro
-    // Webhook will update with accurate proUntil when it fires
-    const provisionalProUntil = new Date(Date.now() + 32 * 24 * 60 * 60 * 1000); // ~1 month
-    await db
-      .update(users)
-      .set({ isPro: true, proUntil: provisionalProUntil })
-      .where(eq(users.id, currentUser.id));
+    // Reject if already consumed — prevents replay of a previously valid payload
+    if (pendingSub.status !== "pending") {
+      req.log.warn({ userId: currentUser.id, status: pendingSub.status }, "subscription.confirm: already consumed");
+      res.status(409).json({ error: "Subscription confirmation already processed" });
+      return;
+    }
+
+    // Signature + ownership + status all valid — atomically transition to confirmed and grant Pro.
+    // Webhook will update with accurate proUntil when subscription.charged fires.
+    const provisionalProUntil = new Date(Date.now() + 32 * 24 * 60 * 60 * 1000); // ~1 month buffer
+    await db.transaction(async (tx) => {
+      // Transition pending -> confirmed to consume this confirmation (idempotency guard)
+      const [updated] = await tx
+        .update(subscriptions)
+        .set({ status: "confirmed" })
+        .where(and(eq(subscriptions.id, pendingSub.id), eq(subscriptions.status, "pending")))
+        .returning({ id: subscriptions.id });
+
+      if (!updated) {
+        // Another concurrent request already confirmed — no-op
+        return;
+      }
+
+      await tx
+        .update(users)
+        .set({ isPro: true, proUntil: provisionalProUntil })
+        .where(eq(users.id, currentUser.id));
+    });
 
     req.log.info({ userId: currentUser.id, razorpay_subscription_id }, "subscription.confirm: Pro granted immediately");
     res.json({ success: true });

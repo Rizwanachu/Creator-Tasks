@@ -41,7 +41,7 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-const VALID_TABS = ["posted", "accepted", "bookmarks", "transactions", "invitations", "referral", "disputes", "subscription"];
+const VALID_TABS = ["posted", "accepted", "bookmarks", "transactions", "invitations", "referral", "subscription", "disputes"];
 
 const NAV_ITEMS = [
   { id: "posted",        label: "Posted Tasks",  icon: ClipboardList },
@@ -50,8 +50,8 @@ const NAV_ITEMS = [
   { id: "invitations",   label: "Invitations",    icon: Mail },
   { id: "bookmarks",     label: "Bookmarks",      icon: Bookmark },
   { id: "referral",      label: "Referral",       icon: Gift },
-  { id: "disputes",      label: "Disputes",       icon: Shield },
   { id: "subscription",  label: "Pro",            icon: Sparkles },
+  { id: "disputes",      label: "Disputes",       icon: Shield },
 ];
 
 function SubscriptionTab() {
