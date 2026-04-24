@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { useCreators, type CreatorSummary } from "@/hooks/use-creators";
@@ -208,29 +208,17 @@ export function CreatorsPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [inviteTarget, setInviteTarget] = useState<{ clerkId: string; name: string | null } | null>(null);
-  const [skillInput, setSkillInput] = useState("");
-  const [skillInputDebounced, setSkillInputDebounced] = useState("");
   const [sort, setSort] = useState<"most_active" | "top_rated" | "newest">("most_active");
   const [available, setAvailable] = useState(false);
-
-  const skillTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 400);
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  useEffect(() => {
-    clearTimeout(skillTimerRef.current);
-    skillTimerRef.current = setTimeout(() => setSkillInputDebounced(skillInput.trim()), 400);
-    return () => clearTimeout(skillTimerRef.current);
-  }, [skillInput]);
-
-  const activeSkill = skillInputDebounced;
-
   const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage, error } = useCreators({
     search,
-    skill: activeSkill,
+    skill: "",
     sort,
     available,
     limit: 12,
@@ -284,20 +272,6 @@ export function CreatorsPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mb-7">
-
-        <div className="relative">
-          <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Filter by skill…"
-            value={skillInput}
-            onChange={(e) => {
-              setSkillInput(e.target.value);
-            }}
-            className="pl-7 pr-3 py-1.5 rounded-full text-xs border border-border bg-muted/40 text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-purple-500/40 focus:text-foreground h-7 w-36 transition-all"
-          />
-        </div>
-
         <div className="ml-auto flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Available now</span>
           <button
@@ -323,7 +297,7 @@ export function CreatorsPage() {
           {Array.from({ length: 8 }).map((_, i) => <CreatorCardSkeleton key={i} />)}
         </div>
       ) : allCreators.length === 0 ? (
-        <EmptyState search={search} skill={skillInputDebounced} skillInput={skillInput} available={available} />
+        <EmptyState search={search} skill="" skillInput="" available={available} />
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
