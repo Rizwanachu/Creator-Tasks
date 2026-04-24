@@ -187,8 +187,8 @@ function SortablePortfolioItem({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
-  const [loadError, setLoadError] = React.useState(false);
-  React.useEffect(() => { setLoadError(false); }, [imageUrl]);
+  const [loadError, setLoadError] = useState(false);
+  useEffect(() => { setLoadError(false); }, [imageUrl]);
   return (
     <div ref={setNodeRef} style={style} className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-muted">
       {loadError || !imageUrl ? (
