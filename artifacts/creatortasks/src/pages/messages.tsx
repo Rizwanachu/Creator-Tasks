@@ -271,7 +271,7 @@ function ChatPanel({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-0.5">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-4 space-y-0.5">
         {isLoading ? (
           <div className="space-y-3 pt-4">
             <div className="flex justify-start"><Skeleton className="h-10 w-48 rounded-2xl bg-white/5" /></div>
