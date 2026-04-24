@@ -133,7 +133,7 @@ export function TaskCard({ task, disableActions }: { task: Task; disableActions?
               {CATEGORY_LABELS[task.category] ?? task.category}
             </Badge>
             {isTrending && task.status === "open" && (
-              <Badge variant="outline" className="text-xs font-medium bg-orange-500/8 text-orange-500 border-orange-500/20 flex items-center gap-1">
+              <Badge variant="outline" className="text-xs font-medium bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20 flex items-center gap-1">
                 <Flame size={10} />
                 Trending
               </Badge>
@@ -199,8 +199,8 @@ export function TaskCard({ task, disableActions }: { task: Task; disableActions?
                     title={bookmarked ? "Remove bookmark" : "Bookmark task"}
                     className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-all duration-200 ${
                       bookmarked
-                        ? "border-purple-500/40 bg-purple-500/10 text-purple-400"
-                        : "border-border bg-muted/50 text-muted-foreground hover:border-purple-500/30 hover:text-purple-400"
+                        ? "border-purple-500/40 bg-purple-500/10 text-purple-700 dark:text-purple-400"
+                        : "border-border bg-muted/50 text-muted-foreground hover:border-purple-500/30 hover:text-purple-700 dark:hover:text-purple-400"
                     }`}
                   >
                     <Bookmark size={12} className={bookmarked ? "fill-current" : ""} />

@@ -129,10 +129,10 @@ export function Tasks() {
                 className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
                   statusFilter === value
                     ? value === "completed"
-                      ? "bg-green-500/15 border-green-500/40 text-green-400"
+                      ? "bg-green-500/15 border-green-500/40 text-green-700 dark:text-green-400"
                       : value === ""
-                      ? "bg-zinc-500/15 border-zinc-500/40 text-zinc-400"
-                      : "bg-purple-500/15 border-purple-500/40 text-purple-400"
+                      ? "bg-zinc-500/15 border-zinc-500/40 text-zinc-600 dark:text-zinc-400"
+                      : "bg-purple-500/15 border-purple-500/40 text-purple-700 dark:text-purple-400"
                     : "border-border text-muted-foreground hover:text-foreground bg-transparent"
                 }`}
               >
@@ -148,13 +148,13 @@ export function Tasks() {
               onClick={() => setShowBudget((v) => !v)}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all ${
                 hasBudgetFilter || showBudget
-                  ? "border-purple-500/40 text-purple-400 bg-purple-500/10"
+                  ? "border-purple-500/40 text-purple-700 dark:text-purple-400 bg-purple-500/10"
                   : "border-border text-muted-foreground hover:text-foreground"
               }`}
             >
               <SlidersHorizontal size={11} />
               Budget
-              {hasBudgetFilter && <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />}
+              {hasBudgetFilter && <span className="w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400" />}
               <ChevronDown size={10} className={`transition-transform ${showBudget ? "rotate-180" : ""}`} />
             </button>
 
@@ -187,7 +187,7 @@ export function Tasks() {
           <div className="container mx-auto max-w-6xl mt-2">
             <button
               onClick={clearFilters}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-red-500/30 text-red-400 bg-red-500/5 hover:bg-red-500/10 transition-all"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-red-500/30 text-red-600 dark:text-red-400 bg-red-500/5 hover:bg-red-500/10 transition-all"
             >
               <X size={10} />
               Clear filters
