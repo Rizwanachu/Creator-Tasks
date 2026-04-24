@@ -132,11 +132,11 @@ function MobileBottomNav() {
               href={item.href}
               className="flex-1 flex flex-col items-center justify-center gap-[3px] py-2 group"
             >
-              <div className={`relative flex items-center justify-center w-10 h-8 rounded-[10px] transition-colors ${active ? "bg-primary/10" : "group-active:bg-muted"}`}>
+              <div className={`relative flex items-center justify-center w-10 h-8 rounded-[10px] transition-colors ${active ? "bg-primary" : "group-active:bg-muted"}`}>
                 <Icon
                   size={19}
                   strokeWidth={active ? 2.2 : 1.8}
-                  className={`transition-colors ${active ? "text-primary" : "text-muted-foreground"}`}
+                  className={`transition-colors ${active ? "text-white" : "text-muted-foreground"}`}
                 />
                 {hasBadge && (
                   <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-card" />
