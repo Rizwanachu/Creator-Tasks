@@ -15,6 +15,16 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram, Users, Home, Sparkles } from "lucide-react";
 import { useUnreadMessageCount } from "@/hooks/use-chat";
 
+interface MobileShellValue {
+  hideBottomNav: boolean;
+  setHideBottomNav: (v: boolean) => void;
+}
+const MobileShellContext = React.createContext<MobileShellValue>({
+  hideBottomNav: false,
+  setHideBottomNav: () => {},
+});
+export function useMobileShell() { return React.useContext(MobileShellContext); }
+
 function NavWalletBadge() {
   const { data: wallet } = useWallet();
   if (wallet?.balance == null) return null;
@@ -172,7 +182,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   ];
 
   const isOnboarding = location === "/onboarding" || location.startsWith("/onboarding?");
-  const isMessages = location === "/messages" || location.startsWith("/messages/") || location.startsWith("/messages?");
+  const [hideBottomNav, setHideBottomNav] = useState(false);
+  const shellValue = React.useMemo(() => ({ hideBottomNav, setHideBottomNav }), [hideBottomNav]);
 
   if (isOnboarding) {
     return <>{children}</>;
@@ -363,13 +374,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <main className={`flex-1 flex flex-col md:pb-0 ${isSignedIn && !isMessages ? "pb-[80px]" : ""}`}>
-        {children}
+      <main className={`flex-1 flex flex-col md:pb-0 ${isSignedIn && !hideBottomNav ? "pb-[80px]" : ""}`}>
+        <MobileShellContext.Provider value={shellValue}>
+          {children}
+        </MobileShellContext.Provider>
       </main>
 
-      {isSignedIn && !isMessages && <MobileBottomNav />}
+      {isSignedIn && !hideBottomNav && <MobileBottomNav />}
 
-      <footer className={`border-t border-border bg-card/50 mt-auto ${isSignedIn ? "hidden md:block" : ""} ${isMessages ? "hidden md:block" : ""}`}>
+      <footer className={`border-t border-border bg-card/50 mt-auto ${isSignedIn ? "hidden md:block" : ""} ${hideBottomNav ? "hidden md:block" : ""}`}>
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-2 md:grid-cols-6 gap-10">
             <div className="col-span-2 flex flex-col gap-4">

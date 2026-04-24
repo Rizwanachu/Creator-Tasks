@@ -279,6 +279,76 @@ router.post("/messages", requireAuth, async (req, res) => {
   }
 });
 
+// In-memory typing state: conversationId → userId → expiresAt
+const typingMap = new Map<string, Map<string, number>>();
+const TYPING_TTL_MS = 6000;
+
+function setTyping(convId: string, userId: string) {
+  let conv = typingMap.get(convId);
+  if (!conv) { conv = new Map(); typingMap.set(convId, conv); }
+  conv.set(userId, Date.now() + TYPING_TTL_MS);
+}
+
+function clearTyping(convId: string, userId: string) {
+  const conv = typingMap.get(convId);
+  if (conv) { conv.delete(userId); if (conv.size === 0) typingMap.delete(convId); }
+}
+
+function getTypingOthers(convId: string, meId: string): string[] {
+  const conv = typingMap.get(convId);
+  if (!conv) return [];
+  const now = Date.now();
+  const others: string[] = [];
+  for (const [uid, expiresAt] of conv.entries()) {
+    if (expiresAt < now) { conv.delete(uid); continue; }
+    if (uid !== meId) others.push(uid);
+  }
+  return others;
+}
+
+// POST /api/conversations/:id/typing — heartbeat that current user is typing
+router.post("/conversations/:id/typing", requireAuth, async (req, res) => {
+  try {
+    const me = req.dbUser!;
+    const convId = req.params.id;
+    const { typing } = (req.body ?? {}) as { typing?: boolean };
+
+    const conv = await db.query.conversations.findFirst({ where: eq(conversations.id, convId) });
+    if (!conv || (conv.participantOneId !== me.id && conv.participantTwoId !== me.id)) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    if (typing === false) clearTyping(convId, me.id);
+    else setTyping(convId, me.id);
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Error setting typing");
+    res.status(500).json({ error: "Failed to update typing" });
+  }
+});
+
+// GET /api/conversations/:id/typing — returns whether the other participant is typing
+router.get("/conversations/:id/typing", requireAuth, async (req, res) => {
+  try {
+    const me = req.dbUser!;
+    const convId = req.params.id;
+
+    const conv = await db.query.conversations.findFirst({ where: eq(conversations.id, convId) });
+    if (!conv || (conv.participantOneId !== me.id && conv.participantTwoId !== me.id)) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    const others = getTypingOthers(convId, me.id);
+    res.json({ typing: others.length > 0 });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching typing");
+    res.status(500).json({ error: "Failed to fetch typing" });
+  }
+});
+
 // POST /api/messages/read
 router.post("/messages/read", requireAuth, async (req, res) => {
   try {

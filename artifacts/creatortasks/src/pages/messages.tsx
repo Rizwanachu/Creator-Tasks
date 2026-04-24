@@ -14,9 +14,12 @@ import {
   useConversationMessages,
   useSendMessage,
   useMarkRead,
+  useTypingStatus,
+  useSetTyping,
   type Conversation,
   type Message,
 } from "@/hooks/use-chat";
+import { useMobileShell } from "@/components/layout";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -138,22 +141,57 @@ function ChatPanel({
   const { data, isLoading } = useConversationMessages(conversationId);
   const sendMessage = useSendMessage();
   const markRead = useMarkRead();
+  const setTyping = useSetTyping();
+  const { data: typingData } = useTypingStatus(conversationId);
+  const otherTyping = !!typingData?.typing;
+  const { setHideBottomNav } = useMobileShell();
   const [text, setText] = useState("");
   const [warned, setWarned] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const typingHeartbeatRef = useRef<number>(0);
+  const typingClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (data?.messages?.length) {
+    setHideBottomNav(true);
+    return () => setHideBottomNav(false);
+  }, [setHideBottomNav]);
+
+  useEffect(() => {
+    if (data?.messages?.length || otherTyping) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [data?.messages?.length]);
+  }, [data?.messages?.length, otherTyping]);
 
   useEffect(() => {
     if (conversationId) {
       markRead.mutate(conversationId);
     }
   }, [conversationId, data?.messages]);
+
+  const sendTypingHeartbeat = () => {
+    if (!conversationId) return;
+    const now = Date.now();
+    if (now - typingHeartbeatRef.current > 3000) {
+      typingHeartbeatRef.current = now;
+      setTyping.mutate({ conversationId, typing: true });
+    }
+    if (typingClearTimerRef.current) clearTimeout(typingClearTimerRef.current);
+    typingClearTimerRef.current = setTimeout(() => {
+      typingHeartbeatRef.current = 0;
+      setTyping.mutate({ conversationId, typing: false });
+    }, 4000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (typingClearTimerRef.current) clearTimeout(typingClearTimerRef.current);
+      if (conversationId && typingHeartbeatRef.current) {
+        setTyping.mutate({ conversationId, typing: false });
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
 
   const handleSend = () => {
     const trimmed = text.trim();
@@ -163,6 +201,9 @@ function ChatPanel({
       {
         onSuccess: (result) => {
           setText("");
+          if (typingClearTimerRef.current) clearTimeout(typingClearTimerRef.current);
+          typingHeartbeatRef.current = 0;
+          setTyping.mutate({ conversationId, typing: false });
           if (result.warn) {
             setWarned(true);
             toast.warning(result.warn);
@@ -251,6 +292,16 @@ function ChatPanel({
             <MessageBubble key={msg.id} msg={msg} isMe={msg.senderId === myDbId} />
           ))
         )}
+        {otherTyping && (
+          <div className="flex justify-start mb-2">
+            <div className="bg-card border border-border text-foreground rounded-2xl rounded-bl-sm px-4 py-2.5 flex items-center gap-1.5">
+              <span className="sr-only">{otherUser?.name ?? "Someone"} is typing</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
@@ -266,7 +317,10 @@ function ChatPanel({
           <Textarea
             ref={textareaRef}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              if (e.target.value.trim()) sendTypingHeartbeat();
+            }}
             onKeyDown={handleKeyDown}
             placeholder="Discuss details, clarify requirements, and share updates here"
             className="resize-none min-h-[44px] max-h-32 bg-background border-border text-sm rounded-xl focus-visible:ring-purple-500/50 flex-1"

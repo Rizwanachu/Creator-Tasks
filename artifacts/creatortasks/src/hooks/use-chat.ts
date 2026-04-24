@@ -97,6 +97,28 @@ export function useSendMessage() {
   });
 }
 
+export function useTypingStatus(conversationId: string | null) {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery<{ typing: boolean }>({
+    queryKey: ["typing", conversationId],
+    queryFn: () => apiFetch(`/api/conversations/${conversationId}/typing`, {}, getToken),
+    enabled: !!isSignedIn && !!conversationId,
+    refetchInterval: 2500,
+    staleTime: 1000,
+  });
+}
+
+export function useSetTyping() {
+  const { getToken } = useAuth();
+  return useMutation({
+    mutationFn: (data: { conversationId: string; typing: boolean }) =>
+      apiFetch(`/api/conversations/${data.conversationId}/typing`, {
+        method: "POST",
+        data: { typing: data.typing },
+      }, getToken),
+  });
+}
+
 export function useMarkRead() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
