@@ -14,13 +14,14 @@ import {
   ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, Copy, Gift,
   Users, TrendingUp, Mail, XCircle, AlertTriangle, Bookmark,
   Sparkles, AlertCircle, ClipboardList, Wrench, ReceiptText,
-  Shield, LayoutDashboard, Check, ChevronRight,
+  Shield, LayoutDashboard, Check, ChevronRight, UserCircle2, Pencil, ExternalLink,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSubscription, useCreateSubscription, useConfirmSubscription, useCancelSubscription } from "@/hooks/use-subscription";
 import { useMyDisputes, useBookmarks } from "@/hooks/use-bookmarks";
 import { toast } from "sonner";
-import { useAuth } from "@clerk/react";
+import { useAuth, useUser } from "@clerk/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "wouter";
 
 declare global {
@@ -41,10 +42,11 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-const VALID_TABS = ["posted", "accepted", "bookmarks", "transactions", "invitations", "referral", "subscription", "disputes"];
+const VALID_TABS = ["posted", "accepted", "bookmarks", "transactions", "invitations", "referral", "subscription", "disputes", "profile"];
 
 const NAV_ITEMS = [
-  { id: "posted",        label: "Posted Tasks",  icon: ClipboardList },
+  { id: "profile",       label: "My Profile",     icon: UserCircle2 },
+  { id: "posted",        label: "Posted Tasks",   icon: ClipboardList },
   { id: "accepted",      label: "My Work",        icon: Wrench },
   { id: "transactions",  label: "Transactions",   icon: ReceiptText },
   { id: "invitations",   label: "Invitations",    icon: Mail },
@@ -198,6 +200,120 @@ function SubscriptionTab() {
           <Link href="/pro" className="text-purple-400 hover:underline">pricing page</Link>.
         </p>
       )}
+    </div>
+  );
+}
+
+function ProfileTab({ completionPercent, profileComplete }: { completionPercent: number; profileComplete: boolean }) {
+  const { user } = useUser();
+  const { data: dashboard } = useDashboard();
+  const { data: wallet } = useWallet();
+
+  const completedCount = (dashboard?.acceptedTasks ?? []).filter(
+    (t) => t.status === "completed"
+  ).length;
+  const postedCount = dashboard?.postedTasks?.length ?? 0;
+  const totalEarned = wallet?.balance ?? 0;
+
+  return (
+    <div className="space-y-5">
+      {/* Profile card */}
+      <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <Avatar className="h-20 w-20 border border-border ring-2 ring-primary/20">
+            <AvatarImage src={user?.imageUrl} alt={user?.fullName || ""} />
+            <AvatarFallback className="bg-purple-600 text-white text-xl font-semibold">
+              {user?.firstName?.charAt(0) || "U"}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-bold text-foreground truncate">
+              {user?.fullName || user?.firstName || "Your profile"}
+            </h3>
+            {user?.primaryEmailAddress && (
+              <p className="text-sm text-muted-foreground truncate">
+                {user.primaryEmailAddress.emailAddress}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2 mt-3">
+              <Button asChild size="sm" className="btn-gradient text-white rounded-xl border-0 font-semibold text-xs">
+                <Link href={user?.id ? `/profile/${user.id}` : "/sign-in"}>
+                  <ExternalLink size={13} className="mr-1.5" /> View Public Profile
+                </Link>
+              </Button>
+              <Button asChild size="sm" variant="outline" className="rounded-xl text-xs">
+                <Link href="/profile/edit">
+                  <Pencil size={13} className="mr-1.5" /> Edit Profile
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Profile completion */}
+      {!profileComplete && (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle size={16} className="text-amber-500" />
+            <h4 className="font-semibold text-amber-700 dark:text-amber-300 text-sm">
+              Profile {completionPercent}% complete
+            </h4>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            A complete profile attracts more clients and unlocks more opportunities.
+          </p>
+          <div className="h-1.5 rounded-full bg-amber-500/10 overflow-hidden mb-3">
+            <div
+              className="h-full rounded-full bg-amber-400/70 transition-all duration-500"
+              style={{ width: `${completionPercent}%` }}
+            />
+          </div>
+          <Button asChild size="sm" className="btn-gradient text-white rounded-xl border-0 font-semibold text-xs">
+            <Link href="/profile/edit">Finish setting up</Link>
+          </Button>
+        </div>
+      )}
+
+      {/* Quick stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mb-1">Completed</p>
+          <p className="text-2xl font-bold text-foreground">{completedCount}</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mb-1">Posted</p>
+          <p className="text-2xl font-bold text-foreground">{postedCount}</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium mb-1">Wallet</p>
+          <p className="text-2xl font-bold text-foreground">₹{totalEarned.toLocaleString()}</p>
+        </div>
+      </div>
+
+      {/* Quick links */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <Link
+          href="/profile/edit"
+          className="flex items-center justify-between px-5 py-4 hover:bg-muted transition-colors border-b border-border"
+        >
+          <div className="flex items-center gap-3">
+            <Pencil size={16} className="text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Edit profile details</span>
+          </div>
+          <ChevronRight size={16} className="text-muted-foreground" />
+        </Link>
+        <Link
+          href={user?.id ? `/profile/${user.id}` : "/sign-in"}
+          className="flex items-center justify-between px-5 py-4 hover:bg-muted transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <ExternalLink size={16} className="text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">View as others see you</span>
+          </div>
+          <ChevronRight size={16} className="text-muted-foreground" />
+        </Link>
+      </div>
     </div>
   );
 }
@@ -792,6 +908,11 @@ export function Dashboard() {
               </Card>
             </div>
           )}
+          {/* ── My Profile ── */}
+          {activeTab === "profile" && (
+            <ProfileTab completionPercent={completionPercent} profileComplete={profileComplete} />
+          )}
+
           {/* ── Pro Subscription ── */}
           {activeTab === "subscription" && (
             <SubscriptionTab />

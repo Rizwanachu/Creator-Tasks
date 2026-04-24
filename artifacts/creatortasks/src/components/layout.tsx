@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWallet } from "@/hooks/use-wallet";
 import { useNotifications } from "@/hooks/use-notifications";
-import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram, Users, Home, UserCircle2, Sparkles } from "lucide-react";
+import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram, Users, Home, Sparkles } from "lucide-react";
 import { useUnreadMessageCount } from "@/hooks/use-chat";
 
 function NavWalletBadge() {
@@ -99,12 +99,13 @@ function MobileBottomNav() {
     { href: "/creators", label: "Creators", icon: Users },
     { href: "/create", label: "Create", icon: PlusCircle, isCreate: true },
     { href: "/messages", label: "Messages", icon: MessageSquare },
-    { href: user?.id ? `/profile/${user.id}` : "/sign-in", label: "Profile", icon: UserCircle2 },
+    { href: user?.id ? "/dashboard?tab=profile" : "/sign-in", label: "Dashboard", icon: LayoutDashboard },
   ] as const;
 
   function isActive(href: string) {
-    if (href === "/tasks") return location === "/tasks" || location === "/";
-    return location.startsWith(href);
+    const path = href.split("?")[0];
+    if (path === "/tasks") return location === "/tasks" || location === "/";
+    return location.startsWith(path);
   }
 
   return (
