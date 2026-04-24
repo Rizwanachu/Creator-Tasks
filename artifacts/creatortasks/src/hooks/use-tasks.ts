@@ -63,6 +63,22 @@ export function useTask(id: string) {
   });
 }
 
+export interface DailyTaskLimit {
+  used: number;
+  limit: number | null;
+  isPro: boolean;
+}
+
+export function useDailyTaskLimit() {
+  const { getToken, isSignedIn } = useAuth();
+  return useQuery<DailyTaskLimit>({
+    queryKey: ["tasks", "daily-limit"],
+    queryFn: () => apiFetch("/api/tasks/daily-limit", {}, getToken),
+    enabled: !!isSignedIn,
+    staleTime: 60_000,
+  });
+}
+
 export function useCreateTask() {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();

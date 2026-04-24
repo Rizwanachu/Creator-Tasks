@@ -3,6 +3,22 @@ import crypto from "crypto";
 import { db, transactions, users, subscriptions } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 
+interface RazorpayEventEntity {
+  id: string;
+  plan_id?: string;
+  notes?: Record<string, string | undefined>;
+  current_start?: number;
+  current_end?: number;
+}
+
+interface RazorpayWebhookEvent {
+  event: string;
+  payload: {
+    subscription?: { entity: RazorpayEventEntity };
+    payment?: { entity: RazorpayEventEntity };
+  };
+}
+
 const router = Router();
 
 router.post("/razorpay", async (req: Request, res: Response) => {
@@ -31,7 +47,7 @@ router.post("/razorpay", async (req: Request, res: Response) => {
       return;
     }
 
-    const event = JSON.parse(rawBody.toString("utf8"));
+    const event = JSON.parse(rawBody.toString("utf8")) as RazorpayWebhookEvent;
     const eventName: string = event.event ?? "";
 
     // ── Subscription events ──────────────────────────────────────────────────
@@ -114,7 +130,7 @@ router.post("/razorpay", async (req: Request, res: Response) => {
   }
 });
 
-async function handleSubscriptionCharged(req: Request, event: any) {
+async function handleSubscriptionCharged(req: Request, event: RazorpayWebhookEvent) {
   try {
     const subEntity = event?.payload?.subscription?.entity;
     const paymentEntity = event?.payload?.payment?.entity;
@@ -171,7 +187,7 @@ async function handleSubscriptionCharged(req: Request, event: any) {
   }
 }
 
-async function handleSubscriptionEnded(req: Request, event: any, eventName: string) {
+async function handleSubscriptionEnded(req: Request, event: RazorpayWebhookEvent, eventName: string) {
   try {
     const subEntity = event?.payload?.subscription?.entity;
     if (!subEntity) return;

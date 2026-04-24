@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateTask } from "@/hooks/use-tasks";
+import { useCreateTask, useDailyTaskLimit } from "@/hooks/use-tasks";
 import { useWallet, useCreateDepositOrder, useVerifyDeposit } from "@/hooks/use-wallet";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -268,6 +268,7 @@ function TaskPreview({
 export function CreateTask() {
   const [, setLocation] = useLocation();
   const createTask = useCreateTask();
+  const { data: dailyLimit } = useDailyTaskLimit();
   const { data: wallet } = useWallet();
   const createOrder = useCreateDepositOrder();
   const verifyDeposit = useVerifyDeposit();
@@ -460,6 +461,38 @@ export function CreateTask() {
               Get creators to work on your idea in minutes. You only pay when you approve.
             </p>
           </div>
+
+          {/* Daily post counter for free users */}
+          {dailyLimit && !dailyLimit.isPro && (
+            <div className={`flex-1 sm:flex-none sm:mt-2 rounded-xl border px-4 py-3 text-sm flex items-start gap-3 ${
+              dailyLimit.used >= (dailyLimit.limit ?? 2)
+                ? "bg-amber-500/10 border-amber-500/25 text-amber-400"
+                : "bg-muted/40 border-border text-muted-foreground"
+            }`}>
+              <Sparkles size={15} className={dailyLimit.used >= (dailyLimit.limit ?? 2) ? "text-amber-400 mt-0.5 shrink-0" : "text-purple-400 mt-0.5 shrink-0"} />
+              <div>
+                <div className="font-semibold text-foreground">
+                  {dailyLimit.used} of {dailyLimit.limit} posts used today
+                </div>
+                {dailyLimit.used >= (dailyLimit.limit ?? 2) ? (
+                  <div className="text-xs mt-1">
+                    Daily limit reached.{" "}
+                    <Link href="/pro" className="underline text-purple-400 hover:text-purple-300">
+                      Upgrade to Pro
+                    </Link>{" "}
+                    for unlimited posting.
+                  </div>
+                ) : (
+                  <div className="text-xs mt-0.5">
+                    <Link href="/pro" className="underline text-purple-400 hover:text-purple-300">
+                      Go Pro
+                    </Link>{" "}
+                    for unlimited daily posts.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Autofill button */}
           <button

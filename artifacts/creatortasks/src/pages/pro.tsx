@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSubscription, useCreateSubscription } from "@/hooks/use-subscription";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -71,6 +72,7 @@ const FEATURES = [
 
 export function ProPage() {
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
   const { data: sub, isLoading } = useSubscription();
   const createSub = useCreateSubscription();
   const [subscribing, setSubscribing] = useState(false);
@@ -95,6 +97,8 @@ export function ProPage() {
         name: "CreatorTasks Pro",
         description: "₹299/month — Pro subscription",
         handler: () => {
+          queryClient.invalidateQueries({ queryKey: ["subscription"] });
+          queryClient.invalidateQueries({ queryKey: ["me"] });
           toast.success("Welcome to Pro! Your badge is active.");
           navigate("/dashboard?tab=subscription");
         },

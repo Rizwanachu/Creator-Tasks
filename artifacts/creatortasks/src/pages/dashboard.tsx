@@ -16,6 +16,7 @@ import {
   Sparkles, AlertCircle, ClipboardList, Wrench, ReceiptText,
   Shield, LayoutDashboard, Check, ChevronRight,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSubscription, useCreateSubscription, useCancelSubscription } from "@/hooks/use-subscription";
 import { useMyDisputes, useBookmarks } from "@/hooks/use-bookmarks";
 import { toast } from "sonner";
@@ -54,6 +55,7 @@ const NAV_ITEMS = [
 ];
 
 function SubscriptionTab() {
+  const queryClient = useQueryClient();
   const { data: sub, isLoading } = useSubscription();
   const createSub = useCreateSubscription();
   const cancelSub = useCancelSubscription();
@@ -76,6 +78,8 @@ function SubscriptionTab() {
         name: "CreatorTasks Pro",
         description: "₹299/month — Pro subscription",
         handler: () => {
+          queryClient.invalidateQueries({ queryKey: ["subscription"] });
+          queryClient.invalidateQueries({ queryKey: ["me"] });
           toast.success("Welcome to Pro! Your badge is active.");
         },
         theme: { color: "#7C5CFF" },
@@ -94,6 +98,7 @@ function SubscriptionTab() {
     setCancelling(true);
     try {
       await cancelSub.mutateAsync();
+      queryClient.invalidateQueries({ queryKey: ["subscription"] });
       toast.success("Subscription cancelled. You'll keep Pro access until the billing period ends.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to cancel subscription");
