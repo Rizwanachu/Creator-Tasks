@@ -95,7 +95,7 @@ router.post("/wallet/deposit/create-order", requireAuth, async (req, res) => {
       amount: amountNum * 100,
       currency: "INR",
       receipt: `dep_${Date.now()}`,
-      notes: { userId: currentUser.id },
+      notes: { userId: currentUser.id, purpose: "wallet_deposit" },
     });
 
     res.json({

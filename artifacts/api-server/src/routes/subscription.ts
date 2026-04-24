@@ -95,6 +95,14 @@ router.post("/subscription/create", requireAuth, async (req, res) => {
 
     const sub = await rzpSubscriptions.create(subPayload);
 
+    // Store a pending record so we can verify ownership on /confirm
+    await db.insert(subscriptions).values({
+      userId: currentUser.id,
+      razorpaySubscriptionId: sub.id,
+      razorpayPlanId: planId,
+      status: "pending",
+    }).onConflictDoNothing();
+
     res.json({
       subscriptionId: sub.id,
       keyId: process.env["RAZORPAY_KEY_ID"],
@@ -139,7 +147,31 @@ router.post("/subscription/confirm", requireAuth, async (req, res) => {
       return;
     }
 
-    // Signature verified — immediately grant Pro (webhook will set accurate proUntil later)
+    // Verify that this subscription was created by and belongs to the current user
+    const pendingSub = await db.query.subscriptions.findFirst({
+      where: eq(subscriptions.razorpaySubscriptionId, razorpay_subscription_id),
+    });
+
+    if (!pendingSub) {
+      res.status(404).json({ error: "Subscription not found" });
+      return;
+    }
+
+    if (pendingSub.userId !== currentUser.id) {
+      req.log.warn({ userId: currentUser.id, subUserId: pendingSub.userId }, "subscription.confirm: owner mismatch");
+      res.status(403).json({ error: "Subscription does not belong to this account" });
+      return;
+    }
+
+    const planId = process.env["RAZORPAY_PRO_PLAN_ID"];
+    if (planId && pendingSub.razorpayPlanId !== planId) {
+      req.log.warn({ pendingPlanId: pendingSub.razorpayPlanId, expectedPlanId: planId }, "subscription.confirm: plan mismatch");
+      res.status(400).json({ error: "Subscription plan mismatch" });
+      return;
+    }
+
+    // Signature verified + ownership verified — immediately grant Pro
+    // Webhook will update with accurate proUntil when it fires
     const provisionalProUntil = new Date(Date.now() + 32 * 24 * 60 * 60 * 1000); // ~1 month
     await db
       .update(users)

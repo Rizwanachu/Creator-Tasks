@@ -6,9 +6,15 @@ import { eq, sql } from "drizzle-orm";
 interface RazorpayEventEntity {
   id: string;
   plan_id?: string;
-  notes?: Record<string, string | undefined>;
+  notes?: {
+    userId?: string;
+    purpose?: string;
+    [key: string]: string | undefined;
+  };
   current_start?: number;
   current_end?: number;
+  amount?: number;
+  description?: string;
 }
 
 interface RazorpayWebhookEvent {
@@ -79,8 +85,10 @@ router.post("/razorpay", async (req: Request, res: Response) => {
     const amountPaise: number = payment.amount;
     const userId: string | undefined = payment.notes?.userId;
 
-    // Skip subscription payments that pass through payment.captured
-    if (payment.description?.includes("subscription") || payment.notes?.subscriptionId) {
+    // Only process payments explicitly created as wallet deposits — prevents
+    // subscription charges (which also carry userId in notes) from being
+    // misclassified as wallet credits.
+    if (payment.notes?.purpose !== "wallet_deposit") {
       res.status(200).json({ ok: true });
       return;
     }
