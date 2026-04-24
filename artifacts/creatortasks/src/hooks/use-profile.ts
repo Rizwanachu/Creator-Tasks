@@ -54,6 +54,7 @@ export interface UserProfile {
   avatarUrl: string | null;
   totalEarnings: number;
   isAvailable: boolean;
+  isPro: boolean;
   referralCode: string | null;
   completedTasksCount: number;
   postedTasksCount: number;
@@ -87,6 +88,8 @@ export interface PrivateProfile {
   upiId: string | null;
   avatarUrl: string | null;
   isAvailable: boolean;
+  isPro: boolean;
+  proUntil: string | null;
   portfolioItems: PortfolioItem[];
 }
 

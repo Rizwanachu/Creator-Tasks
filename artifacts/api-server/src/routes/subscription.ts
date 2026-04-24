@@ -6,11 +6,22 @@ import Razorpay from "razorpay";
 
 const router = Router();
 
+// Explicit interface to avoid `any` casts for the Razorpay subscriptions API
+// which is not fully typed by the razorpay SDK package.
+interface RazorpaySubscriptionsAPI {
+  create(data: Record<string, unknown>): Promise<{ id: string }>;
+  cancel(id: string, data?: Record<string, unknown>): Promise<void>;
+}
+
 function getRazorpay() {
   const keyId = process.env["RAZORPAY_KEY_ID"];
   const keySecret = process.env["RAZORPAY_KEY_SECRET"];
   if (!keyId || !keySecret) throw new Error("Razorpay keys not configured");
-  return new Razorpay({ key_id: keyId, key_secret: keySecret });
+  const rzp = new Razorpay({ key_id: keyId, key_secret: keySecret });
+  return {
+    rzp,
+    subscriptions: (rzp.subscriptions as unknown) as RazorpaySubscriptionsAPI,
+  };
 }
 
 function isProActive(user: { isPro: boolean | null; proUntil: Date | null }): boolean {
@@ -68,7 +79,7 @@ router.post("/subscription/create", requireAuth, async (req, res) => {
       return;
     }
 
-    const razorpay = getRazorpay();
+    const { subscriptions: rzpSubscriptions } = getRazorpay();
 
     const subPayload: Record<string, unknown> = {
       plan_id: planId,
@@ -81,7 +92,7 @@ router.post("/subscription/create", requireAuth, async (req, res) => {
       notes: { userId: currentUser.id },
     };
 
-    const sub = await (razorpay.subscriptions as any).create(subPayload);
+    const sub = await rzpSubscriptions.create(subPayload);
 
     res.json({
       subscriptionId: sub.id,
@@ -112,12 +123,9 @@ router.post("/subscription/cancel", requireAuth, async (req, res) => {
     }
 
     if (sub.razorpaySubscriptionId) {
-      try {
-        const razorpay = getRazorpay();
-        await (razorpay.subscriptions as any).cancel(sub.razorpaySubscriptionId, { cancel_at_cycle_end: 1 });
-      } catch (rzErr) {
-        req.log.warn({ rzErr }, "Razorpay cancel API failed — marking locally anyway");
-      }
+      const { subscriptions: rzpSubscriptions } = getRazorpay();
+      // Let any Razorpay error propagate — we only mark cancelled locally if the provider confirms
+      await rzpSubscriptions.cancel(sub.razorpaySubscriptionId, { cancel_at_cycle_end: 1 });
     }
 
     await db

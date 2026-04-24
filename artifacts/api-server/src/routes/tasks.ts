@@ -235,8 +235,9 @@ router.post("/tasks", requireAuth, async (req, res) => {
       return;
     }
 
-    // Daily posting limit: 2 tasks/day for free users, unlimited for Pro
-    if (!ownerFree && !poster?.isPro) {
+    // Daily posting limit: 2 tasks/day for free users, unlimited for active Pro
+    const posterIsActivePro = !!(poster?.isPro && (!poster.proUntil || poster.proUntil > new Date()));
+    if (!ownerFree && !posterIsActivePro) {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
       const [{ value: tasksToday }] = await db
@@ -412,7 +413,8 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
     }
 
     const worker = await db.query.users.findFirst({ where: eq(users.id, task.workerId!) });
-    const feeRate = worker?.isPro ? 0.07 : 0.10;
+    const workerIsActivePro = !!(worker?.isPro && (!worker.proUntil || worker.proUntil > new Date()));
+    const feeRate = workerIsActivePro ? 0.07 : 0.10;
     const workerEarning = Math.floor(task.budget * (1 - feeRate));
 
     const approved = await db.transaction(async (tx) => {

@@ -4,7 +4,7 @@ import { useAuth } from "@clerk/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, Briefcase, CheckCircle, TrendingUp, Send, ExternalLink, Instagram, Youtube, AlertCircle, Pencil, Image } from "lucide-react";
+import { Star, Briefcase, CheckCircle, TrendingUp, Send, ExternalLink, Instagram, Youtube, AlertCircle, Pencil, Image, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
@@ -137,6 +137,12 @@ export function ProfilePage() {
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <h1 className="text-2xl font-bold text-foreground">{profile.name || "Anonymous Creator"}</h1>
+              {profile.isPro && (
+                <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-400 border-purple-500/20 gap-1">
+                  <Sparkles size={9} />
+                  Pro
+                </Badge>
+              )}
               {isOwnProfile && (
                 <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-400 border-purple-500/20">
                   You

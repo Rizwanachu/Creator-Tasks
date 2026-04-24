@@ -19,6 +19,7 @@ import {
   MapPin,
   X,
   ZoomIn,
+  Sparkles,
 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -263,10 +264,16 @@ export function CreatorPage() {
                 </div>
 
                 {/* Name + @handle + Available pill — single responsive row */}
-                <div className="flex items-baseline gap-2 flex-wrap mb-2">
+                <div className="flex items-center gap-2 flex-wrap mb-2">
                   <h1 className="text-[1.1rem] font-bold text-foreground leading-tight">
                     {profile.name || "Anonymous Creator"}
                   </h1>
+                  {profile.isPro && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-purple-500/10 border-purple-500/20 text-purple-400 shrink-0">
+                      <Sparkles size={8} className="text-purple-400" />
+                      Pro
+                    </span>
+                  )}
                   {profile.username && (
                     <span className="text-sm text-muted-foreground shrink-0">
                       @{profile.username}

@@ -833,12 +833,17 @@ router.get("/creators", async (req, res) => {
       conditions.push(eq(users.isAvailable, true));
     }
 
-    const orderExpr =
+    const primaryOrder =
       sort === "top_rated"
         ? sql`avg(${ratings.score}) DESC NULLS LAST`
         : sort === "newest"
         ? sql`${users.createdAt} DESC NULLS LAST`
         : sql`count(distinct case when ${tasks.status} = 'completed' then ${tasks.id} end) DESC`;
+
+    // When searching, rank active Pro creators first in SQL so pagination works correctly
+    const proBoostExpr = search
+      ? sql`CASE WHEN ${users.isPro} = true AND (${users.proUntil} IS NULL OR ${users.proUntil} > NOW()) THEN 0 ELSE 1 END ASC`
+      : null;
 
     const rows = await db
       .select({
@@ -861,21 +866,12 @@ router.get("/creators", async (req, res) => {
       .leftJoin(tasks, eq(tasks.workerId, users.id))
       .where(and(...conditions))
       .groupBy(users.id)
-      .orderBy(orderExpr)
+      .orderBy(...(proBoostExpr ? [proBoostExpr, primaryOrder] : [primaryOrder]))
       .limit(limit + 1)
       .offset(offset);
 
     const hasMore = rows.length > limit;
-    let items = rows.slice(0, limit);
-
-    // When a search keyword is present, promote Pro creators to the top
-    if (search) {
-      const now = new Date();
-      items = [
-        ...items.filter((u) => u.isPro && (!u.proUntil || u.proUntil > now)),
-        ...items.filter((u) => !u.isPro || (u.proUntil && u.proUntil <= now)),
-      ];
-    }
+    const items = rows.slice(0, limit);
 
     res.json({
       creators: items.map((u) => ({
