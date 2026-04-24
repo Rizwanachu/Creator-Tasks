@@ -815,7 +815,9 @@ router.get("/creators", async (req, res) => {
           ? ilike(users.username, `%${search}%`)!
           : or(
               ilike(users.name, `%${search}%`),
-              ilike(users.username, `%${search}%`)
+              ilike(users.username, `%${search}%`),
+              ilike(users.bio, `%${search}%`),
+              sql`exists (select 1 from unnest(${users.skills}) s where s ilike ${'%' + search + '%'})`
             )!
       );
     }
