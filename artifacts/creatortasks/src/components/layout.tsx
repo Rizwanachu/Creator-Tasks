@@ -190,7 +190,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-background text-foreground">
+    <div className={`flex flex-col bg-background text-foreground ${hideBottomNav ? "h-[100dvh] overflow-hidden" : "min-h-[100dvh]"}`}>
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -374,7 +374,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <main className={`flex-1 flex flex-col md:pb-0 ${isSignedIn && !hideBottomNav ? "pb-[80px]" : ""}`}>
+      <main className={`flex-1 flex flex-col md:pb-0 ${isSignedIn && !hideBottomNav ? "pb-[80px]" : ""} ${hideBottomNav ? "min-h-0 overflow-hidden" : ""}`}>
         <MobileShellContext.Provider value={shellValue}>
           {children}
         </MobileShellContext.Provider>

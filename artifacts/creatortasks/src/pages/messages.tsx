@@ -225,9 +225,9 @@ function ChatPanel({
   const otherUser = data?.conversation?.otherUser;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0 sticky top-0 z-10">
+    <div className="flex flex-col h-full min-h-0">
+      {/* Header — fixed top row */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
         <button
           onClick={onBack}
           className="md:hidden w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -262,7 +262,7 @@ function ChatPanel({
         </span>
       </div>
 
-      {/* Warning banner */}
+      {/* Warning banner — fixed sub-row */}
       <div className="flex items-start gap-2 px-4 py-2 bg-amber-500/5 border-b border-amber-500/20 shrink-0">
         <Lock size={13} className="text-amber-400 mt-0.5 shrink-0" />
         <p className="text-[11px] text-amber-300/80 leading-relaxed">
@@ -270,8 +270,8 @@ function ChatPanel({
         </p>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0.5">
+      {/* Messages — only this section scrolls */}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-4 space-y-0.5">
         {isLoading ? (
           <div className="space-y-3 pt-4">
             <div className="flex justify-start"><Skeleton className="h-10 w-48 rounded-2xl bg-white/5" /></div>
@@ -305,8 +305,8 @@ function ChatPanel({
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)] border-t border-border bg-card shrink-0 sticky bottom-0">
+      {/* Input — fixed bottom row */}
+      <div className="px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)] border-t border-border bg-card shrink-0">
         {warned && (
           <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-400">
             <AlertTriangle size={12} />
