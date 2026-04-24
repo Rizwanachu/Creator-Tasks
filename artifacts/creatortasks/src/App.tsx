@@ -39,6 +39,7 @@ import { RefundPolicyPage } from "@/pages/refund-policy";
 import { ContactPage } from "@/pages/contact";
 import { MessagesPage } from "@/pages/messages";
 import { OnboardingPage } from "@/pages/onboarding";
+import { ProPage } from "@/pages/pro";
 
 const queryClient = new QueryClient();
 
@@ -209,6 +210,8 @@ function ClerkProviderWithRoutes() {
             <Route path="/messages">
               <ProtectedRoute component={MessagesPage} />
             </Route>
+
+            <Route path="/pro" component={ProPage} />
 
             <Route path="/terms" component={TermsPage} />
             <Route path="/privacy" component={PrivacyPage} />

@@ -19,6 +19,9 @@ export const users = pgTable("users", {
   balance: integer("balance").default(0),
   pendingBalance: integer("pending_balance").default(0),
   isAvailable: boolean("is_available").default(true),
+  isPro: boolean("is_pro").default(false),
+  proUntil: timestamp("pro_until"),
+  razorpayCustomerId: text("razorpay_customer_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -166,6 +169,21 @@ export const messages = pgTable("messages", {
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  razorpaySubscriptionId: text("razorpay_subscription_id").unique(),
+  razorpayPlanId: text("razorpay_plan_id"),
+  status: text("status").notNull().default("active"),
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  cancelledAt: timestamp("cancelled_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("subscriptions_user_id_idx").on(table.userId),
+  razorpaySubIdIdx: index("subscriptions_razorpay_sub_id_idx").on(table.razorpaySubscriptionId),
+}));
 
 export const skillEndorsements = pgTable("skill_endorsements", {
   id: uuid("id").defaultRandom().primaryKey(),

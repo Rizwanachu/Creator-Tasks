@@ -46,6 +46,7 @@ async function buildPublicProfile(user: typeof users.$inferSelect) {
     skillEndorsementCounts[row.skill] = Number(row.count);
   }
 
+  const now = new Date();
   return {
     id: user.id,
     clerkId: user.clerkId,
@@ -60,6 +61,7 @@ async function buildPublicProfile(user: typeof users.$inferSelect) {
     avatarUrl: user.avatarUrl,
     totalEarnings: user.totalEarnings ?? 0,
     isAvailable: user.isAvailable ?? true,
+    isPro: !!(user.isPro && (!user.proUntil || user.proUntil > now)),
     referralCode: user.referralCode,
     completedTasksCount: completedTasks.length,
     postedTasksCount: postedCount[0]?.count ?? 0,
@@ -119,6 +121,7 @@ router.get("/users/me", requireAuth, async (req, res) => {
       .where(eq(portfolioItems.userId, user.clerkId))
       .orderBy(asc(portfolioItems.position), asc(portfolioItems.createdAt));
 
+    const now = new Date();
     res.json({
       id: user.id,
       clerkId: user.clerkId,
@@ -132,6 +135,8 @@ router.get("/users/me", requireAuth, async (req, res) => {
       upiId: user.upiId,
       avatarUrl: user.avatarUrl,
       isAvailable: user.isAvailable ?? true,
+      isPro: !!(user.isPro && (!user.proUntil || user.proUntil > now)),
+      proUntil: user.proUntil ?? null,
       portfolioItems: portfolio.map((p) => ({
         id: p.id,
         userId: p.userId,
@@ -845,6 +850,8 @@ router.get("/creators", async (req, res) => {
         skills: users.skills,
         avatarUrl: users.avatarUrl,
         isAvailable: users.isAvailable,
+        isPro: users.isPro,
+        proUntil: users.proUntil,
         avgRating: avg(ratings.score),
         ratingCount: sql<number>`count(distinct ${ratings.id})`,
         completedTasksCount: sql<number>`count(distinct case when ${tasks.status} = 'completed' then ${tasks.id} end)`,
@@ -859,7 +866,16 @@ router.get("/creators", async (req, res) => {
       .offset(offset);
 
     const hasMore = rows.length > limit;
-    const items = rows.slice(0, limit);
+    let items = rows.slice(0, limit);
+
+    // When a search keyword is present, promote Pro creators to the top
+    if (search) {
+      const now = new Date();
+      items = [
+        ...items.filter((u) => u.isPro && (!u.proUntil || u.proUntil > now)),
+        ...items.filter((u) => !u.isPro || (u.proUntil && u.proUntil <= now)),
+      ];
+    }
 
     res.json({
       creators: items.map((u) => ({
@@ -871,6 +887,7 @@ router.get("/creators", async (req, res) => {
         skills: u.skills ?? [],
         avatarUrl: u.avatarUrl,
         isAvailable: u.isAvailable ?? true,
+        isPro: !!(u.isPro && (!u.proUntil || u.proUntil > new Date())),
         completedTasksCount: Number(u.completedTasksCount),
         rating: {
           average: u.avgRating ? parseFloat(String(u.avgRating)).toFixed(1) : null,

@@ -235,16 +235,21 @@ router.post("/tasks", requireAuth, async (req, res) => {
       return;
     }
 
-    // Fraud guard: max 3 tasks per day per poster
-    if (!ownerFree) {
+    // Daily posting limit: 2 tasks/day for free users, unlimited for Pro
+    if (!ownerFree && !poster?.isPro) {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
       const [{ value: tasksToday }] = await db
         .select({ value: count() })
         .from(tasks)
         .where(and(eq(tasks.creatorId, currentUser.id), gte(tasks.createdAt, todayStart)));
-      if (tasksToday >= 3) {
-        res.status(429).json({ error: "You can post a maximum of 3 tasks per day. Try again tomorrow." });
+      if (tasksToday >= 2) {
+        res.status(429).json({
+          error: "Daily task limit reached — upgrade to Pro for unlimited posting.",
+          code: "DAILY_LIMIT",
+          limit: 2,
+          used: Number(tasksToday),
+        });
         return;
       }
     }
@@ -406,7 +411,9 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
       return;
     }
 
-    const workerEarning = Math.floor(task.budget * 0.9);
+    const worker = await db.query.users.findFirst({ where: eq(users.id, task.workerId!) });
+    const feeRate = worker?.isPro ? 0.07 : 0.10;
+    const workerEarning = Math.floor(task.budget * (1 - feeRate));
 
     const approved = await db.transaction(async (tx) => {
       const [updated] = await tx
@@ -467,9 +474,9 @@ router.post("/tasks/:id/approve", requireAuth, async (req, res) => {
     );
 
     // Email worker
-    const worker = await db.query.users.findFirst({ where: eq(users.id, task.workerId!) });
-    if (worker?.email) {
-      emailTaskApproved(worker.email, task.title, workerEarning, id);
+    const workerForEmail = await db.query.users.findFirst({ where: eq(users.id, task.workerId!) });
+    if (workerForEmail?.email) {
+      emailTaskApproved(workerForEmail.email, task.title, workerEarning, id);
     }
 
     // Fire referral rewards (non-blocking — failures don't affect approval)

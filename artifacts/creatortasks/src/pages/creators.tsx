@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Star, CheckCircle, Users, ArrowRight, Zap, Send } from "lucide-react";
+import { Search, Star, CheckCircle, Users, ArrowRight, Zap, Send, Sparkles } from "lucide-react";
 import { InviteModal } from "@/components/invite-modal";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -69,6 +69,12 @@ function CreatorCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
             <span className="font-semibold text-foreground text-sm truncate">{creator.name || "Anonymous"}</span>
+            {creator.isPro && (
+              <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 font-semibold shrink-0">
+                <Sparkles size={8} className="fill-purple-400" />
+                Pro
+              </span>
+            )}
             {creator.isAvailable && (
               <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20 font-medium shrink-0">
                 <Zap size={8} className="fill-green-400" />

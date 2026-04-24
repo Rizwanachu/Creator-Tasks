@@ -10,6 +10,7 @@ export interface CreatorSummary {
   skills: string[];
   avatarUrl: string | null;
   isAvailable: boolean;
+  isPro: boolean;
   completedTasksCount: number;
   rating: {
     average: string | null;

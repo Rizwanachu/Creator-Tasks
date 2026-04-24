@@ -14,8 +14,9 @@ import {
   ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, Copy, Gift,
   Users, TrendingUp, Mail, XCircle, AlertTriangle, Bookmark,
   Sparkles, AlertCircle, ClipboardList, Wrench, ReceiptText,
-  Shield, LayoutDashboard,
+  Shield, LayoutDashboard, Check, ChevronRight,
 } from "lucide-react";
+import { useSubscription, useCreateSubscription, useCancelSubscription } from "@/hooks/use-subscription";
 import { useMyDisputes, useBookmarks } from "@/hooks/use-bookmarks";
 import { toast } from "sonner";
 import { useAuth } from "@clerk/react";
@@ -39,17 +40,153 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-const VALID_TABS = ["posted", "accepted", "bookmarks", "transactions", "invitations", "referral", "disputes"];
+const VALID_TABS = ["posted", "accepted", "bookmarks", "transactions", "invitations", "referral", "disputes", "subscription"];
 
 const NAV_ITEMS = [
-  { id: "posted",       label: "Posted Tasks",  icon: ClipboardList },
-  { id: "accepted",     label: "My Work",        icon: Wrench },
-  { id: "transactions", label: "Transactions",   icon: ReceiptText },
-  { id: "invitations",  label: "Invitations",    icon: Mail },
-  { id: "bookmarks",    label: "Bookmarks",      icon: Bookmark },
-  { id: "referral",     label: "Referral",       icon: Gift },
-  { id: "disputes",     label: "Disputes",       icon: Shield },
+  { id: "posted",        label: "Posted Tasks",  icon: ClipboardList },
+  { id: "accepted",      label: "My Work",        icon: Wrench },
+  { id: "transactions",  label: "Transactions",   icon: ReceiptText },
+  { id: "invitations",   label: "Invitations",    icon: Mail },
+  { id: "bookmarks",     label: "Bookmarks",      icon: Bookmark },
+  { id: "referral",      label: "Referral",       icon: Gift },
+  { id: "disputes",      label: "Disputes",       icon: Shield },
+  { id: "subscription",  label: "Pro",            icon: Sparkles },
 ];
+
+function SubscriptionTab() {
+  const { data: sub, isLoading } = useSubscription();
+  const createSub = useCreateSubscription();
+  const cancelSub = useCancelSubscription();
+  const [subscribing, setSubscribing] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  const isPro = sub?.isPro ?? false;
+  const proUntil = sub?.proUntil ? new Date(sub.proUntil) : null;
+  const subscription = sub?.subscription ?? null;
+
+  async function handleSubscribe() {
+    setSubscribing(true);
+    try {
+      const loaded = await loadRazorpayScript();
+      if (!loaded) { toast.error("Could not load payment system."); setSubscribing(false); return; }
+      const data = await createSub.mutateAsync();
+      const rzp = new window.Razorpay({
+        key: data.keyId,
+        subscription_id: data.subscriptionId,
+        name: "CreatorTasks Pro",
+        description: "₹299/month — Pro subscription",
+        handler: () => {
+          toast.success("Welcome to Pro! Your badge is active.");
+        },
+        theme: { color: "#7C5CFF" },
+        modal: { escape: true },
+      });
+      rzp.open();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to start subscription");
+    } finally {
+      setSubscribing(false);
+    }
+  }
+
+  async function handleCancel() {
+    if (!confirm("Cancel your Pro subscription? You'll keep access until the end of your billing period.")) return;
+    setCancelling(true);
+    try {
+      await cancelSub.mutateAsync();
+      toast.success("Subscription cancelled. You'll keep Pro access until the billing period ends.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to cancel subscription");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
+  if (isLoading) {
+    return <div className="py-12 text-center text-muted-foreground text-sm">Loading subscription…</div>;
+  }
+
+  return (
+    <div className="space-y-6 max-w-xl">
+      {/* Status card */}
+      <Card className="border-border">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isPro ? "bg-purple-500/10" : "bg-muted"}`}>
+              <Sparkles size={18} className={isPro ? "text-purple-400 fill-purple-400" : "text-muted-foreground"} />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground text-sm">{isPro ? "CreatorTasks Pro" : "Free Plan"}</p>
+              <p className="text-xs text-muted-foreground">
+                {isPro
+                  ? proUntil
+                    ? `Active until ${proUntil.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
+                    : "Active"
+                  : "Upgrade to unlock Pro benefits"}
+              </p>
+            </div>
+            {isPro && (
+              <span className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold">
+                <Check size={10} />
+                Active
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-2 mb-5">
+            {[
+              { label: "Platform fee", value: isPro ? "7% (save 3%)" : "10%", pro: isPro },
+              { label: "Daily task posting", value: isPro ? "Unlimited" : "2 tasks/day", pro: isPro },
+              { label: "Search ranking", value: isPro ? "Pinned to top" : "Standard", pro: isPro },
+              { label: "Pro badge on profile", value: isPro ? "Visible" : "Not included", pro: isPro },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                <span className="text-sm text-muted-foreground">{item.label}</span>
+                <span className={`text-sm font-medium ${item.pro ? "text-purple-400" : "text-foreground"}`}>{item.value}</span>
+              </div>
+            ))}
+          </div>
+
+          {isPro ? (
+            <div className="space-y-3">
+              {subscription?.status === "active" && (
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl text-sm border-red-500/20 text-red-400 hover:bg-red-500/5 hover:border-red-500/40"
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                >
+                  {cancelling ? "Cancelling…" : "Cancel Subscription"}
+                </Button>
+              )}
+              {subscription?.status === "cancelled" && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Subscription cancelled — access ends {proUntil?.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}.
+                </p>
+              )}
+            </div>
+          ) : (
+            <Button
+              className="w-full btn-gradient text-white rounded-xl border-0 font-semibold"
+              onClick={handleSubscribe}
+              disabled={subscribing}
+            >
+              {subscribing ? "Opening payment…" : "Upgrade to Pro — ₹299/month"}
+              <ChevronRight size={14} className="ml-1" />
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {!isPro && (
+        <p className="text-xs text-muted-foreground text-center">
+          See full feature breakdown on the{" "}
+          <Link href="/pro" className="text-purple-400 hover:underline">pricing page</Link>.
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function Dashboard() {
   const tabParam = useSearchParam("tab");
@@ -640,6 +777,10 @@ export function Dashboard() {
                 </CardContent>
               </Card>
             </div>
+          )}
+          {/* ── Pro Subscription ── */}
+          {activeTab === "subscription" && (
+            <SubscriptionTab />
           )}
         </main>
       </div>

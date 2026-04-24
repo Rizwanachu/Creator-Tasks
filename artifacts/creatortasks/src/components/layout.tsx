@@ -12,7 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWallet } from "@/hooks/use-wallet";
 import { useNotifications } from "@/hooks/use-notifications";
-import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram, Users, Home, UserCircle2 } from "lucide-react";
+import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram, Users, Home, UserCircle2, Sparkles } from "lucide-react";
 import { useUnreadMessageCount } from "@/hooks/use-chat";
 
 function NavWalletBadge() {
@@ -167,6 +167,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
     { href: "/create", label: "Post a Task", icon: PlusCircle },
     ...(isSignedIn ? [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
+    { href: "/pro", label: "Pro", icon: Sparkles },
   ];
 
   const isOnboarding = location === "/onboarding" || location.startsWith("/onboarding?");
@@ -189,13 +190,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
               {navLinks.map(({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
-                >
-                  {label}
-                </Link>
+                href === "/pro" ? (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="px-3 py-1.5 rounded-lg text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 transition-all duration-200 flex items-center gap-1.5 font-semibold"
+                  >
+                    <Sparkles size={12} className="text-purple-400" />
+                    {label}
+                  </Link>
+                ) : (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
+                  >
+                    {label}
+                  </Link>
+                )
               ))}
             </nav>
           </div>

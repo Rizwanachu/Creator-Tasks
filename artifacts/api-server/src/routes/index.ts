@@ -14,6 +14,7 @@ import userInvitesRouter from "./user-invites";
 import bookmarksRouter from "./bookmarks";
 import storageRouter from "./storage";
 import conversationsRouter from "./conversations";
+import subscriptionRouter from "./subscription";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(conversationsRouter);
 router.use(tasksRouter);
 router.use(walletRouter);
 router.use(dashboardRouter);
+router.use(subscriptionRouter);
 
 export default router;
