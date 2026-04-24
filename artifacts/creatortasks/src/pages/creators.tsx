@@ -293,7 +293,6 @@ export function CreatorsPage() {
             value={skillInput}
             onChange={(e) => {
               setSkillInput(e.target.value);
-              if (e.target.value) setSkillPill("");
             }}
             className="pl-7 pr-3 py-1.5 rounded-full text-xs border border-border bg-muted/40 text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-purple-500/40 focus:text-foreground h-7 w-36 transition-all"
           />
