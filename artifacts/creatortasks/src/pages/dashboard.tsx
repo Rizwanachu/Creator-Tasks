@@ -50,7 +50,7 @@ const NAV_ITEMS = [
   { id: "invitations",   label: "Invitations",    icon: Mail },
   { id: "bookmarks",     label: "Bookmarks",      icon: Bookmark },
   { id: "referral",      label: "Referral",       icon: Gift },
-  { id: "subscription",  label: "Pro",            icon: Sparkles },
+  { id: "subscription",  label: "Subscription",   icon: Sparkles },
   { id: "disputes",      label: "Disputes",       icon: Shield },
 ];
 

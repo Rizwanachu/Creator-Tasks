@@ -84,7 +84,7 @@ router.post("/subscription/create", requireAuth, async (req, res) => {
 
     const subPayload: Record<string, unknown> = {
       plan_id: planId,
-      total_count: 12,
+      total_count: 120, // 10 years — effectively open-ended; user cancels to stop
       quantity: 1,
       notify_info: {
         notify_phone: null,
@@ -217,7 +217,7 @@ router.post("/subscription/cancel", requireAuth, async (req, res) => {
       orderBy: [desc(subscriptions.createdAt)],
     });
 
-    if (!sub || sub.status !== "active") {
+    if (!sub || (sub.status !== "active" && sub.status !== "confirmed")) {
       res.status(404).json({ error: "No active subscription found." });
       return;
     }
