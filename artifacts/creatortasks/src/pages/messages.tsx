@@ -271,7 +271,7 @@ function ChatPanel({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0.5">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-0.5">
         {isLoading ? (
           <div className="space-y-3 pt-4">
             <div className="flex justify-start"><Skeleton className="h-10 w-48 rounded-2xl bg-white/5" /></div>
@@ -306,7 +306,7 @@ function ChatPanel({
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)] border-t border-border bg-card shrink-0 sticky bottom-0">
+      <div className="px-4 py-3 pb-[max(env(safe-area-inset-bottom),12px)] border-t border-border bg-card shrink-0">
         {warned && (
           <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-400">
             <AlertTriangle size={12} />
