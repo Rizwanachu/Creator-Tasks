@@ -145,7 +145,6 @@ function MobileBottomNav() {
               <span className={`text-[9.5px] font-medium leading-none tracking-wide transition-colors ${active ? "text-primary font-semibold" : "text-muted-foreground"}`}>
                 {item.label}
               </span>
-              {active && <span className="w-1 h-1 rounded-full bg-primary" />}
             </Link>
           );
         })}
