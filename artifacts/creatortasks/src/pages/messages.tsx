@@ -358,7 +358,7 @@ export function MessagesPage() {
       <Helmet>
         <title>Messages — CreatorTasks</title>
       </Helmet>
-      <div className="flex h-[calc(100dvh-4rem)] overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Sidebar */}
         <div
           className={`flex flex-col border-r border-border bg-card/30 ${
