@@ -227,7 +227,7 @@ function ChatPanel({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card/50 shrink-0">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0 sticky top-0 z-10">
         <button
           onClick={onBack}
           className="md:hidden w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
