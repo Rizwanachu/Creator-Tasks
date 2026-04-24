@@ -233,13 +233,12 @@ export function CreatorPage() {
 
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
       </div>
-
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="flex flex-col md:flex-row gap-6 md:gap-8">
           {/* ── Sidebar ── */}
           <div className="w-full md:w-[300px] shrink-0 md:-mt-20 md:sticky md:top-6 md:self-start space-y-4">
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="px-5 pb-5">
+              <div className="px-5 pb-5 pt-[55px]">
                 {/* Avatar */}
                 <div className="relative -mt-12 mb-4 w-fit">
                   <div
@@ -642,7 +641,6 @@ export function CreatorPage() {
           </div>
         </div>
       </div>
-
       {profile && (
         <InviteModal
           open={inviteModalOpen}
@@ -651,7 +649,6 @@ export function CreatorPage() {
           creatorName={profile.name}
         />
       )}
-
       {lightboxItem && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4"
