@@ -17,6 +17,8 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
 import { Layout } from "@/components/layout";
+import { useNotifications } from "@/hooks/use-notifications";
+import { useUnreadMessageCount } from "@/hooks/use-chat";
 
 // Pages
 import NotFound from "@/pages/not-found";
@@ -173,6 +175,34 @@ function OnboardingGate() {
   return null;
 }
 
+function AppBadgeSync() {
+  const { isSignedIn } = useAuth();
+  const { data } = useNotifications();
+  const unreadMessages = useUnreadMessageCount();
+
+  useEffect(() => {
+    const nav = navigator as Navigator & {
+      setAppBadge?: (count?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    if (typeof nav.setAppBadge !== "function") return;
+
+    if (!isSignedIn) {
+      nav.clearAppBadge?.().catch(() => {});
+      return;
+    }
+
+    const total = (data?.unreadCount ?? 0) + (unreadMessages ?? 0);
+    if (total > 0) {
+      nav.setAppBadge(total).catch(() => {});
+    } else {
+      nav.clearAppBadge?.().catch(() => {});
+    }
+  }, [isSignedIn, data?.unreadCount, unreadMessages]);
+
+  return null;
+}
+
 function ScrollToTop() {
   const [location] = useLocation();
   useEffect(() => {
@@ -201,6 +231,7 @@ function ClerkProviderWithRoutes() {
         <ScrollToTop />
         <RefCapture />
         <OnboardingGate />
+        <AppBadgeSync />
         <Layout>
           <Switch>
             <Route path="/" component={Home} />
