@@ -88,7 +88,3 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-VAPID_PUBLIC_KEY = "BG6VoBJe5k-6ZXO0Gez8hn7-dC9A0PYg1sapKE82zU1NI1g0EDvlIH_xjDlbnezk-n_idcBw5SSej_2rSLaJnrU"
-VAPID_PRIVATE_KEY = "rWrH5FclDxD3zP3hVVVFHaKLVt5bEwhbqRM9r1MZXfs"
-VAPID_SUBJECT = "mailto:rizwanachoo123@gmail.com"
-VITE_VAPID_PUBLIC_KEY = "BG6VoBJe5k-6ZXO0Gez8hn7-dC9A0PYg1sapKE82zU1NI1g0EDvlIH_xjDlbnezk-n_idcBw5SSej_2rSLaJnrU"
