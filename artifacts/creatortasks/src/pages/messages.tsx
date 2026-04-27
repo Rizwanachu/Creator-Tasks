@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,12 +60,24 @@ function ConversationItem({
       }`}
     >
       <div className="relative shrink-0">
-        <Avatar className="h-10 w-10 border border-border">
-          <AvatarImage src={avatarSrc(conv.otherUser?.avatarUrl)} />
-          <AvatarFallback className="bg-purple-600 text-white text-sm font-semibold">
-            {conv.otherUser?.name?.charAt(0) ?? "?"}
-          </AvatarFallback>
-        </Avatar>
+        <div
+          className="h-10 w-10 rounded-xl overflow-hidden border border-border"
+          style={{ background: "linear-gradient(135deg, #7C5CFF, #ec4899)" }}
+        >
+          {avatarSrc(conv.otherUser?.avatarUrl) ? (
+            <img
+              src={avatarSrc(conv.otherUser?.avatarUrl)}
+              alt={conv.otherUser?.name ?? ""}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+              {conv.otherUser?.name
+                ? conv.otherUser.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+                : "?"}
+            </div>
+          )}
+        </div>
         {(conv.unreadCount ?? 0) > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 bg-purple-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
             {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
@@ -283,12 +294,24 @@ function ChatPanel({
         {isLoading ? (
           <Skeleton className="h-9 w-9 rounded-full bg-white/5" />
         ) : (
-          <Avatar className="h-9 w-9 border border-border">
-            <AvatarImage src={avatarSrc(otherUser?.avatarUrl)} />
-            <AvatarFallback className="bg-purple-600 text-white text-sm font-semibold">
-              {otherUser?.name?.charAt(0) ?? "?"}
-            </AvatarFallback>
-          </Avatar>
+          <div
+            className="h-9 w-9 rounded-xl overflow-hidden border border-border"
+            style={{ background: "linear-gradient(135deg, #7C5CFF, #ec4899)" }}
+          >
+            {avatarSrc(otherUser?.avatarUrl) ? (
+              <img
+                src={avatarSrc(otherUser?.avatarUrl)}
+                alt={otherUser?.name ?? ""}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+                {otherUser?.name
+                  ? otherUser.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+                  : "?"}
+              </div>
+            )}
+          </div>
         )}
 
         <div className="flex-1 min-w-0">
