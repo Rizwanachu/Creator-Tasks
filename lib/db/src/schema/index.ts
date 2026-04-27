@@ -22,6 +22,7 @@ export const users = pgTable("users", {
   isPro: boolean("is_pro").default(false),
   proUntil: timestamp("pro_until"),
   razorpayCustomerId: text("razorpay_customer_id"),
+  lastSeenAt: timestamp("last_seen_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

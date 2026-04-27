@@ -100,6 +100,43 @@ function ConversationItem({
   );
 }
 
+function PresenceLabel({ lastSeenAt }: { lastSeenAt: string | Date | null | undefined }) {
+  // Re-render every 30s so "x min ago" stays fresh.
+  const [, force] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => force((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (!lastSeenAt) return null;
+  const ts = typeof lastSeenAt === "string" ? new Date(lastSeenAt) : lastSeenAt;
+  const diffMs = Date.now() - ts.getTime();
+  const diffMin = Math.floor(diffMs / 60_000);
+
+  // Online if seen in the last 90s (matches our 30s heartbeat throttle + buffer).
+  if (diffMs < 90_000) {
+    return (
+      <span className="flex items-center gap-1 text-[10px] text-green-500 dark:text-green-400 leading-tight">
+        <span className="relative flex w-1.5 h-1.5">
+          <span className="absolute inline-flex w-full h-full rounded-full bg-green-500 opacity-75 animate-ping" />
+          <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-green-500" />
+        </span>
+        Online
+      </span>
+    );
+  }
+
+  let label: string;
+  if (diffMin < 60) label = `Active ${diffMin}m ago`;
+  else if (diffMin < 1440) label = `Active ${Math.floor(diffMin / 60)}h ago`;
+  else if (diffMin < 10080) label = `Active ${Math.floor(diffMin / 1440)}d ago`;
+  else return null; // Hide for very old presence to avoid awkward "Active 5w ago" labels.
+
+  return (
+    <span className="text-[10px] text-muted-foreground leading-tight">{label}</span>
+  );
+}
+
 function MessageBubble({
   msg,
   isMe,
@@ -258,9 +295,12 @@ function ChatPanel({
           {isLoading ? (
             <Skeleton className="h-4 w-28 bg-white/5" />
           ) : (
-            <p className="font-semibold text-foreground text-sm truncate">
-              {otherUser?.name ?? "Unknown User"}
-            </p>
+            <>
+              <p className="font-semibold text-foreground text-sm truncate leading-tight">
+                {otherUser?.name ?? "Unknown User"}
+              </p>
+              <PresenceLabel lastSeenAt={otherUser?.lastSeenAt} />
+            </>
           )}
         </div>
 

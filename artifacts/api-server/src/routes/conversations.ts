@@ -201,7 +201,7 @@ router.get("/conversations/:id", requireAuth, async (req, res) => {
     const otherId = conv.participantOneId === me.id ? conv.participantTwoId : conv.participantOneId;
     const otherUser = await db.query.users.findFirst({
       where: eq(users.id, otherId),
-      columns: { id: true, name: true, avatarUrl: true, clerkId: true },
+      columns: { id: true, name: true, avatarUrl: true, clerkId: true, lastSeenAt: true },
     });
 
     const limit = parseInt(String(req.query.limit ?? "50"));

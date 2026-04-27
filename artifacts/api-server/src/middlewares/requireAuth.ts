@@ -30,6 +30,10 @@ declare global {
   }
 }
 
+// Throttle lastSeenAt writes — at most once per 30s per user.
+const lastSeenWriteAt = new Map<string, number>();
+const LAST_SEEN_THROTTLE_MS = 30_000;
+
 export const requireAuth = async (
   req: Request,
   res: Response,
@@ -85,6 +89,18 @@ export const requireAuth = async (
     }
 
     req.dbUser = dbUser;
+
+    // Throttled lastSeenAt heartbeat — fire-and-forget so it doesn't block the response.
+    const now = Date.now();
+    const last = lastSeenWriteAt.get(clerkUserId) ?? 0;
+    if (now - last >= LAST_SEEN_THROTTLE_MS) {
+      lastSeenWriteAt.set(clerkUserId, now);
+      db.update(users)
+        .set({ lastSeenAt: new Date(now) })
+        .where(eq(users.clerkId, clerkUserId))
+        .catch((err) => req.log.warn({ err }, "Failed to update lastSeenAt"));
+    }
+
     next();
   } catch (err) {
     req.log.error({ err }, "Error in requireAuth middleware");
