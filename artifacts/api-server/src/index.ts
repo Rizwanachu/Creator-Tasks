@@ -22,17 +22,4 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
-
-  const razorpayConfig = {
-    keyId: !!process.env["RAZORPAY_KEY_ID"],
-    keySecret: !!process.env["RAZORPAY_KEY_SECRET"],
-    proPlanId: !!process.env["RAZORPAY_PRO_PLAN_ID"],
-    webhookSecret: !!process.env["RAZORPAY_WEBHOOK_SECRET"],
-  };
-  const allConfigured = Object.values(razorpayConfig).every(Boolean);
-  if (allConfigured) {
-    logger.info({ razorpayConfig }, "Razorpay: all required env vars present — subscriptions enabled");
-  } else {
-    logger.warn({ razorpayConfig }, "Razorpay: one or more env vars missing — subscriptions may be degraded");
-  }
 });
