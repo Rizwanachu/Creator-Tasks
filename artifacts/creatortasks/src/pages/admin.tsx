@@ -91,7 +91,9 @@ export function AdminPage() {
       <div className="container mx-auto px-4 py-24 text-center">
         <ShieldCheck size={40} className="mx-auto mb-4 text-muted-foreground" />
         <h2 className="text-xl font-bold mb-2">Admin access required</h2>
-        <p className="text-muted-foreground text-sm">Set ADMIN_CLERK_ID in your environment to access the admin panel.</p>
+        <p className="text-muted-foreground text-sm">
+          Sign in with the admin email configured in <code className="px-1.5 py-0.5 rounded bg-muted text-foreground">ADMIN_EMAIL</code> to access this panel.
+        </p>
       </div>
     );
   }
