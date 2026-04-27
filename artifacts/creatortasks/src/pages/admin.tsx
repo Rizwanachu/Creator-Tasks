@@ -205,8 +205,43 @@ export function AdminPage() {
         </div>
       </div>
 
+      {/* Quick navigation menu */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 mb-6 sm:mb-8">
+        {[
+          { id: "stats", label: "Stats", icon: TrendingUp, color: "text-purple-500", bg: "bg-purple-500/10" },
+          { id: "disputes", label: "Disputes", icon: AlertTriangle, color: "text-orange-500", bg: "bg-orange-500/10", badge: openDisputes.length },
+          { id: "withdrawals", label: "Withdrawals", icon: Wallet, color: "text-amber-500", bg: "bg-amber-500/10", badge: (withdrawalsList ?? []).filter((w: any) => w.status === "pending").length },
+          { id: "tasks", label: "Tasks", icon: FileText, color: "text-cyan-500", bg: "bg-cyan-500/10" },
+          { id: "users", label: "Users", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10" },
+          { id: "transactions", label: "Transactions", icon: Receipt, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+          { id: "audit", label: "Audit Log", icon: History, color: "text-pink-500", bg: "bg-pink-500/10" },
+        ].map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              onClick={() => {
+                const el = document.getElementById(`admin-section-${item.id}`);
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              className="relative bg-card border border-border rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center gap-2 hover:border-foreground/20 hover:bg-muted/50 transition-colors text-center"
+            >
+              <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl ${item.bg} flex items-center justify-center`}>
+                <Icon size={18} className={item.color} />
+              </div>
+              <span className="text-[11px] sm:text-xs font-medium text-foreground leading-tight">{item.label}</span>
+              {item.badge ? (
+                <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                  {item.badge > 99 ? "99+" : item.badge}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <div id="admin-section-stats" className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8 scroll-mt-4">
         <StatCard label="Commission Earned" value={`₹${stats.totalCommission?.toLocaleString()}`} icon={TrendingUp} color="text-purple-400" />
         <StatCard label="Completed Tasks" value={stats.completedTasks} icon={CheckCircle} color="text-green-400" />
         <StatCard label="Open Disputes" value={stats.openDisputes} icon={AlertTriangle} color="text-orange-400" />
@@ -214,7 +249,7 @@ export function AdminPage() {
       </div>
 
       {/* Disputes */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-8">
+      <div id="admin-section-disputes" className="bg-card border border-border rounded-2xl overflow-hidden mb-8 scroll-mt-4">
         <div className="p-6 border-b border-border flex items-center justify-between">
           <h2 className="font-bold text-foreground flex items-center gap-2">
             <AlertTriangle size={16} className="text-orange-400" />
@@ -307,7 +342,7 @@ export function AdminPage() {
       </div>
 
       {/* Withdrawal Requests */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-8">
+      <div id="admin-section-withdrawals" className="bg-card border border-border rounded-2xl overflow-hidden mb-8 scroll-mt-4">
         <div className="p-6 border-b border-border flex items-center justify-between">
           <h2 className="font-bold text-foreground flex items-center gap-2">
             <Wallet size={16} className="text-amber-400" />
@@ -390,7 +425,7 @@ export function AdminPage() {
       </div>
 
       {/* Tasks Moderation */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-6 sm:mb-8">
+      <div id="admin-section-tasks" className="bg-card border border-border rounded-2xl overflow-hidden mb-6 sm:mb-8 scroll-mt-4">
         <div className="p-4 sm:p-6 border-b border-border space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h2 className="font-bold text-foreground flex items-center gap-2">
@@ -522,7 +557,7 @@ export function AdminPage() {
       </div>
 
       {/* Users */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-6 sm:mb-8">
+      <div id="admin-section-users" className="bg-card border border-border rounded-2xl overflow-hidden mb-6 sm:mb-8 scroll-mt-4">
         <div className="p-4 sm:p-6 border-b border-border space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h2 className="font-bold text-foreground flex items-center gap-2">
@@ -780,7 +815,7 @@ export function AdminPage() {
       </div>
 
       {/* Transaction Logs */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-6 sm:mb-8">
+      <div id="admin-section-transactions" className="bg-card border border-border rounded-2xl overflow-hidden mb-6 sm:mb-8 scroll-mt-4">
         <div className="p-4 sm:p-6 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h2 className="font-bold text-foreground flex items-center gap-2">
             <Receipt size={16} className="text-emerald-400" />
@@ -840,7 +875,7 @@ export function AdminPage() {
       </div>
 
       {/* Audit Log */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+      <div id="admin-section-audit" className="bg-card border border-border rounded-2xl overflow-hidden scroll-mt-4">
         <div className="p-6 border-b border-border flex items-center justify-between">
           <h2 className="font-bold text-foreground flex items-center gap-2">
             <History size={16} className="text-slate-400" />
