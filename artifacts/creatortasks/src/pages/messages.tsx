@@ -144,18 +144,12 @@ function ChatPanel({
   const setTyping = useSetTyping();
   const { data: typingData } = useTypingStatus(conversationId);
   const otherTyping = !!typingData?.typing;
-  const { setHideBottomNav } = useMobileShell();
   const [text, setText] = useState("");
   const [warned, setWarned] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingHeartbeatRef = useRef<number>(0);
   const typingClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    setHideBottomNav(true);
-    return () => setHideBottomNav(false);
-  }, [setHideBottomNav]);
 
   useEffect(() => {
     if (data?.messages?.length || otherTyping) {
@@ -376,9 +370,18 @@ export function MessagesPage() {
   const [, setLocation] = useLocation();
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [showSidebar, setShowSidebar] = useState(true);
+  const { setHideBottomNav } = useMobileShell();
 
   const { data, isLoading } = useConversations();
   const conversations = data?.conversations ?? [];
+
+  // Hide the mobile bottom nav only while the chat panel is the visible view on mobile.
+  // (On desktop the sidebar is always shown, so chat being open doesn't take over the screen.)
+  useEffect(() => {
+    const chatVisibleOnMobile = !showSidebar && !!activeConvId;
+    setHideBottomNav(chatVisibleOnMobile);
+    return () => setHideBottomNav(false);
+  }, [showSidebar, activeConvId, setHideBottomNav]);
 
   // Get my DB user ID from the first conversation
   const myDbId = conversations.length > 0
