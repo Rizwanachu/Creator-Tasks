@@ -128,9 +128,15 @@ function TaskPreview({
   description,
   budget,
   category,
+  otherCategory,
+  isAi,
   imagePreview,
 }: Partial<TaskFormValues> & { imagePreview?: string | null }) {
   const cat = CATEGORIES.find((c) => c.value === category) ?? CATEGORIES[0];
+  const isCustomCategory =
+    category === "other" && !!otherCategory && otherCategory.trim().length > 0;
+  const displayCategoryLabel = isCustomCategory ? otherCategory!.trim() : cat.label;
+  const categoryBadgeClass = CATEGORY_BADGE[category ?? "reels"] ?? CATEGORY_BADGE.other;
   const hasTitle = !!(title && title.length >= 3);
   const hasDesc = !!(description && description.length >= 10);
   const hasBudget = !!(budget && budget >= 100);
@@ -188,10 +194,21 @@ function TaskPreview({
     <div className="space-y-4">
       {/* Preview card */}
       <div className="card-lit bg-card border border-border rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${CATEGORY_BADGE[category ?? "reels"]}`}>
-            {cat.label}
-          </span>
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+            <span
+              className={`text-xs font-medium px-2.5 py-1 rounded-full max-w-[180px] truncate ${categoryBadgeClass}`}
+              title={displayCategoryLabel}
+            >
+              {displayCategoryLabel}
+            </span>
+            {isAi && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-violet-500/10 text-violet-500 dark:text-violet-300 border border-violet-500/20">
+                <Bot size={11} />
+                AI
+              </span>
+            )}
+          </div>
           <AnimatedPreviewSection animKey={budgetKey}>
             <span className={`font-bold text-sm tabular-nums ${hasBudget ? "text-purple-600 dark:text-purple-400" : "text-muted-foreground"}`}>
               {hasBudget ? `₹${budget!.toLocaleString()}` : "₹—"}
@@ -863,6 +880,8 @@ export function CreateTask() {
               description={watched.description}
               budget={watched.budget}
               category={watched.category}
+              otherCategory={watched.otherCategory}
+              isAi={watched.isAi}
               imagePreview={taskImagePreview}
             />
           </div>
