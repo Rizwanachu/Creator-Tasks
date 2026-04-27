@@ -61,7 +61,7 @@ function CreatorCard({
       <div className="flex items-start gap-4 mb-4">
         <Avatar className="w-12 h-12 border border-border rounded-xl shrink-0">
           {imgSrc && <AvatarImage src={imgSrc} alt={creator.name ?? ""} className="object-cover" />}
-          <AvatarFallback className="bg-gradient-to-br from-purple-600/25 to-pink-600/25 text-purple-300 text-sm font-bold rounded-xl">
+          <AvatarFallback className="bg-gradient-to-br from-purple-600/15 to-pink-600/15 dark:from-purple-600/25 dark:to-pink-600/25 text-purple-700 dark:text-purple-300 text-sm font-bold rounded-xl">
             {initials}
           </AvatarFallback>
         </Avatar>
