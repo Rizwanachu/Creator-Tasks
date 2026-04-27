@@ -109,7 +109,7 @@ function MobileBottomNav() {
     { href: "/creators", label: "Creators", icon: Users },
     { href: "/create", label: "Create", icon: PlusCircle, isCreate: true },
     { href: "/messages", label: "Messages", icon: MessageSquare },
-    { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
+    { href: user?.id ? "/dashboard?tab=profile" : "/sign-in", label: "Dashboard", icon: LayoutDashboard },
   ] as const;
 
   function isActive(href: string) {
