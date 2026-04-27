@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, users, adminAuditLogs, tasks } from "@workspace/db";
+import { db, users, adminAuditLogs, tasks, transactions } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireAdmin } from "../middlewares/requireAdmin";
@@ -176,12 +176,16 @@ router.get("/admin/tasks", requireAuth, requireAdmin, async (req, res) => {
     if (filter === "rejected") {
       whereClause = sql`${tasks.rejectedAt} IS NOT NULL`;
     } else if (filter === "active") {
-      whereClause = sql`${tasks.rejectedAt} IS NULL`;
+      // Tasks a creator has accepted (ticked) and is currently working on —
+      // assigned to a worker but not yet completed or rejected.
+      whereClause = sql`${tasks.rejectedAt} IS NULL AND ${tasks.status} IN ('in_progress', 'submitted', 'revision_requested')`;
     } else if (filter === "new") {
       // Tasks awaiting a worker — freshly posted, not yet picked up
       whereClause = sql`${tasks.rejectedAt} IS NULL AND ${tasks.status} = 'open'`;
     } else if (filter === "completed") {
-      whereClause = sql`${tasks.status} = 'completed'`;
+      // Tasks completed by a creator AND the creator got paid (wallet credit
+      // happens atomically with status -> 'completed' in the approve handler).
+      whereClause = sql`${tasks.status} = 'completed' AND ${tasks.workerId} IS NOT NULL`;
     }
 
     const rows = await db
@@ -295,6 +299,42 @@ router.post("/admin/tasks/:id/unreject", requireAuth, requireAdmin, async (req, 
   } catch (err) {
     req.log.error({ err }, "Error unrejecting task");
     res.status(500).json({ error: "Failed to unreject task" });
+  }
+});
+
+// GET /admin/transactions — full transaction log (last 200)
+router.get("/admin/transactions", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const rows = await db
+      .select({
+        id: transactions.id,
+        userId: transactions.userId,
+        amount: transactions.amount,
+        type: transactions.type,
+        paymentId: transactions.paymentId,
+        createdAt: transactions.createdAt,
+        userName: users.name,
+        userEmail: users.email,
+      })
+      .from(transactions)
+      .leftJoin(users, eq(transactions.userId, users.id))
+      .orderBy(desc(transactions.createdAt))
+      .limit(200);
+
+    // Aggregate totals so admins can see GMV / commission / payouts at a glance.
+    const totals = await db
+      .select({
+        type: transactions.type,
+        total: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
+        count: sql<number>`count(*)`,
+      })
+      .from(transactions)
+      .groupBy(transactions.type);
+
+    res.json({ rows, totals });
+  } catch (err) {
+    req.log.error({ err }, "Error fetching admin transactions");
+    res.status(500).json({ error: "Failed to fetch transactions" });
   }
 });
 

@@ -163,12 +163,12 @@ router.get("/admin/stats", requireAuth, async (req, res) => {
       return;
     }
 
-    const allUsers = await db.select({ id: users.id, clerkId: users.clerkId, name: users.name, email: users.email, balance: users.balance, totalEarnings: users.totalEarnings, suspendedAt: users.suspendedAt, bannedAt: users.bannedAt, moderationReason: users.moderationReason, createdAt: sql<string>`now()` }).from(users).limit(100);
+    const allUsers = await db.select({ id: users.id, clerkId: users.clerkId, name: users.name, email: users.email, balance: users.balance, totalEarnings: users.totalEarnings, suspendedAt: users.suspendedAt, bannedAt: users.bannedAt, moderationReason: users.moderationReason, createdAt: sql<string>`now()` }).from(users).limit(500);
 
     // Backfill missing names/emails from Clerk (older accounts may have been
-    // created before the auto-sync was in place). Best-effort, capped to keep
-    // the admin dashboard responsive.
-    const missing = allUsers.filter((u) => (!u.email || !u.name) && u.clerkId).slice(0, 25);
+    // created before the auto-sync was in place). Cap raised so the admin
+    // panel can hydrate older users in fewer page loads.
+    const missing = allUsers.filter((u) => (!u.email || !u.name) && u.clerkId).slice(0, 100);
     if (missing.length > 0) {
       await Promise.all(
         missing.map(async (u) => {

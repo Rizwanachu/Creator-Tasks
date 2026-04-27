@@ -6,16 +6,16 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, AlertTriangle, Users, TrendingUp, CheckCircle, Loader2, Wallet, Ban, ShieldOff, ShieldX, History, Trash2, FileText, RotateCcw } from "lucide-react";
+import { ShieldCheck, AlertTriangle, Users, TrendingUp, CheckCircle, Loader2, Wallet, Ban, ShieldOff, ShieldX, History, Trash2, FileText, RotateCcw, Receipt, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: React.ElementType; color: string }) {
   return (
-    <div className="bg-card border border-border rounded-xl p-5">
-      <div className={`flex items-center gap-2 mb-2 ${color}`}>
-        <Icon size={16} />
-        <span className="text-xs font-semibold uppercase tracking-wide">{label}</span>
+    <div className="bg-card border border-border rounded-xl p-3 sm:p-5">
+      <div className={`flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 ${color}`}>
+        <Icon size={14} className="shrink-0" />
+        <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide truncate">{label}</span>
       </div>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
+      <p className="text-lg sm:text-2xl font-bold text-foreground tabular-nums truncate">{value}</p>
     </div>
   );
 }
@@ -44,6 +44,11 @@ export function AdminPage() {
   const { data: auditLogs, isLoading: auditLoading } = useQuery({
     queryKey: ["admin-audit-logs"],
     queryFn: () => apiFetch("/api/admin/audit-logs", {}, getToken),
+  });
+
+  const { data: txData, isLoading: txLoading } = useQuery({
+    queryKey: ["admin-transactions"],
+    queryFn: () => apiFetch("/api/admin/transactions", {}, getToken),
   });
 
   const [taskFilter, setTaskFilter] = useState<"new" | "active" | "completed" | "rejected" | "all">("new");
@@ -159,19 +164,19 @@ export function AdminPage() {
   const resolvedDisputes = (disputes ?? []).filter((d: any) => d.status === "resolved");
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-5xl">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center">
-          <ShieldCheck size={20} className="text-white" />
+    <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 max-w-5xl">
+      <div className="flex items-center gap-3 mb-6 sm:mb-8">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-600 flex items-center justify-center shrink-0">
+          <ShieldCheck size={18} className="text-white" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
-          <p className="text-sm text-muted-foreground">Platform overview and moderation</p>
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">Admin Panel</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Platform overview and moderation</p>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <StatCard label="Commission Earned" value={`₹${stats.totalCommission?.toLocaleString()}`} icon={TrendingUp} color="text-purple-400" />
         <StatCard label="Completed Tasks" value={stats.completedTasks} icon={CheckCircle} color="text-green-400" />
         <StatCard label="Open Disputes" value={stats.openDisputes} icon={AlertTriangle} color="text-orange-400" />
@@ -355,18 +360,18 @@ export function AdminPage() {
       </div>
 
       {/* Tasks Moderation */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-8">
-        <div className="p-6 border-b border-border flex items-center justify-between flex-wrap gap-3">
+      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-6 sm:mb-8">
+        <div className="p-4 sm:p-6 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h2 className="font-bold text-foreground flex items-center gap-2">
             <FileText size={16} className="text-cyan-400" />
             Marketplace Tasks
           </h2>
-          <div className="flex gap-1 bg-muted rounded-lg p-1">
+          <div className="flex gap-1 bg-muted rounded-lg p-1 overflow-x-auto -mx-1 px-1 scrollbar-thin">
             {(["new", "active", "completed", "rejected", "all"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setTaskFilter(f)}
-                className={`px-3 py-1 text-xs rounded-md capitalize transition-colors ${
+                className={`px-3 py-1 text-xs rounded-md capitalize transition-colors shrink-0 ${
                   taskFilter === f
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -393,11 +398,11 @@ export function AdminPage() {
               const isRejected = !!t.rejectedAt;
               const isOpen = rejectTaskId === t.id;
               return (
-                <div key={t.id} className="p-4">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div key={t.id} className="p-3 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-foreground">{t.title}</h3>
+                        <h3 className="font-semibold text-foreground text-sm sm:text-base break-words">{t.title}</h3>
                         <Badge variant="outline" className="text-xs capitalize">{t.category}</Badge>
                         <span className="text-sm tabular-nums text-green-400">₹{(t.budget ?? 0).toLocaleString()}</span>
                         {isRejected ? (
@@ -411,21 +416,21 @@ export function AdminPage() {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{t.description}</p>
-                      <p className="text-[11px] text-muted-foreground mt-2">
+                      <p className="text-[11px] text-muted-foreground mt-2 break-words">
                         by {t.creatorName || "—"}{t.creatorEmail ? ` (${t.creatorEmail})` : ""} · {new Date(t.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                       </p>
                       {isRejected && t.rejectionReason && (
                         <p className="text-xs text-red-400 mt-2">Reason: {t.rejectionReason}</p>
                       )}
                     </div>
-                    <div className="flex flex-col gap-2 items-end">
+                    <div className="flex flex-col gap-2 sm:items-end w-full sm:w-auto">
                       {isOpen ? (
-                        <div className="flex flex-col gap-2 min-w-[260px]">
+                        <div className="flex flex-col gap-2 w-full sm:min-w-[260px]">
                           <input
                             placeholder="Reason for rejection (optional)"
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
-                            className="px-3 py-1.5 text-sm rounded-lg border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                            className="px-3 py-1.5 text-sm rounded-lg border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring w-full"
                           />
                           <div className="flex gap-2 justify-end">
                             <Button size="sm" className="rounded-lg text-xs bg-red-600 hover:bg-red-700 text-white border-0"
@@ -442,14 +447,14 @@ export function AdminPage() {
                           </div>
                         </div>
                       ) : isRejected ? (
-                        <Button size="sm" variant="outline" className="rounded-lg text-xs"
+                        <Button size="sm" variant="outline" className="rounded-lg text-xs w-full sm:w-auto"
                           onClick={() => unrejectTask.mutate(t.id)}
                           disabled={unrejectTask.isPending}
                         >
                           <RotateCcw size={13} className="mr-1" /> Restore
                         </Button>
                       ) : (
-                        <Button size="sm" variant="outline" className="rounded-lg text-xs text-red-400 hover:text-red-300"
+                        <Button size="sm" variant="outline" className="rounded-lg text-xs text-red-400 hover:text-red-300 w-full sm:w-auto"
                           onClick={() => { setRejectTaskId(t.id); setRejectReason(""); }}
                         >
                           <Trash2 size={13} className="mr-1" /> Reject
@@ -465,14 +470,16 @@ export function AdminPage() {
       </div>
 
       {/* Users */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-8">
-        <div className="p-6 border-b border-border">
+      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-6 sm:mb-8">
+        <div className="p-4 sm:p-6 border-b border-border">
           <h2 className="font-bold text-foreground flex items-center gap-2">
             <Users size={16} className="text-blue-400" />
             Users ({stats.users?.length ?? 0})
           </h2>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Desktop: table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border">
@@ -492,7 +499,7 @@ export function AdminPage() {
                   <tr key={u.id} className="hover:bg-muted/30 transition-colors align-top">
                     <td className="p-4">
                       <div className="text-foreground font-medium">{u.name || "—"}</div>
-                      <div className="text-xs text-muted-foreground">{u.email || "—"}</div>
+                      <div className="text-xs text-muted-foreground break-all">{u.email || <span className="italic text-muted-foreground/60">no email on file</span>}</div>
                     </td>
                     <td className="p-4">
                       {isBanned ? (
@@ -572,6 +579,161 @@ export function AdminPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile: card list */}
+        <div className="md:hidden divide-y divide-border">
+          {(stats.users ?? []).map((u: any) => {
+            const isBanned = !!u.bannedAt;
+            const isSuspended = !!u.suspendedAt && !isBanned;
+            const isThisRowOpen = moderateId === u.id;
+            return (
+              <div key={u.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-foreground font-medium truncate">{u.name || "—"}</div>
+                    <div className="text-xs text-muted-foreground break-all">{u.email || <span className="italic text-muted-foreground/60">no email on file</span>}</div>
+                  </div>
+                  {isBanned ? (
+                    <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/20 text-xs shrink-0">Banned</Badge>
+                  ) : isSuspended ? (
+                    <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-xs shrink-0">Suspended</Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-xs shrink-0">Active</Badge>
+                  )}
+                </div>
+                {u.moderationReason && (
+                  <div className="text-[11px] text-muted-foreground">{u.moderationReason}</div>
+                )}
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <div className="text-muted-foreground uppercase tracking-wide text-[10px] font-semibold mb-0.5">Balance</div>
+                    <div className="tabular-nums text-green-400 text-sm">₹{(u.balance ?? 0).toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground uppercase tracking-wide text-[10px] font-semibold mb-0.5">Total Earned</div>
+                    <div className="tabular-nums text-purple-400 text-sm">₹{(u.totalEarnings ?? 0).toLocaleString()}</div>
+                  </div>
+                </div>
+                {isThisRowOpen && moderateMode ? (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      placeholder={`Reason for ${moderateMode} (optional)`}
+                      value={moderationReason}
+                      onChange={(e) => setModerationReason(e.target.value)}
+                      className="px-3 py-2 text-sm rounded-lg border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring w-full"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => moderateUser.mutate({ id: u.id, mode: moderateMode, reason: moderationReason })}
+                        disabled={moderateUser.isPending}
+                        className={`flex-1 rounded-lg text-xs text-white border-0 ${moderateMode === "ban" ? "bg-red-600 hover:bg-red-700" : "bg-amber-600 hover:bg-amber-700"}`}
+                      >
+                        {moderateUser.isPending ? <Loader2 size={13} className="animate-spin" /> : `Confirm ${moderateMode}`}
+                      </Button>
+                      <Button size="sm" variant="outline" className="rounded-lg text-xs"
+                        onClick={() => { setModerateId(null); setModerateMode(null); setModerationReason(""); }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    {isBanned ? (
+                      <Button size="sm" variant="outline" className="flex-1 rounded-lg text-xs"
+                        onClick={() => moderateUser.mutate({ id: u.id, mode: "unban" })}
+                        disabled={moderateUser.isPending}
+                      >
+                        <ShieldCheck size={13} className="mr-1" /> Unban
+                      </Button>
+                    ) : isSuspended ? (
+                      <Button size="sm" variant="outline" className="flex-1 rounded-lg text-xs"
+                        onClick={() => moderateUser.mutate({ id: u.id, mode: "unsuspend" })}
+                        disabled={moderateUser.isPending}
+                      >
+                        <ShieldCheck size={13} className="mr-1" /> Unsuspend
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" className="flex-1 rounded-lg text-xs text-amber-400 hover:text-amber-300"
+                        onClick={() => { setModerateId(u.id); setModerateMode("suspend"); setModerationReason(""); }}
+                      >
+                        <ShieldOff size={13} className="mr-1" /> Suspend
+                      </Button>
+                    )}
+                    {!isBanned && (
+                      <Button size="sm" variant="outline" className="flex-1 rounded-lg text-xs text-red-400 hover:text-red-300"
+                        onClick={() => { setModerateId(u.id); setModerateMode("ban"); setModerationReason(""); }}
+                      >
+                        <Ban size={13} className="mr-1" /> Ban
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Transaction Logs */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-6 sm:mb-8">
+        <div className="p-4 sm:p-6 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h2 className="font-bold text-foreground flex items-center gap-2">
+            <Receipt size={16} className="text-emerald-400" />
+            Transaction Logs
+          </h2>
+          {(txData?.totals ?? []).length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {(txData.totals as any[]).map((t) => (
+                <Badge key={t.type} variant="outline" className="text-xs capitalize bg-muted/50">
+                  {String(t.type).replace(/_/g, " ")}: ₹{Number(t.total ?? 0).toLocaleString()} ({t.count})
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {txLoading ? (
+          <div className="p-6 space-y-3">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-lg" />)}
+          </div>
+        ) : (txData?.rows ?? []).length === 0 ? (
+          <div className="py-16 text-center text-muted-foreground">
+            <Receipt size={32} className="mx-auto mb-3 text-muted-foreground/40" />
+            <p className="text-sm">No transactions yet</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+            {(txData.rows as any[]).map((tx) => {
+              const isCredit = tx.amount > 0;
+              return (
+                <div key={tx.id} className="p-3 sm:p-4 flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isCredit ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}`}>
+                    {isCredit ? <ArrowDownLeft size={15} /> : <ArrowUpRight size={15} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-xs capitalize">{String(tx.type).replace(/_/g, " ")}</Badge>
+                      <span className={`tabular-nums text-sm font-semibold ${isCredit ? "text-green-400" : "text-red-400"}`}>
+                        {isCredit ? "+" : ""}₹{Math.abs(tx.amount).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 truncate">
+                      {tx.userName || "—"}{tx.userEmail ? ` · ${tx.userEmail}` : ""}
+                    </p>
+                    {tx.paymentId && (
+                      <p className="text-[10px] text-muted-foreground/70 font-mono mt-0.5 truncate">{tx.paymentId}</p>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground shrink-0 hidden sm:block">
+                    {tx.createdAt && new Date(tx.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Audit Log */}
