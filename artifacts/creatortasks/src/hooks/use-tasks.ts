@@ -23,6 +23,7 @@ export interface Task {
   imageUrl: string | null;
   deadline: string | null;
   flagged: boolean;
+  isAi: boolean;
   createdAt: string;
   creatorName?: string;
 }
@@ -92,6 +93,7 @@ export function useCreateTask() {
       deadline?: string;
       attachmentUrl?: string;
       imageUrl?: string;
+      isAi?: boolean;
     }) => apiFetch("/api/tasks", { method: "POST", data }, getToken),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });

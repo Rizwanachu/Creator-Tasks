@@ -55,6 +55,7 @@ router.get("/tasks", async (req, res) => {
         attachmentUrl: tasks.attachmentUrl,
         imageUrl: tasks.imageUrl,
         flagged: tasks.flagged,
+        isAi: tasks.isAi,
         createdAt: tasks.createdAt,
         creatorName: users.name,
         creatorClerkId: users.clerkId,
@@ -176,6 +177,7 @@ router.get("/tasks/:id", async (req, res) => {
         attachmentUrl: tasks.attachmentUrl,
         imageUrl: tasks.imageUrl,
         flagged: tasks.flagged,
+        isAi: tasks.isAi,
         createdAt: tasks.createdAt,
         creatorName: users.name,
         creatorClerkId: users.clerkId,
@@ -221,7 +223,7 @@ router.get("/tasks/:id", async (req, res) => {
 
 router.post("/tasks", requireAuth, async (req, res) => {
   try {
-    const { title, description, budget, category, deadline, attachmentUrl, imageUrl } = req.body as {
+    const { title, description, budget, category, deadline, attachmentUrl, imageUrl, isAi } = req.body as {
       title?: string;
       description?: string;
       budget?: unknown;
@@ -229,6 +231,7 @@ router.post("/tasks", requireAuth, async (req, res) => {
       deadline?: string;
       attachmentUrl?: string;
       imageUrl?: string;
+      isAi?: unknown;
     };
 
     if (!title || !description || !budget) {
@@ -314,6 +317,7 @@ router.post("/tasks", requireAuth, async (req, res) => {
           deadline: deadlineDate,
           attachmentUrl: attachmentUrl?.trim() || null,
           imageUrl: imageUrl?.trim() || null,
+          isAi: isAi === true,
         })
         .returning();
     });

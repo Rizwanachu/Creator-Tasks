@@ -18,7 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { WalletModal } from "@/components/wallet-modal";
-import { Zap, Clock, Users, Lock, Sparkles, Wallet, AlertTriangle, ImagePlus, X as XIcon, Loader2 } from "lucide-react";
+import { Zap, Clock, Users, Lock, Sparkles, Wallet, AlertTriangle, ImagePlus, X as XIcon, Loader2, Bot } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@clerk/react";
 
 function loadRazorpayScript(): Promise<boolean> {
@@ -93,6 +94,7 @@ const taskSchema = z
     otherCategory: z.string().max(50).optional(),
     deadline: z.string().optional(),
     attachmentUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    isAi: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.category === "other" && !data.otherCategory?.trim()) {
@@ -332,6 +334,7 @@ export function CreateTask() {
       otherCategory: "",
       deadline: "",
       attachmentUrl: "",
+      isAi: false,
     },
   });
 
@@ -358,6 +361,7 @@ export function CreateTask() {
       deadline: data.deadline || undefined,
       attachmentUrl: data.attachmentUrl || undefined,
       imageUrl: taskImagePath || undefined,
+      isAi: !!data.isAi,
     }, {
       onSuccess: () => {
         toast.success("Task posted! Budget locked in escrow.");
@@ -686,6 +690,39 @@ export function CreateTask() {
                         />
                       </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                {/* AI toggle */}
+                <FormField
+                  control={form.control}
+                  name="isAi"
+                  render={({ field }) => (
+                    <FormItem className="rounded-xl border border-border bg-muted/30 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center shrink-0">
+                            <Bot size={18} />
+                          </div>
+                          <div className="min-w-0">
+                            <FormLabel className="text-foreground text-sm font-semibold cursor-pointer">
+                              AI-assisted task
+                            </FormLabel>
+                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                              Turn this on if creators can use AI tools to complete the work. We'll show an AI badge so the right people apply.
+                            </p>
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={!!field.value}
+                            onCheckedChange={field.onChange}
+                            aria-label="Allow AI tools"
+                            className="mt-1 shrink-0 data-[state=checked]:bg-violet-500"
+                          />
+                        </FormControl>
+                      </div>
                     </FormItem>
                   )}
                 />

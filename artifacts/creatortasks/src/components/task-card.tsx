@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Task } from "@/hooks/use-tasks";
 import { useAuth } from "@clerk/react";
-import { Clock, Eye, Flame, AlertCircle, Timer, Bookmark } from "lucide-react";
+import { Clock, Eye, Flame, AlertCircle, Timer, Bookmark, Bot } from "lucide-react";
 import { useIsBookmarked, useToggleBookmark } from "@/hooks/use-bookmarks";
 import { toast } from "sonner";
 
@@ -136,6 +136,16 @@ export function TaskCard({ task, disableActions }: { task: Task; disableActions?
               <Badge variant="outline" className="text-xs font-medium bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20 flex items-center gap-1">
                 <Flame size={10} />
                 Trending
+              </Badge>
+            )}
+            {task.isAi && (
+              <Badge
+                variant="outline"
+                title="Creator can use AI tools to complete this task"
+                className="text-xs font-medium bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20 flex items-center gap-1"
+              >
+                <Bot size={10} />
+                AI
               </Badge>
             )}
             {dl && (

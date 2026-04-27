@@ -49,6 +49,7 @@ export const tasks = pgTable("tasks", {
   attachmentUrl: text("attachment_url"),
   imageUrl: text("image_url"),
   flagged: boolean("flagged").default(false),
+  isAi: boolean("is_ai").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
   workerIdIdx: index("tasks_worker_id_idx").on(table.workerId),

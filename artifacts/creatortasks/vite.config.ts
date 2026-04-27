@@ -89,6 +89,7 @@ export default defineConfig(async ({ command }) => {
         "next-themes",
         "react-helmet-async",
         "lucide-react",
+        "@radix-ui/react-switch",
       ],
     },
     server: {
