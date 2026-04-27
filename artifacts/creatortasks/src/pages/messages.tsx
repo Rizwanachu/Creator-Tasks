@@ -263,9 +263,9 @@ function ChatPanel({
       </div>
 
       {/* Warning banner — fixed sub-row */}
-      <div className="flex items-start gap-2 px-4 py-2 bg-amber-500/5 border-b border-amber-500/20 shrink-0">
-        <Lock size={13} className="text-amber-400 mt-0.5 shrink-0" />
-        <p className="text-[11px] text-amber-300/80 leading-relaxed">
+      <div className="flex items-start gap-2 px-4 py-2 bg-amber-500/10 dark:bg-amber-500/5 border-b border-amber-500/30 dark:border-amber-500/20 shrink-0">
+        <Lock size={13} className="text-amber-700 dark:text-amber-400 mt-0.5 shrink-0" />
+        <p className="text-[11px] text-amber-800 dark:text-amber-300/80 leading-relaxed">
           Do not share personal contact info. Keep all communication and payments on CreatorTasks.
         </p>
       </div>
