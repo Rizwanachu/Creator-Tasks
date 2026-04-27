@@ -269,8 +269,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       </div>
                     </div>
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="w-full cursor-pointer text-foreground/80 focus:text-foreground focus:bg-muted">
-                        Dashboard
+                      <Link href="/leaderboard" className="w-full cursor-pointer text-foreground/80 focus:text-foreground focus:bg-muted">
+                        Leaderboard
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
