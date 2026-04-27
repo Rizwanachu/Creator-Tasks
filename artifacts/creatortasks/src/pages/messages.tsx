@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
-import { Send, ArrowLeft, MessageSquare, AlertTriangle, ShieldCheck, Lock } from "lucide-react";
+import { Send, ArrowLeft, MessageSquare, AlertTriangle, ShieldCheck, Lock, Check, CheckCheck } from "lucide-react";
 import {
   useConversations,
   useConversationMessages,
@@ -103,12 +103,15 @@ function ConversationItem({
 function MessageBubble({
   msg,
   isMe,
+  showStatus = false,
 }: {
   msg: Message;
   isMe: boolean;
+  showStatus?: boolean;
 }) {
+  const seen = isMe && !!msg.isRead;
   return (
-    <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-2`}>
+    <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} mb-2`}>
       <div
         className={`max-w-[72%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
           isMe
@@ -125,6 +128,17 @@ function MessageBubble({
           {formatTimeFull(msg.createdAt)}
         </p>
       </div>
+      {isMe && showStatus && (
+        <div
+          className={`flex items-center gap-1 mt-1 mr-1 text-[10px] font-medium ${
+            seen ? "text-purple-500 dark:text-purple-400" : "text-muted-foreground"
+          }`}
+          aria-label={seen ? "Seen" : "Sent"}
+        >
+          {seen ? <CheckCheck size={12} /> : <Check size={12} />}
+          <span>{seen ? "Seen" : "Sent"}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -282,9 +296,24 @@ function ChatPanel({
             </p>
           </div>
         ) : (
-          data?.messages?.map((msg) => (
-            <MessageBubble key={msg.id} msg={msg} isMe={msg.senderId === myDbId} />
-          ))
+          (() => {
+            const msgs = data?.messages ?? [];
+            let lastMineIdx = -1;
+            for (let i = msgs.length - 1; i >= 0; i--) {
+              if (msgs[i].senderId === myDbId) {
+                lastMineIdx = i;
+                break;
+              }
+            }
+            return msgs.map((msg, i) => (
+              <MessageBubble
+                key={msg.id}
+                msg={msg}
+                isMe={msg.senderId === myDbId}
+                showStatus={i === lastMineIdx}
+              />
+            ));
+          })()
         )}
         {otherTyping && (
           <div className="flex justify-start mb-2">
