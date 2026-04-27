@@ -17,7 +17,10 @@ type NotifType =
   | "application_rejected"
   | "task_invite"
   | "invite_accepted"
-  | "invite_declined";
+  | "invite_declined"
+  | "withdrawal_requested"
+  | "withdrawal_paid"
+  | "withdrawal_rejected";
 
 export async function createNotification(
   userId: string,

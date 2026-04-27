@@ -2,8 +2,17 @@ import { Router } from "express";
 import { db, transactions, users, withdrawals, tasks, disputes } from "@workspace/db";
 import { and, eq, sql, count } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
+import { createNotification } from "../lib/notify";
+import { isOwner } from "../lib/owner";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+
+const ADMIN_CLERK_ID = process.env["ADMIN_CLERK_ID"];
+
+function isAdmin(user: { clerkId?: string; email?: string | null }) {
+  if (ADMIN_CLERK_ID && user.clerkId === ADMIN_CLERK_ID) return true;
+  return isOwner(user.email);
+}
 
 const router = Router();
 
@@ -266,6 +275,22 @@ router.post("/wallet/withdraw", requireAuth, async (req, res) => {
       return result;
     });
 
+    // Notify admin so the owner sees a bell alert in the header.
+    try {
+      const adminUser = ADMIN_CLERK_ID
+        ? await db.query.users.findFirst({ where: eq(users.clerkId, ADMIN_CLERK_ID) })
+        : await db.query.users.findFirst({ where: sql`LOWER(${users.email}) = LOWER(${process.env.OWNER_EMAIL ?? "rizwanachoo123@gmail.com"})` });
+      if (adminUser && adminUser.id !== currentUser.id) {
+        await createNotification(
+          adminUser.id,
+          "withdrawal_requested",
+          `${currentUser.name ?? "A user"} requested a withdrawal of ₹${amountNum} to ${upiId.trim()}`,
+        );
+      }
+    } catch {
+      // notification is non-fatal
+    }
+
     res.json({ success: true, balance: updatedWallet.balance });
   } catch (err) {
     if ((err as Error).message === "INSUFFICIENT_BALANCE") {
@@ -274,6 +299,117 @@ router.post("/wallet/withdraw", requireAuth, async (req, res) => {
     }
     req.log.error({ err }, "Error processing withdrawal");
     res.status(500).json({ error: "Failed to process withdrawal" });
+  }
+});
+
+// GET /admin/withdrawals — admin only: list all withdrawal requests
+router.get("/admin/withdrawals", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    if (!isAdmin(currentUser)) {
+      res.status(403).json({ error: "Admin access required" });
+      return;
+    }
+
+    const list = await db
+      .select({
+        id: withdrawals.id,
+        amount: withdrawals.amount,
+        upiId: withdrawals.upiId,
+        status: withdrawals.status,
+        createdAt: withdrawals.createdAt,
+        userId: withdrawals.userId,
+        userName: users.name,
+        userEmail: users.email,
+      })
+      .from(withdrawals)
+      .leftJoin(users, eq(withdrawals.userId, users.id))
+      .orderBy(sql`${withdrawals.createdAt} DESC`);
+
+    res.json(list);
+  } catch (err) {
+    req.log.error({ err }, "Error fetching admin withdrawals");
+    res.status(500).json({ error: "Failed to fetch withdrawals" });
+  }
+});
+
+// POST /admin/withdrawals/:id/mark-paid — admin only: mark a withdrawal as paid
+router.post("/admin/withdrawals/:id/mark-paid", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    if (!isAdmin(currentUser)) {
+      res.status(403).json({ error: "Admin access required" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(withdrawals)
+      .set({ status: "paid" })
+      .where(and(eq(withdrawals.id, req.params.id as string), eq(withdrawals.status, "pending")))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "Pending withdrawal not found" });
+      return;
+    }
+
+    await createNotification(
+      updated.userId,
+      "withdrawal_paid",
+      `Your withdrawal of ₹${updated.amount} has been paid to ${updated.upiId}.`,
+    );
+
+    res.json(updated);
+  } catch (err) {
+    req.log.error({ err }, "Error marking withdrawal paid");
+    res.status(500).json({ error: "Failed to mark withdrawal as paid" });
+  }
+});
+
+// POST /admin/withdrawals/:id/reject — admin only: reject and refund a withdrawal
+router.post("/admin/withdrawals/:id/reject", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    if (!isAdmin(currentUser)) {
+      res.status(403).json({ error: "Admin access required" });
+      return;
+    }
+
+    const { reason } = req.body as { reason?: string };
+
+    const updated = await db.transaction(async (tx) => {
+      const [w] = await tx
+        .update(withdrawals)
+        .set({ status: "rejected" })
+        .where(and(eq(withdrawals.id, req.params.id as string), eq(withdrawals.status, "pending")))
+        .returning();
+
+      if (!w) return null;
+
+      // Refund the amount back to the user's wallet
+      await tx
+        .update(users)
+        .set({ balance: sql`${users.balance} + ${w.amount}` })
+        .where(eq(users.id, w.userId));
+
+      return w;
+    });
+
+    if (!updated) {
+      res.status(404).json({ error: "Pending withdrawal not found" });
+      return;
+    }
+
+    await createNotification(
+      updated.userId,
+      "withdrawal_rejected",
+      `Your withdrawal of ₹${updated.amount} was rejected${reason ? `: ${reason}` : ""}. The amount has been refunded to your wallet.`,
+    );
+
+    res.json(updated);
+  } catch (err) {
+    req.log.error({ err }, "Error rejecting withdrawal");
+    res.status(500).json({ error: "Failed to reject withdrawal" });
   }
 });
 

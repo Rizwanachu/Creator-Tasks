@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, AlertTriangle, Users, TrendingUp, CheckCircle, Loader2 } from "lucide-react";
+import { ShieldCheck, AlertTriangle, Users, TrendingUp, CheckCircle, Loader2, Wallet } from "lucide-react";
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: React.ElementType; color: string }) {
   return (
@@ -36,6 +36,11 @@ export function AdminPage() {
     queryFn: () => apiFetch("/api/admin/disputes", {}, getToken),
   });
 
+  const { data: withdrawalsList, isLoading: withdrawalsLoading } = useQuery({
+    queryKey: ["admin-withdrawals"],
+    queryFn: () => apiFetch("/api/admin/withdrawals", {}, getToken),
+  });
+
   const resolveDispute = useMutation({
     mutationFn: ({ id, adminNote, unflagTask }: { id: string; adminNote: string; unflagTask: boolean }) =>
       apiFetch(`/api/admin/disputes/${id}/resolve`, { method: "POST", data: { adminNote, unflagTask } }, getToken),
@@ -47,6 +52,27 @@ export function AdminPage() {
       queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
     },
     onError: () => toast.error("Failed to resolve dispute"),
+  });
+
+  const markPaid = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/api/admin/withdrawals/${id}/mark-paid`, { method: "POST" }, getToken),
+    onSuccess: () => {
+      toast.success("Marked as paid");
+      queryClient.invalidateQueries({ queryKey: ["admin-withdrawals"] });
+    },
+    onError: () => toast.error("Failed to mark as paid"),
+  });
+
+  const rejectWithdrawal = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/api/admin/withdrawals/${id}/reject`, { method: "POST", data: {} }, getToken),
+    onSuccess: () => {
+      toast.success("Rejected and refunded to user");
+      queryClient.invalidateQueries({ queryKey: ["admin-withdrawals"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+    onError: () => toast.error("Failed to reject withdrawal"),
   });
 
   if (statsLoading) {
@@ -177,6 +203,89 @@ export function AdminPage() {
                           Resolve
                         </Button>
                       )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Withdrawal Requests */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-8">
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <h2 className="font-bold text-foreground flex items-center gap-2">
+            <Wallet size={16} className="text-amber-400" />
+            Withdrawal Requests
+          </h2>
+          {(() => {
+            const pendingCount = (withdrawalsList ?? []).filter((w: any) => w.status === "pending").length;
+            return pendingCount > 0 ? (
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-xs">
+                {pendingCount} pending
+              </Badge>
+            ) : null;
+          })()}
+        </div>
+
+        {withdrawalsLoading ? (
+          <div className="p-6 space-y-3">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+          </div>
+        ) : (withdrawalsList ?? []).length === 0 ? (
+          <div className="py-16 text-center text-muted-foreground">
+            <Wallet size={32} className="mx-auto mb-3 text-muted-foreground/40" />
+            <p className="text-sm">No withdrawal requests yet</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {(withdrawalsList ?? []).map((w: any) => (
+              <div key={w.id} className="p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <Badge variant="outline" className={
+                        w.status === "pending"
+                          ? "text-amber-400 bg-amber-500/10 border-amber-500/20 text-xs"
+                          : w.status === "paid"
+                          ? "text-green-400 bg-green-500/10 border-green-500/20 text-xs"
+                          : "text-red-400 bg-red-500/10 border-red-500/20 text-xs"
+                      }>
+                        {w.status}
+                      </Badge>
+                      <span className="text-base font-bold text-foreground">₹{w.amount?.toLocaleString()}</span>
+                      <span className="text-xs text-muted-foreground">to <span className="font-mono text-foreground">{w.upiId}</span></span>
+                    </div>
+                    <p className="text-sm text-foreground">{w.userName ?? "—"} <span className="text-muted-foreground">· {w.userEmail}</span></p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Requested {new Date(w.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+
+                  {w.status === "pending" && (
+                    <div className="flex gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        onClick={() => markPaid.mutate(w.id)}
+                        disabled={markPaid.isPending}
+                        className="btn-gradient text-white border-0 rounded-lg text-xs"
+                      >
+                        {markPaid.isPending ? <Loader2 size={13} className="animate-spin" /> : "Mark as Paid"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (confirm(`Reject and refund ₹${w.amount} to ${w.userName}?`)) {
+                            rejectWithdrawal.mutate(w.id);
+                          }
+                        }}
+                        disabled={rejectWithdrawal.isPending}
+                        className="rounded-lg text-xs text-red-400 hover:text-red-300"
+                      >
+                        Reject
+                      </Button>
                     </div>
                   )}
                 </div>
