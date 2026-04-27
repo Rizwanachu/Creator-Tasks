@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@clerk/react";
 import { useLocation, useSearch } from "wouter";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -136,6 +137,7 @@ export function OnboardingPage() {
   const { getToken } = useAuth();
   const [, setLocation] = useLocation();
   const search = useSearch();
+  const queryClient = useQueryClient();
 
   const { data: existingProfile } = useMyProfile();
   // Treat legacy auto-generated handles ("creator-XXXXXX") as unset so the user can pick their own.
@@ -284,6 +286,14 @@ export function OnboardingPage() {
           caption: [item.title, item.description].filter(Boolean).join(" — ") || undefined,
         });
       }
+
+      // Wait for the profile cache to refresh with the freshly-saved name/bio
+      // BEFORE navigating, otherwise the OnboardingGate will read stale
+      // (incomplete) profile data and bounce the user back to /onboarding.
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["profile"] }),
+        queryClient.refetchQueries({ queryKey: ["my-profile"] }),
+      ]);
 
       toast.success("Welcome to CreatorTasks! 🎉");
       const params = new URLSearchParams(search);
