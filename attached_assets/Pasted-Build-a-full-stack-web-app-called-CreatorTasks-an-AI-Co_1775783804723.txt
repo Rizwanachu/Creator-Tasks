@@ -1,0 +1,128 @@
+Build a full-stack web app called "CreatorTasks" — an AI Content Task Marketplace where users can post tasks and other users complete them for money. The platform takes a 10% commission on each completed task.
+
+Tech Stack:
+- Frontend: Next.js 14 (App Router, TypeScript, Tailwind CSS)
+- Backend: Next.js API routes
+- Database: PostgreSQL (Neon free tier)
+- Auth: NextAuth (email + Google login)
+- Payments: Razorpay (India-friendly)
+- ORM: Prisma
+
+Core Features:
+
+1. Authentication:
+- Sign up / login using email and Google
+- Store user profile (name, email, wallet balance)
+
+2. User Roles:
+- All users can:
+  - Post tasks
+  - Accept tasks
+  - Earn money
+
+3. Task System:
+- Create Task:
+  - Title
+  - Description
+  - Budget (INR)
+  - Example reference (URL or text)
+- View all tasks (feed)
+- Accept a task (only one user can accept)
+- Mark task as submitted
+- Task owner can:
+  - Approve OR reject submission
+
+4. Payment Logic:
+- When a task is created:
+  - User pays upfront via Razorpay
+- Store payment in escrow (DB)
+- When task is approved:
+  - 90% goes to worker
+  - 10% platform fee
+- Add withdrawal system:
+  - Users can request withdrawal
+  - Deduct platform fee if needed
+
+5. Wallet System:
+- Each user has:
+  - balance
+  - pending_balance
+- Update balances based on task completion
+
+6. Dashboard:
+- Show:
+  - Posted tasks
+  - Accepted tasks
+  - Earnings
+  - Withdraw button
+
+7. Admin Panel:
+- View all users
+- View all transactions
+- Approve withdrawals manually
+
+8. UI Design:
+- Minimal, modern, clean
+- Inspired by Fiverr + Upwork
+- Dark/light mode
+- Mobile responsive
+
+9. Security:
+- Protect routes (auth required)
+- Validate all inputs
+- Prevent multiple users accepting same task
+
+10. Deployment Ready:
+- Use environment variables
+- Compatible with Vercel deployment
+- Use Neon PostgreSQL connection string
+
+Database Schema (Prisma):
+
+User:
+- id
+- name
+- email
+- balance
+- pending_balance
+- createdAt
+
+Task:
+- id
+- title
+- description
+- budget
+- status (open, in_progress, submitted, completed)
+- creatorId
+- workerId
+- createdAt
+
+Submission:
+- id
+- taskId
+- content
+- status (pending, approved, rejected)
+
+Transaction:
+- id
+- userId
+- amount
+- type (deposit, earning, withdrawal, fee)
+- createdAt
+
+Withdrawal:
+- id
+- userId
+- amount
+- status (pending, approved, rejected)
+
+Extra:
+- Use clean folder structure
+- Add loading states
+- Add toast notifications
+- Error handling everywhere
+
+Output:
+- Complete working code
+- Instructions to run locally
+- Instructions to deploy on Vercel

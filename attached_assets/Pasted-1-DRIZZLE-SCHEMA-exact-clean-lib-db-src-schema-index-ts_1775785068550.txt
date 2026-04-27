@@ -1,0 +1,218 @@
+1. DRIZZLE SCHEMA (exact, clean)
+
+📄 lib/db/src/schema/index.ts
+
+import { pgTable, text, integer, uuid, timestamp } from "drizzle-orm/pg-core";
+
+export const users = pgTable("users", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  clerkId: text("clerk_id").notNull().unique(),
+  email: text("email"),
+  name: text("name"),
+  balance: integer("balance").default(0),
+  pendingBalance: integer("pending_balance").default(0),
+});
+
+export const tasks = pgTable("tasks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  budget: integer("budget").notNull(),
+  status: text("status").default("open"),
+  creatorId: uuid("creator_id").notNull(),
+  workerId: uuid("worker_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const submissions = pgTable("submissions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  taskId: uuid("task_id").notNull(),
+  content: text("content").notNull(),
+  status: text("status").default("pending"),
+});
+
+export const transactions = pgTable("transactions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  amount: integer("amount").notNull(),
+  type: text("type").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+🔐 2. CLERK USER SYNC MIDDLEWARE
+
+📄 artifacts/api-server/src/middleware/auth.ts
+
+import { getAuth } from "@clerk/express";
+import { db } from "../db";
+import { users } from "@repo/db/schema";
+import { eq } from "drizzle-orm";
+
+export const requireAuth = async (req, res, next) => {
+  const { userId } = getAuth(req);
+
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  req.userId = userId;
+
+  // Upsert user
+  const existing = await db.query.users.findFirst({
+    where: eq(users.clerkId, userId),
+  });
+
+  if (!existing) {
+    await db.insert(users).values({
+      clerkId: userId,
+      email: req.auth?.sessionClaims?.email || "",
+      name: req.auth?.sessionClaims?.name || "",
+    });
+  }
+
+  next();
+};
+⚡ 3. ACCEPT TASK (RACE CONDITION FIXED)
+// POST /api/tasks/:id/accept
+
+const result = await db
+  .update(tasks)
+  .set({
+    workerId: currentUserDbId,
+    status: "in_progress",
+  })
+  .where(
+    and(
+      eq(tasks.id, taskId),
+      eq(tasks.status, "open")
+    )
+  )
+  .returning();
+
+if (result.length === 0) {
+  return res.status(409).json({ error: "Task already taken" });
+}
+💰 4. APPROVE LOGIC (CORE MONEY FLOW)
+const workerEarning = Math.floor(task.budget * 0.9);
+const platformFee = task.budget - workerEarning;
+
+// Update worker balance
+await db.update(users)
+  .set({
+    balance: sql`${users.balance} + ${workerEarning}`
+  })
+  .where(eq(users.id, task.workerId));
+
+// Transactions
+await db.insert(transactions).values([
+  {
+    userId: task.workerId,
+    amount: workerEarning,
+    type: "earning",
+  },
+  {
+    userId: task.creatorId,
+    amount: platformFee,
+    type: "fee",
+  }
+]);
+
+// Complete task
+await db.update(tasks)
+  .set({ status: "completed" })
+  .where(eq(tasks.id, task.id));
+🎨 5. PREMIUM UI — TASK CARD COMPONENT
+
+📄 TaskCard.tsx
+
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+export function TaskCard({ task, onAccept, disabled }) {
+  return (
+    <Card className="bg-[#111217] border border-[#1F2228] rounded-2xl p-5 hover:border-purple-500/30 hover:bg-white/5 transition-all hover:scale-[1.02]">
+      
+      <div className="flex justify-between items-start mb-3">
+        <h3 className="text-white font-semibold text-lg">
+          {task.title}
+        </h3>
+        <span className="text-purple-400 font-semibold">
+          ₹{task.budget}
+        </span>
+      </div>
+
+      <p className="text-sm text-zinc-400 mb-4 line-clamp-2">
+        {task.description}
+      </p>
+
+      <div className="flex justify-between items-center">
+        <span className="text-xs text-zinc-500">
+          {task.creator?.name || "Anonymous"}
+        </span>
+
+        <Button
+          disabled={disabled}
+          onClick={onAccept}
+          className="bg-purple-600 hover:bg-purple-500 rounded-xl"
+        >
+          Accept
+        </Button>
+      </div>
+    </Card>
+  );
+}
+🧭 6. NAVBAR (PREMIUM FEEL)
+export function Navbar() {
+  return (
+    <div className="sticky top-0 z-50 backdrop-blur-md bg-black/40 border-b border-white/5">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+        
+        <h1 className="text-white font-semibold text-lg">
+          CreatorTasks
+        </h1>
+
+        <div className="flex gap-6 text-sm text-zinc-300">
+          <a href="/tasks">Tasks</a>
+          <a href="/create">Create</a>
+          <a href="/dashboard">Dashboard</a>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+💰 7. DASHBOARD HEADER (THIS MAKES IT FEEL REAL)
+<div className="bg-[#111217] border border-[#1F2228] rounded-2xl p-6">
+  <p className="text-zinc-400 text-sm">Wallet Balance</p>
+  <h2 className="text-4xl font-semibold text-white mt-1">
+    ₹{balance}
+  </h2>
+</div>
+🧊 8. SKELETON LOADING (PRO FEEL)
+import { Skeleton } from "@/components/ui/skeleton";
+
+<Skeleton className="h-24 w-full rounded-xl bg-white/5" />
+🔔 9. SONNER TOASTS
+import { toast } from "sonner";
+
+toast.success("Task accepted");
+toast.success("Submission sent");
+toast.success("Payment received");
+toast.error("Something went wrong");
+🎯 10. FINAL UI CHECKLIST (DON’T SKIP)
+
+Before you deploy, check:
+
+ Consistent spacing (p-5, gap-4 everywhere)
+ Same border color everywhere (#1F2228)
+ No random colors
+ Buttons consistent
+ Cards hover smoothly
+ No empty blank screens
+ Mobile works cleanly
+🧠 REAL DIFFERENCE NOW
+
+At this point, you’re not:
+❌ building a project
+
+You’re:
+✅ building a monetizable product with a premium feel

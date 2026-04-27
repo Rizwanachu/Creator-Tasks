@@ -1,0 +1,49 @@
+Blocker #1
+
+Zero open tasks — new creators have nothing to do and leave immediately
+
+Your marketplace shows 14+ tasks but every single one is "Completed." A creator signs up, checks the task board, sees nothing open, and never returns. Your entire growth loop depends on open tasks existing at all times. This is the most urgent problem on the platform.
+
+Fix immediately: Post 10 real open tasks today using your admin account (no wallet needed per your spec). Recruit 3 real clients to post tasks — even friends with small budgets. Seed the marketplace manually until organic supply comes in. Target: always have at least 5 open tasks visible.
+
+
+
+Blocker #2
+
+Landing page stats (340+ creators, ₹25,000+ paid) don't match leaderboard (1 creator, ₹90)
+
+Any curious visitor who checks the leaderboard after seeing your landing page stats will immediately see the contradiction. This destroys trust faster than any design flaw. It signals that the numbers are fabricated.
+
+Fix immediately: Change landing stats to match reality right now. "10+ creators," "₹5,000+ paid," "10% fee." Small honest numbers beat big fake ones. Update stats to auto-calculate from your database so they're always accurate.
+
+
+
+Blocker #3
+
+Wallet pre-deposit required to post a task — buyers abandon before they start
+
+Your spec says clients must deposit into their wallet first, then the task budget is locked from that balance. This creates 2 friction steps before a buyer can post even one task: 
+
+(1) deposit money, (2) post task. Most buyers will leave at step 1, especially new users who haven't seen value yet.
+
+Fix: Allow "pay at posting" — when a client clicks "Post Task & Lock Funds," open a Razorpay checkout for exactly the task budget + any fee. Funds go directly to escrow. The wallet can remain for power users who pre-load, but don't require it.
+
+
+
+Blocker #4
+
+No public creator profiles — buyers can't evaluate who they're hiring
+
+Your spec says buyers can "see their profile, past earnings, completed task count, rating" when reviewing applicants — but there's no public profile URL. Buyers need to view creators before inviting them, and creators need a shareable link to prove their credibility.
+
+Fix: Build public profile pages at /creator/[username]. Show: photo, bio, skills, portfolio gallery, rating, tasks completed, reviews. Add an "Invite to Task" button. These pages also become your primary SEO pages.
+
+
+
+High
+
+4-second polling for chat is fragile and expensive
+
+Polling every 4 seconds means if 100 users are active, that's 25 API requests per second just for chat. This will cause Vercel function limits to be hit quickly, and still feels slow compared to real-time chat.
+
+Fix: Replace polling with Supabase Realtime or Pusher (free tier). Instant delivery, zero load on your API. This is a 1-day implementation and will feel dramatically better.
