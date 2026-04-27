@@ -76,10 +76,34 @@ export default defineConfig(async ({ command }) => {
       outDir: path.resolve(__dirname, "../../dist"),
       emptyOutDir: true,
     },
+    optimizeDeps: {
+      include: [
+        "@clerk/react",
+        "@clerk/shared",
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "@tanstack/react-query",
+        "wouter",
+        "sonner",
+        "next-themes",
+        "react-helmet-async",
+        "lucide-react",
+      ],
+    },
     server: {
       port,
       host: "0.0.0.0",
       allowedHosts: true,
+      warmup: {
+        clientFiles: [
+          "./src/main.tsx",
+          "./src/App.tsx",
+          "./src/pages/auth.tsx",
+          "./src/pages/home.tsx",
+          "./src/components/layout.tsx",
+        ],
+      },
       fs: {
         strict: true,
         deny: ["**/.*"],
