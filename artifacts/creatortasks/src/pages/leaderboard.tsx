@@ -2,9 +2,21 @@ import { Link } from "wouter";
 import { useLeaderboard } from "@/hooks/use-bookmarks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Star, CheckCircle2, Clock, Users } from "lucide-react";
 import { useUser } from "@clerk/react";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+
+function avatarSrc(objectPath: string | null | undefined): string | null {
+  if (!objectPath) return null;
+  if (
+    objectPath.startsWith("data:") ||
+    objectPath.startsWith("http://") ||
+    objectPath.startsWith("https://")
+  )
+    return objectPath;
+  return `${API_BASE}/api/storage${objectPath}`;
+}
 
 function timeAgo(dateStr: string | null): string | null {
   if (!dateStr) return null;
@@ -90,6 +102,7 @@ export function LeaderboardPage() {
                 : "?";
               const isMe = user?.id === entry.clerkId;
               const ago = timeAgo(entry.lastCompletedAt);
+              const imgSrc = avatarSrc(entry.avatarUrl);
 
               return (
                 <Link key={entry.id} href={entry.username ? `/creator/${entry.username}` : `/profile/${entry.clerkId}`}>
@@ -106,11 +119,22 @@ export function LeaderboardPage() {
                     </div>
 
                     {/* Avatar */}
-                    <Avatar className="w-11 h-11 border border-border rounded-xl shrink-0">
-                      <AvatarFallback className="text-sm font-bold rounded-xl bg-gradient-to-br from-purple-600/25 to-pink-600/25 text-purple-300">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div
+                      className="w-11 h-11 rounded-xl overflow-hidden border border-border shrink-0"
+                      style={{ background: "linear-gradient(135deg, #7C5CFF, #ec4899)" }}
+                    >
+                      {imgSrc ? (
+                        <img
+                          src={imgSrc}
+                          alt={entry.name ?? ""}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+                          {initials}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
