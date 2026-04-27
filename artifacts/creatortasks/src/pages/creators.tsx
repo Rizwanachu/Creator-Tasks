@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@clerk/react";
 import { useCreators, type CreatorSummary } from "@/hooks/use-creators";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,12 +58,22 @@ function CreatorCard({
       onClick={() => navigate(profileHref)}
     >
       <div className="flex items-start gap-4 mb-4">
-        <Avatar className="w-12 h-12 border border-border rounded-xl shrink-0">
-          {imgSrc && <AvatarImage src={imgSrc} alt={creator.name ?? ""} className="object-cover" />}
-          <AvatarFallback className="bg-gradient-to-br from-purple-600/15 to-pink-600/15 dark:from-purple-600/25 dark:to-pink-600/25 text-purple-700 dark:text-purple-300 text-sm font-bold rounded-xl">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+        <div
+          className="w-12 h-12 rounded-xl overflow-hidden border border-border shrink-0"
+          style={{ background: "linear-gradient(135deg, #7C5CFF, #ec4899)" }}
+        >
+          {imgSrc ? (
+            <img
+              src={imgSrc}
+              alt={creator.name ?? ""}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+              {initials}
+            </div>
+          )}
+        </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
