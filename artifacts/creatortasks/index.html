@@ -10,6 +10,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="preconnect" href="https://accounts.google.com" crossorigin>
+    <link rel="dns-prefetch" href="https://accounts.google.com">
+    <link rel="preconnect" href="https://clerk-telemetry.com" crossorigin>
+    <link rel="dns-prefetch" href="https://clerk-telemetry.com">
+    <script>
+      (function () {
+        try {
+          var pk = "%VITE_CLERK_PUBLISHABLE_KEY%";
+          if (!pk || pk.indexOf("VITE_CLERK_PUBLISHABLE_KEY") !== -1) return;
+          var parts = pk.split("_");
+          if (parts.length < 3) return;
+          var encoded = parts.slice(2).join("_");
+          var domain = atob(encoded).replace(/\$+$/, "").trim();
+          if (!domain || /[^a-z0-9.\-]/i.test(domain)) return;
+          var origin = "https://" + domain;
+          var pre = document.createElement("link");
+          pre.rel = "preconnect";
+          pre.href = origin;
+          pre.crossOrigin = "anonymous";
+          document.head.appendChild(pre);
+          var dns = document.createElement("link");
+          dns.rel = "dns-prefetch";
+          dns.href = origin;
+          document.head.appendChild(dns);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
