@@ -265,7 +265,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/profile/:clerkId" component={ProfilePage} />
             <Route path="/creator/:username" component={CreatorPage} />
 
-            <Route path="/admin">
+            <Route path="/letsmakesomemoney2026">
               <ProtectedRoute component={AdminPage} />
             </Route>
 
