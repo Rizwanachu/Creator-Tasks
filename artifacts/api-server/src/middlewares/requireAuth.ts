@@ -76,6 +76,17 @@ export const requireAuth = async (
       dbUser = updated ?? dbUser;
     }
 
+    if (dbUser?.bannedAt) {
+      res.status(403).json({ error: "Your account has been banned." });
+      return;
+    }
+    if (dbUser?.suspendedAt) {
+      res.status(403).json({
+        error: "Your account is suspended. Contact support if you believe this is a mistake.",
+      });
+      return;
+    }
+
     req.dbUser = dbUser;
 
     // Throttled lastSeenAt heartbeat — fire-and-forget so it doesn't block the response.

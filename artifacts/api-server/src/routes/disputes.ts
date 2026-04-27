@@ -162,7 +162,7 @@ router.get("/admin/stats", requireAuth, async (req, res) => {
       return;
     }
 
-    const allUsers = await db.select({ id: users.id, name: users.name, email: users.email, balance: users.balance, totalEarnings: users.totalEarnings, createdAt: sql<string>`now()` }).from(users).limit(100);
+    const allUsers = await db.select({ id: users.id, name: users.name, email: users.email, balance: users.balance, totalEarnings: users.totalEarnings, suspendedAt: users.suspendedAt, bannedAt: users.bannedAt, moderationReason: users.moderationReason, createdAt: sql<string>`now()` }).from(users).limit(100);
 
     const totalCommission = await db
       .select({ total: sql<number>`coalesce(sum(budget * 0.1), 0)` })

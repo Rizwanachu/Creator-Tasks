@@ -24,7 +24,27 @@ export const users = pgTable("users", {
   razorpayCustomerId: text("razorpay_customer_id"),
   lastSeenAt: timestamp("last_seen_at"),
   createdAt: timestamp("created_at").defaultNow(),
+  suspendedAt: timestamp("suspended_at"),
+  bannedAt: timestamp("banned_at"),
+  moderationReason: text("moderation_reason"),
 });
+
+export const adminAuditLogs = pgTable("admin_audit_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  adminUserId: uuid("admin_user_id").notNull(),
+  adminEmail: text("admin_email"),
+  action: text("action").notNull(),
+  targetUserId: uuid("target_user_id"),
+  targetType: text("target_type"),
+  targetId: text("target_id"),
+  reason: text("reason"),
+  metadata: text("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  adminUserIdIdx: index("admin_audit_admin_idx").on(table.adminUserId),
+  targetUserIdIdx: index("admin_audit_target_user_idx").on(table.targetUserId),
+  createdAtIdx: index("admin_audit_created_idx").on(table.createdAt),
+}));
 
 export const portfolioItems = pgTable("portfolio_items", {
   id: uuid("id").defaultRandom().primaryKey(),

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, AlertTriangle, Users, TrendingUp, CheckCircle, Loader2, Wallet } from "lucide-react";
+import { ShieldCheck, AlertTriangle, Users, TrendingUp, CheckCircle, Loader2, Wallet, Ban, ShieldOff, ShieldX, History } from "lucide-react";
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: React.ElementType; color: string }) {
   return (
@@ -39,6 +39,30 @@ export function AdminPage() {
   const { data: withdrawalsList, isLoading: withdrawalsLoading } = useQuery({
     queryKey: ["admin-withdrawals"],
     queryFn: () => apiFetch("/api/admin/withdrawals", {}, getToken),
+  });
+
+  const { data: auditLogs, isLoading: auditLoading } = useQuery({
+    queryKey: ["admin-audit-logs"],
+    queryFn: () => apiFetch("/api/admin/audit-logs", {}, getToken),
+  });
+
+  const [moderateId, setModerateId] = useState<string | null>(null);
+  const [moderateMode, setModerateMode] = useState<"suspend" | "ban" | null>(null);
+  const [moderationReason, setModerationReason] = useState("");
+
+  const moderateUser = useMutation({
+    mutationFn: ({ id, mode, reason }: { id: string; mode: "suspend" | "ban" | "unsuspend" | "unban"; reason?: string }) =>
+      apiFetch(`/api/admin/users/${id}/${mode}`, { method: "POST", data: { reason } }, getToken),
+    onSuccess: (_, vars) => {
+      const verb = vars.mode === "unsuspend" ? "unsuspended" : vars.mode === "unban" ? "unbanned" : `${vars.mode}ed`;
+      toast.success(`User ${verb}`);
+      setModerateId(null);
+      setModerateMode(null);
+      setModerationReason("");
+      queryClient.invalidateQueries({ queryKey: ["admin-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-audit-logs"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to update user"),
   });
 
   const resolveDispute = useMutation({
@@ -298,7 +322,7 @@ export function AdminPage() {
       </div>
 
       {/* Users */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-8">
         <div className="p-6 border-b border-border">
           <h2 className="font-bold text-foreground flex items-center gap-2">
             <Users size={16} className="text-blue-400" />
@@ -310,21 +334,145 @@ export function AdminPage() {
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left p-4 text-xs text-muted-foreground font-semibold uppercase tracking-wide">Name</th>
+                <th className="text-left p-4 text-xs text-muted-foreground font-semibold uppercase tracking-wide">Status</th>
                 <th className="text-right p-4 text-xs text-muted-foreground font-semibold uppercase tracking-wide">Balance</th>
                 <th className="text-right p-4 text-xs text-muted-foreground font-semibold uppercase tracking-wide">Total Earned</th>
+                <th className="text-right p-4 text-xs text-muted-foreground font-semibold uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {(stats.users ?? []).map((u: any) => (
-                <tr key={u.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="p-4 text-foreground font-medium">{u.name || "—"}</td>
-                  <td className="p-4 text-right tabular-nums text-green-400">₹{(u.balance ?? 0).toLocaleString()}</td>
-                  <td className="p-4 text-right tabular-nums text-purple-400">₹{(u.totalEarnings ?? 0).toLocaleString()}</td>
-                </tr>
-              ))}
+              {(stats.users ?? []).map((u: any) => {
+                const isBanned = !!u.bannedAt;
+                const isSuspended = !!u.suspendedAt && !isBanned;
+                const isThisRowOpen = moderateId === u.id;
+                return (
+                  <tr key={u.id} className="hover:bg-muted/30 transition-colors align-top">
+                    <td className="p-4">
+                      <div className="text-foreground font-medium">{u.name || "—"}</div>
+                      <div className="text-xs text-muted-foreground">{u.email || "—"}</div>
+                    </td>
+                    <td className="p-4">
+                      {isBanned ? (
+                        <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/20 text-xs">Banned</Badge>
+                      ) : isSuspended ? (
+                        <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-xs">Suspended</Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-xs">Active</Badge>
+                      )}
+                      {u.moderationReason && (
+                        <div className="text-[11px] text-muted-foreground mt-1 max-w-[180px]">{u.moderationReason}</div>
+                      )}
+                    </td>
+                    <td className="p-4 text-right tabular-nums text-green-400">₹{(u.balance ?? 0).toLocaleString()}</td>
+                    <td className="p-4 text-right tabular-nums text-purple-400">₹{(u.totalEarnings ?? 0).toLocaleString()}</td>
+                    <td className="p-4">
+                      {isThisRowOpen && moderateMode ? (
+                        <div className="flex flex-col gap-2 min-w-[220px] ml-auto">
+                          <input
+                            placeholder={`Reason for ${moderateMode} (optional)`}
+                            value={moderationReason}
+                            onChange={(e) => setModerationReason(e.target.value)}
+                            className="px-3 py-1.5 text-sm rounded-lg border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              onClick={() => moderateUser.mutate({ id: u.id, mode: moderateMode, reason: moderationReason })}
+                              disabled={moderateUser.isPending}
+                              className={`rounded-lg text-xs text-white border-0 ${moderateMode === "ban" ? "bg-red-600 hover:bg-red-700" : "bg-amber-600 hover:bg-amber-700"}`}
+                            >
+                              {moderateUser.isPending ? <Loader2 size={13} className="animate-spin" /> : `Confirm ${moderateMode}`}
+                            </Button>
+                            <Button size="sm" variant="outline" className="rounded-lg text-xs"
+                              onClick={() => { setModerateId(null); setModerateMode(null); setModerationReason(""); }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2 justify-end flex-wrap">
+                          {isBanned ? (
+                            <Button size="sm" variant="outline" className="rounded-lg text-xs"
+                              onClick={() => moderateUser.mutate({ id: u.id, mode: "unban" })}
+                              disabled={moderateUser.isPending}
+                            >
+                              <ShieldCheck size={13} className="mr-1" /> Unban
+                            </Button>
+                          ) : isSuspended ? (
+                            <Button size="sm" variant="outline" className="rounded-lg text-xs"
+                              onClick={() => moderateUser.mutate({ id: u.id, mode: "unsuspend" })}
+                              disabled={moderateUser.isPending}
+                            >
+                              <ShieldCheck size={13} className="mr-1" /> Unsuspend
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="outline" className="rounded-lg text-xs text-amber-400 hover:text-amber-300"
+                              onClick={() => { setModerateId(u.id); setModerateMode("suspend"); setModerationReason(""); }}
+                            >
+                              <ShieldOff size={13} className="mr-1" /> Suspend
+                            </Button>
+                          )}
+                          {!isBanned && (
+                            <Button size="sm" variant="outline" className="rounded-lg text-xs text-red-400 hover:text-red-300"
+                              onClick={() => { setModerateId(u.id); setModerateMode("ban"); setModerationReason(""); }}
+                            >
+                              <Ban size={13} className="mr-1" /> Ban
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Audit Log */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <h2 className="font-bold text-foreground flex items-center gap-2">
+            <History size={16} className="text-slate-400" />
+            Admin Activity Log
+          </h2>
+          <span className="text-xs text-muted-foreground">{(auditLogs ?? []).length} entries</span>
+        </div>
+
+        {auditLoading ? (
+          <div className="p-6 space-y-3">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
+          </div>
+        ) : (auditLogs ?? []).length === 0 ? (
+          <div className="py-16 text-center text-muted-foreground">
+            <ShieldX size={32} className="mx-auto mb-3 text-muted-foreground/40" />
+            <p className="text-sm">No admin actions yet</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+            {(auditLogs ?? []).map((log: any) => (
+              <div key={log.id} className="p-4 flex items-start gap-3 text-sm">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" className="text-xs font-mono">{log.action}</Badge>
+                    {log.targetName && (
+                      <span className="text-xs text-muted-foreground">
+                        on <span className="text-foreground">{log.targetName}</span>
+                        {log.targetEmail ? <span className="text-muted-foreground"> ({log.targetEmail})</span> : null}
+                      </span>
+                    )}
+                  </div>
+                  {log.reason && <p className="text-xs text-muted-foreground mt-1">"{log.reason}"</p>}
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    by {log.adminEmail || "admin"} · {new Date(log.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
