@@ -183,7 +183,11 @@ router.get("/users/check-username", async (req, res) => {
   }
   try {
     const existing = await db.query.users.findFirst({ where: sql`lower(${users.username}) = ${handle}` });
-    res.json({ available: !existing });
+    if (existing) {
+      res.json({ available: false, reason: "This username is already taken." });
+      return;
+    }
+    res.json({ available: true });
   } catch (err) {
     req.log.error({ err }, "Error checking username");
     res.status(500).json({ error: "Failed to check username" });

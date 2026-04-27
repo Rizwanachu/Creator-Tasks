@@ -151,6 +151,28 @@ function RefCapture() {
   return null;
 }
 
+function OnboardingGate() {
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { isComplete, isLoading } = useProfileComplete(userId ?? undefined);
+  const [location, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || isLoading) return;
+    if (isComplete) return;
+
+    // Always allow these routes through, even with an incomplete profile.
+    const allowed = ["/sign-in", "/sign-up", "/onboarding"];
+    const onAllowedRoute = allowed.some(
+      (p) => location === p || location.startsWith(`${p}/`) || location.startsWith(`${p}?`)
+    );
+    if (onAllowedRoute) return;
+
+    setLocation(`/onboarding?next=${encodeURIComponent(location)}`, { replace: true });
+  }, [isLoaded, isSignedIn, isLoading, isComplete, location, setLocation]);
+
+  return null;
+}
+
 function ScrollToTop() {
   const [location] = useLocation();
   useEffect(() => {
@@ -178,6 +200,7 @@ function ClerkProviderWithRoutes() {
         <ClerkQueryClientCacheInvalidator />
         <ScrollToTop />
         <RefCapture />
+        <OnboardingGate />
         <Layout>
           <Switch>
             <Route path="/" component={Home} />
