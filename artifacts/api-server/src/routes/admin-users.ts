@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { db, users, adminAuditLogs } from "@workspace/db";
+import { db, users, adminAuditLogs, tasks } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { requireAdmin } from "../middlewares/requireAdmin";
 import { recordAdminAction } from "../lib/audit";
+import { createNotification } from "../lib/notify";
 
 const router = Router();
 
@@ -163,6 +164,132 @@ router.post("/admin/users/:id/unban", requireAuth, requireAdmin, async (req, res
   } catch (err) {
     req.log.error({ err }, "Error unbanning user");
     res.status(500).json({ error: "Failed to unban user" });
+  }
+});
+
+// GET /admin/tasks — recent tasks for moderation review
+router.get("/admin/tasks", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { filter } = req.query as { filter?: string };
+
+    let whereClause: any = undefined;
+    if (filter === "rejected") {
+      whereClause = sql`${tasks.rejectedAt} IS NOT NULL`;
+    } else if (filter === "active") {
+      whereClause = sql`${tasks.rejectedAt} IS NULL`;
+    }
+
+    const rows = await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        budget: tasks.budget,
+        category: tasks.category,
+        status: tasks.status,
+        flagged: tasks.flagged,
+        rejectedAt: tasks.rejectedAt,
+        rejectionReason: tasks.rejectionReason,
+        createdAt: tasks.createdAt,
+        creatorId: tasks.creatorId,
+        creatorName: users.name,
+        creatorEmail: users.email,
+      })
+      .from(tasks)
+      .leftJoin(users, eq(tasks.creatorId, users.id))
+      .where(whereClause as any)
+      .orderBy(desc(tasks.createdAt))
+      .limit(100);
+
+    res.json(rows);
+  } catch (err) {
+    req.log.error({ err }, "Error fetching admin tasks");
+    res.status(500).json({ error: "Failed to fetch tasks" });
+  }
+});
+
+// POST /admin/tasks/:id/reject — hide a task from the marketplace
+router.post("/admin/tasks/:id/reject", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const taskId = req.params.id as string;
+    const { reason } = (req.body ?? {}) as { reason?: string };
+    const admin = req.dbUser!;
+
+    const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+    if (!task) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+    if (task.rejectedAt) {
+      res.status(400).json({ error: "Task is already rejected" });
+      return;
+    }
+
+    const trimmedReason = reason?.trim() || null;
+
+    const [updated] = await db
+      .update(tasks)
+      .set({ rejectedAt: new Date(), rejectionReason: trimmedReason })
+      .where(eq(tasks.id, taskId))
+      .returning();
+
+    await recordAdminAction({
+      adminUserId: admin.id,
+      adminEmail: admin.email,
+      action: "task.reject",
+      targetUserId: task.creatorId,
+      targetType: "task",
+      targetId: taskId,
+      reason: trimmedReason,
+      metadata: { title: task.title },
+    });
+
+    if (task.creatorId) {
+      const message = trimmedReason
+        ? `Your task "${task.title}" was removed by an admin. Reason: ${trimmedReason}`
+        : `Your task "${task.title}" was removed by an admin.`;
+      await createNotification(task.creatorId, "task_rejected", message, taskId);
+    }
+
+    res.json({ ok: true, task: updated });
+  } catch (err) {
+    req.log.error({ err }, "Error rejecting task");
+    res.status(500).json({ error: "Failed to reject task" });
+  }
+});
+
+// POST /admin/tasks/:id/unreject — restore a previously rejected task
+router.post("/admin/tasks/:id/unreject", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const taskId = req.params.id as string;
+    const admin = req.dbUser!;
+
+    const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+    if (!task) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+
+    const [updated] = await db
+      .update(tasks)
+      .set({ rejectedAt: null, rejectionReason: null })
+      .where(eq(tasks.id, taskId))
+      .returning();
+
+    await recordAdminAction({
+      adminUserId: admin.id,
+      adminEmail: admin.email,
+      action: "task.unreject",
+      targetUserId: task.creatorId,
+      targetType: "task",
+      targetId: taskId,
+      metadata: { title: task.title },
+    });
+
+    res.json({ ok: true, task: updated });
+  } catch (err) {
+    req.log.error({ err }, "Error unrejecting task");
+    res.status(500).json({ error: "Failed to unreject task" });
   }
 });
 

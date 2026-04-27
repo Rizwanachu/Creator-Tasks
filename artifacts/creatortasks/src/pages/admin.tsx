@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, AlertTriangle, Users, TrendingUp, CheckCircle, Loader2, Wallet, Ban, ShieldOff, ShieldX, History } from "lucide-react";
+import { ShieldCheck, AlertTriangle, Users, TrendingUp, CheckCircle, Loader2, Wallet, Ban, ShieldOff, ShieldX, History, Trash2, FileText, RotateCcw } from "lucide-react";
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: React.ElementType; color: string }) {
   return (
@@ -44,6 +44,39 @@ export function AdminPage() {
   const { data: auditLogs, isLoading: auditLoading } = useQuery({
     queryKey: ["admin-audit-logs"],
     queryFn: () => apiFetch("/api/admin/audit-logs", {}, getToken),
+  });
+
+  const [taskFilter, setTaskFilter] = useState<"active" | "rejected" | "all">("active");
+  const { data: adminTasks, isLoading: adminTasksLoading } = useQuery({
+    queryKey: ["admin-tasks", taskFilter],
+    queryFn: () => apiFetch(`/api/admin/tasks?filter=${taskFilter}`, {}, getToken),
+  });
+
+  const [rejectTaskId, setRejectTaskId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const rejectTask = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      apiFetch(`/api/admin/tasks/${id}/reject`, { method: "POST", data: { reason } }, getToken),
+    onSuccess: () => {
+      toast.success("Task removed from marketplace");
+      setRejectTaskId(null);
+      setRejectReason("");
+      queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-audit-logs"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to reject task"),
+  });
+
+  const unrejectTask = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch(`/api/admin/tasks/${id}/unreject`, { method: "POST" }, getToken),
+    onSuccess: () => {
+      toast.success("Task restored to marketplace");
+      queryClient.invalidateQueries({ queryKey: ["admin-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-audit-logs"] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Failed to restore task"),
   });
 
   const [moderateId, setModerateId] = useState<string | null>(null);
@@ -317,6 +350,112 @@ export function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Tasks Moderation */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden mb-8">
+        <div className="p-6 border-b border-border flex items-center justify-between flex-wrap gap-3">
+          <h2 className="font-bold text-foreground flex items-center gap-2">
+            <FileText size={16} className="text-cyan-400" />
+            Marketplace Tasks
+          </h2>
+          <div className="flex gap-1 bg-muted rounded-lg p-1">
+            {(["active", "rejected", "all"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setTaskFilter(f)}
+                className={`px-3 py-1 text-xs rounded-md capitalize transition-colors ${
+                  taskFilter === f
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {adminTasksLoading ? (
+          <div className="p-6 space-y-3">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
+          </div>
+        ) : (adminTasks ?? []).length === 0 ? (
+          <div className="py-16 text-center text-muted-foreground">
+            <FileText size={32} className="mx-auto mb-3 text-muted-foreground/40" />
+            <p className="text-sm">No tasks to show</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
+            {(adminTasks ?? []).map((t: any) => {
+              const isRejected = !!t.rejectedAt;
+              const isOpen = rejectTaskId === t.id;
+              return (
+                <div key={t.id} className="p-4">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-foreground">{t.title}</h3>
+                        <Badge variant="outline" className="text-xs capitalize">{t.category}</Badge>
+                        <span className="text-sm tabular-nums text-green-400">₹{(t.budget ?? 0).toLocaleString()}</span>
+                        {isRejected ? (
+                          <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/20 text-xs">Rejected</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-xs">Live</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{t.description}</p>
+                      <p className="text-[11px] text-muted-foreground mt-2">
+                        by {t.creatorName || "—"}{t.creatorEmail ? ` (${t.creatorEmail})` : ""} · {new Date(t.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                      {isRejected && t.rejectionReason && (
+                        <p className="text-xs text-red-400 mt-2">Reason: {t.rejectionReason}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2 items-end">
+                      {isOpen ? (
+                        <div className="flex flex-col gap-2 min-w-[260px]">
+                          <input
+                            placeholder="Reason for rejection (optional)"
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            className="px-3 py-1.5 text-sm rounded-lg border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <Button size="sm" className="rounded-lg text-xs bg-red-600 hover:bg-red-700 text-white border-0"
+                              onClick={() => rejectTask.mutate({ id: t.id, reason: rejectReason })}
+                              disabled={rejectTask.isPending}
+                            >
+                              {rejectTask.isPending ? <Loader2 size={13} className="animate-spin" /> : "Confirm reject"}
+                            </Button>
+                            <Button size="sm" variant="outline" className="rounded-lg text-xs"
+                              onClick={() => { setRejectTaskId(null); setRejectReason(""); }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : isRejected ? (
+                        <Button size="sm" variant="outline" className="rounded-lg text-xs"
+                          onClick={() => unrejectTask.mutate(t.id)}
+                          disabled={unrejectTask.isPending}
+                        >
+                          <RotateCcw size={13} className="mr-1" /> Restore
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" className="rounded-lg text-xs text-red-400 hover:text-red-300"
+                          onClick={() => { setRejectTaskId(t.id); setRejectReason(""); }}
+                        >
+                          <Trash2 size={13} className="mr-1" /> Reject
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

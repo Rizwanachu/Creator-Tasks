@@ -67,6 +67,9 @@ router.get("/tasks", async (req, res) => {
 
     const conditions: ReturnType<typeof eq>[] = [];
 
+    // Hide admin-rejected tasks from the public marketplace
+    conditions.push(sql`${tasks.rejectedAt} IS NULL` as any);
+
     if (category && isValidCategory(category)) {
       conditions.push(eq(tasks.category, category) as any);
     }

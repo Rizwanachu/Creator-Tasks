@@ -70,6 +70,8 @@ export const tasks = pgTable("tasks", {
   attachmentUrl: text("attachment_url"),
   imageUrl: text("image_url"),
   flagged: boolean("flagged").default(false),
+  rejectedAt: timestamp("rejected_at"),
+  rejectionReason: text("rejection_reason"),
   isAi: boolean("is_ai").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
