@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -9,12 +9,82 @@ args = ["pnpm", "store", "prune"]
 env = { "CI" = "true" }
 
 [workflows]
-runButton = "Project"
 
 [agent]
-stack = "PNPM_WORKSPACE"
+stack = "BEST_EFFORT_FALLBACK"
 expertMode = true
 
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 80
+
+[[ports]]
+localPort = 8082
+externalPort = 3002
+
+[[ports]]
+localPort = 8085
+externalPort = 8000
+
+[[ports]]
+localPort = 19998
+externalPort = 4200
+
+[[ports]]
+localPort = 19999
+externalPort = 5000
+
+[[ports]]
+localPort = 20296
+externalPort = 6000
+
+[[ports]]
+localPort = 22649
+externalPort = 3000
+
+[[ports]]
+localPort = 22650
+externalPort = 3001
+
+[[ports]]
+localPort = 22651
+externalPort = 3003
+
+[[ports]]
+localPort = 22652
+externalPort = 9000
+
+[[ports]]
+localPort = 29995
+externalPort = 8099
+
+[[ports]]
+localPort = 29996
+externalPort = 8081
+
+[[ports]]
+localPort = 29997
+externalPort = 8008
+
+[[ports]]
+localPort = 29998
+externalPort = 6800
+
+[[ports]]
+localPort = 29999
+externalPort = 5173
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
