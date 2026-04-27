@@ -260,16 +260,21 @@ router.put("/users/me", requireAuth, async (req, res) => {
     if (upiId !== undefined) updateData.upiId = upiId.trim() || null;
     if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl.trim() || null;
     if (isAvailable !== undefined) updateData.isAvailable = Boolean(isAvailable);
-    if (username !== undefined && !currentUser.username) {
+    // Allow setting a username if the user has none yet, or if the existing one is
+    // an auto-generated legacy "creator-XXXXXX" style handle (one-time change allowed).
+    const isAutoGenLegacy = !!currentUser.username && /^creator-[a-z0-9]+$/.test(currentUser.username);
+    if (username !== undefined && (!currentUser.username || isAutoGenLegacy)) {
       const cleaned = username.trim().toLowerCase();
       if (!/^[a-z0-9_]{3,20}$/.test(cleaned)) {
         res.status(400).json({ error: "Invalid username format. Use 3-20 characters: letters, numbers, or underscores." });
         return;
       }
-      const taken = await db.query.users.findFirst({ where: sql`lower(${users.username}) = ${cleaned}` });
-      if (taken) {
-        res.status(409).json({ error: "That username is already taken. Please choose another." });
-        return;
+      if (cleaned !== currentUser.username) {
+        const taken = await db.query.users.findFirst({ where: sql`lower(${users.username}) = ${cleaned}` });
+        if (taken) {
+          res.status(409).json({ error: "That username is already taken. Please choose another." });
+          return;
+        }
       }
       updateData.username = cleaned;
     }
