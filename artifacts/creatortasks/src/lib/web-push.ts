@@ -15,11 +15,45 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return out;
 }
 
+export function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  // iPadOS 13+ reports as MacIntel with touch
+  return ua.includes("Mac") && "ontouchend" in document;
+}
+
+export function getIOSVersion(): number | null {
+  if (typeof navigator === "undefined") return null;
+  const m = navigator.userAgent.match(/OS (\d+)_(\d+)(?:_(\d+))?/);
+  if (!m) return null;
+  return parseFloat(`${m[1]}.${m[2]}`);
+}
+
+export function isStandalone(): boolean {
+  if (typeof window === "undefined") return false;
+  // iOS Safari sets navigator.standalone; modern browsers expose display-mode media query
+  // @ts-expect-error - non-standard iOS prop
+  if (navigator.standalone === true) return true;
+  try {
+    return window.matchMedia("(display-mode: standalone)").matches;
+  } catch {
+    return false;
+  }
+}
+
 export function isPushSupported(): boolean {
-  return typeof window !== "undefined"
-    && "serviceWorker" in navigator
-    && "PushManager" in window
-    && "Notification" in window;
+  if (typeof window === "undefined") return false;
+  if (!("serviceWorker" in navigator) || !("Notification" in window) || !("PushManager" in window)) {
+    return false;
+  }
+  // iOS only allows web push from a home-screen installed PWA (iOS 16.4+)
+  if (isIOS()) {
+    if (!isStandalone()) return false;
+    const v = getIOSVersion();
+    if (v !== null && v < 16.4) return false;
+  }
+  return true;
 }
 
 export function getPushPermission(): PushPermission {
@@ -34,7 +68,12 @@ async function getOrRegisterSW(): Promise<ServiceWorkerRegistration> {
 }
 
 export async function enableWebPush(getToken: () => Promise<string | null>): Promise<{ ok: boolean; error?: string }> {
-  if (!isPushSupported()) return { ok: false, error: "Push notifications aren't supported on this device or browser." };
+  if (!isPushSupported()) {
+    if (isIOS() && !isStandalone()) {
+      return { ok: false, error: "On iPhone, install the app to your Home Screen first (Share → Add to Home Screen), then open it from there." };
+    }
+    return { ok: false, error: "Push notifications aren't supported on this device or browser." };
+  }
 
   let publicKey = VAPID_PUBLIC_KEY;
   if (!publicKey) {
@@ -102,4 +141,23 @@ export async function isCurrentlySubscribed(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+const AUTO_PROMPT_KEY = "ct.pushAutoPromptDismissedAt";
+const AUTO_PROMPT_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+export function shouldAutoPrompt(): boolean {
+  if (!isPushSupported()) return false;
+  if (Notification.permission !== "default") return false;
+  try {
+    const ts = Number(localStorage.getItem(AUTO_PROMPT_KEY) || "0");
+    if (ts && Date.now() - ts < AUTO_PROMPT_COOLDOWN_MS) return false;
+  } catch {
+    /* ignore */
+  }
+  return true;
+}
+
+export function markAutoPromptDismissed(): void {
+  try { localStorage.setItem(AUTO_PROMPT_KEY, String(Date.now())); } catch { /* ignore */ }
 }

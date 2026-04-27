@@ -17,6 +17,7 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
 import { Layout } from "@/components/layout";
+import { PWAEnhancements } from "@/components/pwa-enhancements";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useUnreadMessageCount } from "@/hooks/use-chat";
 
@@ -232,6 +233,7 @@ function ClerkProviderWithRoutes() {
         <RefCapture />
         <OnboardingGate />
         <AppBadgeSync />
+        <PWAEnhancements />
         <Layout>
           <Switch>
             <Route path="/" component={Home} />

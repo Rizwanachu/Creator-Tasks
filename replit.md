@@ -25,3 +25,11 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+
+## CreatorTasks PWA notes
+
+- `public/manifest.webmanifest` — default install (start_url `/`).
+- `public/admin-manifest.webmanifest` — admin install (start_url `/letsmakesomemoney2026`, name "CreatorTasks Admin").
+- `src/components/pwa-enhancements.tsx` — swaps the active `<link rel="manifest">` based on the signed-in user's email (admin = `VITE_ADMIN_EMAIL`, falls back to `rizwanachoo123@gmail.com` to mirror the server's `lib/owner.ts`). Persists an `ct.isAdmin` localStorage flag so the admin manifest is applied early on subsequent loads (before Clerk finishes loading).
+- Same component auto-prompts the browser push permission once the user is signed in, push is supported, and the app is running standalone (PWA). 7-day cooldown after dismissal via `markAutoPromptDismissed` in `src/lib/web-push.ts`.
+- iOS push gating: `isPushSupported()` returns false on iOS unless the page is launched from the Home Screen (`navigator.standalone` / display-mode standalone) AND iOS ≥ 16.4. The Notifications page renders contextual help (install, update iOS, etc.) instead of a generic unsupported message.

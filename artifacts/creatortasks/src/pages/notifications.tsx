@@ -12,6 +12,9 @@ import {
   isCurrentlySubscribed,
   isPushSupported,
   getPushPermission,
+  isIOS,
+  isStandalone,
+  getIOSVersion,
 } from "@/lib/web-push";
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -50,12 +53,30 @@ function PushEnableCard() {
   }, []);
 
   if (!supported) {
+    const ios = isIOS();
+    const standalone = isStandalone();
+    const iosVer = getIOSVersion();
+
+    let title = "Push notifications aren't supported";
+    let body = "This browser doesn't support web push notifications.";
+
+    if (ios && !standalone) {
+      title = "Add CreatorTasks to your Home Screen";
+      body = "Tap the Share button in Safari, choose 'Add to Home Screen', then open CreatorTasks from the new icon and come back here.";
+    } else if (ios && standalone && iosVer !== null && iosVer < 16.4) {
+      title = "Update iOS to enable notifications";
+      body = `iOS ${iosVer} doesn't support web push. Update to iOS 16.4 or later in Settings → General → Software Update.`;
+    } else if (ios && standalone) {
+      title = "Push isn't available right now";
+      body = "Your iPhone is running the app from the Home Screen, but push isn't available. Make sure iOS is fully updated, then reopen the app.";
+    }
+
     return (
       <div className="border border-border rounded-2xl p-4 mb-6 flex items-start gap-3 bg-muted/30">
-        <BellOff size={18} className="text-muted-foreground mt-0.5" />
-        <div className="text-sm text-muted-foreground">
-          Push notifications aren't supported in this browser. On iPhone, install the app to your home screen first
-          (Share → Add to Home Screen) and open it from there.
+        <BellOff size={18} className="text-muted-foreground mt-0.5 shrink-0" />
+        <div className="text-sm">
+          <div className="font-medium text-foreground">{title}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{body}</div>
         </div>
       </div>
     );
