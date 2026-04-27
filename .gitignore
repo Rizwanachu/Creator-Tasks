@@ -2,7 +2,6 @@
 
 # compiled output
 dist
-api/index.mjs
 tmp
 out-tsc
 *.tsbuildinfo
@@ -48,6 +47,3 @@ Thumbs.db
 # Replit
 .cache/
 .local/
-
-# Vercel build output (created by build-vercel.mjs)
-.vercel/output
