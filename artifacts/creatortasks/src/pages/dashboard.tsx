@@ -21,7 +21,6 @@ import { useSubscription, useCreateSubscription, useConfirmSubscription, useCanc
 import { useMyDisputes, useBookmarks } from "@/hooks/use-bookmarks";
 import { toast } from "sonner";
 import { useAuth, useUser } from "@clerk/react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "wouter";
 
 declare global {
@@ -220,12 +219,24 @@ function ProfileTab({ completionPercent, profileComplete }: { completionPercent:
       {/* Profile card */}
       <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <Avatar className="h-20 w-20 border border-border ring-2 ring-primary/20">
-            <AvatarImage src={user?.imageUrl} alt={user?.fullName || ""} />
-            <AvatarFallback className="bg-purple-600 text-white text-xl font-semibold">
-              {user?.firstName?.charAt(0) || "U"}
-            </AvatarFallback>
-          </Avatar>
+          <div
+            className="h-20 w-20 rounded-xl overflow-hidden border border-border ring-2 ring-primary/20 shrink-0"
+            style={{ background: "linear-gradient(135deg, #7C5CFF, #ec4899)" }}
+          >
+            {user?.imageUrl ? (
+              <img
+                src={user.imageUrl}
+                alt={user?.fullName || ""}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
+                {user?.fullName
+                  ? user.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+                  : user?.firstName?.charAt(0).toUpperCase() || "U"}
+              </div>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-bold text-foreground truncate">
               {user?.fullName || user?.firstName || "Your profile"}

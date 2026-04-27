@@ -9,7 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWallet } from "@/hooks/use-wallet";
 import { useNotifications } from "@/hooks/use-notifications";
 import { Menu, X, LayoutDashboard, ListTodo, PlusCircle, Sun, Moon, Bell, Trophy, MessageSquare, Instagram, Users, Home, Sparkles } from "lucide-react";
@@ -235,13 +234,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <NotificationBell />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                      <Avatar className="h-9 w-9 border border-border ring-2 ring-primary/20">
-                        <AvatarImage src={user?.imageUrl} alt={user?.fullName || ""} />
-                        <AvatarFallback className="bg-purple-600 text-white text-sm font-semibold">
-                          {user?.firstName?.charAt(0) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-xl p-0 overflow-hidden">
+                      <div
+                        className="h-9 w-9 rounded-xl overflow-hidden border border-border ring-2 ring-primary/20"
+                        style={{ background: "linear-gradient(135deg, #7C5CFF, #ec4899)" }}
+                      >
+                        {user?.imageUrl ? (
+                          <img
+                            src={user.imageUrl}
+                            alt={user?.fullName || ""}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+                            {user?.fullName
+                              ? user.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+                              : user?.firstName?.charAt(0).toUpperCase() || "U"}
+                          </div>
+                        )}
+                      </div>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 bg-card border-border" align="end" forceMount>
@@ -340,12 +351,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {isSignedIn ? (
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8 border border-border">
-                        <AvatarImage src={user?.imageUrl} />
-                        <AvatarFallback className="bg-purple-600 text-white text-xs">
-                          {user?.firstName?.charAt(0) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div
+                        className="h-8 w-8 rounded-xl overflow-hidden border border-border shrink-0"
+                        style={{ background: "linear-gradient(135deg, #7C5CFF, #ec4899)" }}
+                      >
+                        {user?.imageUrl ? (
+                          <img
+                            src={user.imageUrl}
+                            alt={user?.fullName || ""}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white text-xs font-bold">
+                            {user?.fullName
+                              ? user.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+                              : user?.firstName?.charAt(0).toUpperCase() || "U"}
+                          </div>
+                        )}
+                      </div>
                       <div>
                         <p className="text-sm font-semibold text-foreground">{user?.firstName}</p>
                         <NavWalletBadge />
