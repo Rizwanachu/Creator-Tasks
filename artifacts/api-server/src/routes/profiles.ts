@@ -1,6 +1,27 @@
 import { Router } from "express";
-import { db, users, tasks, ratings, portfolioItems, experience, education, skillEndorsements } from "@workspace/db";
-import { eq, and, avg, count, sql, ilike, or, isNotNull, ne, desc, asc, max } from "drizzle-orm";
+import {
+  db,
+  users,
+  tasks,
+  ratings,
+  portfolioItems,
+  experience,
+  education,
+  skillEndorsements,
+  applications,
+  invites,
+  bookmarks,
+  notifications,
+  messages,
+  conversations,
+  referrals,
+  transactions,
+  withdrawals,
+  subscriptions,
+  disputes,
+} from "@workspace/db";
+import { eq, and, avg, count, sql, ilike, or, isNotNull, ne, desc, asc, max, inArray } from "drizzle-orm";
+import { clerkClient } from "@clerk/express";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
@@ -272,6 +293,122 @@ router.put("/users/me", requireAuth, async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Error updating profile");
     res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
+// DELETE /users/me — permanently delete the current user's account
+router.delete("/users/me", requireAuth, async (req, res) => {
+  try {
+    const currentUser = req.dbUser!;
+    const userId = currentUser.id;
+    const clerkId = currentUser.clerkId;
+
+    // 1. Block deletion if any task is still in flight (creator or worker side)
+    const activeStatuses = ["open", "in_progress", "submitted", "revision_requested"];
+    const [{ value: activeTaskCount }] = await db
+      .select({ value: count() })
+      .from(tasks)
+      .where(
+        and(
+          or(eq(tasks.creatorId, userId), eq(tasks.workerId, userId)),
+          inArray(tasks.status, activeStatuses),
+        ),
+      );
+
+    if (Number(activeTaskCount) > 0) {
+      res.status(409).json({
+        error:
+          "You still have active tasks. Cancel or finish them before deleting your account.",
+        code: "ACTIVE_TASKS",
+      });
+      return;
+    }
+
+    // 2. Block if there are pending withdrawals (money still owed/processing)
+    const [{ value: pendingWithdrawals }] = await db
+      .select({ value: count() })
+      .from(withdrawals)
+      .where(and(eq(withdrawals.userId, userId), eq(withdrawals.status, "pending")));
+
+    if (Number(pendingWithdrawals) > 0) {
+      res.status(409).json({
+        error:
+          "You have a withdrawal still being processed. Wait for it to complete before deleting your account.",
+        code: "PENDING_WITHDRAWAL",
+      });
+      return;
+    }
+
+    // 3. Block if escrow / pending balance is non-zero
+    if ((currentUser.pendingBalance ?? 0) > 0) {
+      res.status(409).json({
+        error:
+          "You still have funds locked in escrow. Resolve those tasks first.",
+        code: "ESCROW_LOCKED",
+      });
+      return;
+    }
+
+    // 4. Refuse if wallet has money — user must withdraw first
+    if ((currentUser.balance ?? 0) > 0) {
+      res.status(409).json({
+        error:
+          "Your wallet still has a balance. Please withdraw it before deleting your account.",
+        code: "WALLET_HAS_BALANCE",
+      });
+      return;
+    }
+
+    // 5. Wipe personal data. There are no FK constraints, but order matters
+    // logically (delete child records before parent) for clarity.
+    await db.delete(messages).where(eq(messages.senderId, userId));
+    await db.delete(conversations).where(
+      or(eq(conversations.participantOneId, userId), eq(conversations.participantTwoId, userId)),
+    );
+    await db.delete(applications).where(eq(applications.workerId, userId));
+    await db.delete(invites).where(
+      or(eq(invites.workerId, userId), eq(invites.creatorId, userId)),
+    );
+    await db.delete(bookmarks).where(eq(bookmarks.userId, userId));
+    await db.delete(notifications).where(eq(notifications.userId, userId));
+    await db.delete(skillEndorsements).where(
+      or(eq(skillEndorsements.endorsedById, userId), eq(skillEndorsements.endorsedUserId, userId)),
+    );
+    await db.delete(ratings).where(
+      or(eq(ratings.ratingBy, userId), eq(ratings.ratingFor, userId)),
+    );
+    await db.delete(referrals).where(
+      or(eq(referrals.referrerId, userId), eq(referrals.referredUserId, userId)),
+    );
+    await db.delete(disputes).where(eq(disputes.reportedBy, userId));
+    await db.delete(transactions).where(eq(transactions.userId, userId));
+    await db.delete(withdrawals).where(eq(withdrawals.userId, userId));
+    await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
+    await db.delete(portfolioItems).where(eq(portfolioItems.userId, clerkId));
+    await db.delete(experience).where(eq(experience.userId, clerkId));
+    await db.delete(education).where(eq(education.userId, clerkId));
+
+    // Tasks the user posted/worked on are kept for the other party's history,
+    // but anonymized so their name no longer appears in joins.
+    // (Public profile lookups will return 404 once the user row is gone.)
+
+    // 6. Delete the user row from our DB.
+    await db.delete(users).where(eq(users.id, userId));
+
+    // 7. Delete the user from Clerk so they can't sign back in with the same identity.
+    try {
+      await clerkClient.users.deleteUser(clerkId);
+    } catch (clerkErr) {
+      req.log.warn(
+        { clerkErr, clerkId },
+        "Local user deleted but Clerk deletion failed — manual cleanup may be needed",
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Error deleting account");
+    res.status(500).json({ error: "Failed to delete account" });
   }
 });
 

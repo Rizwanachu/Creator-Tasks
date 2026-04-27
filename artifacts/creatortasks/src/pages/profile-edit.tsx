@@ -1,4 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useClerk } from "@clerk/react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { apiFetch } from "@/lib/api";
 import {
   DndContext,
   closestCenter,
@@ -234,9 +246,31 @@ function SortablePortfolioItem({
 
 export function ProfileEditPage() {
   const { userId, getToken } = useAuth();
+  const { signOut } = useClerk();
   const [, setLocation] = useLocation();
   const search = useSearch();
   const nextParam = new URLSearchParams(search).get("next");
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE") return;
+    setDeletingAccount(true);
+    try {
+      await apiFetch("/api/users/me", { method: "DELETE" }, getToken);
+      toast.success("Account deleted. Goodbye!");
+      setDeleteDialogOpen(false);
+      await signOut();
+      setLocation("/");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to delete account";
+      toast.error(msg);
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
 
   const { data: profile, isLoading } = useMyProfile();
   const updateProfile = useUpdateProfile();
@@ -1098,7 +1132,74 @@ export function ProfileEditPage() {
             <Link href={userId ? `/profile/${userId}` : "/"}>Cancel</Link>
           </Button>
         </div>
+
+        {/* ── Danger zone ── */}
+        <div className="mt-8 rounded-2xl border border-red-500/30 bg-red-500/5 p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
+              <Trash2 size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold text-foreground">Delete account</h3>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                Permanently remove your profile, applications, messages and history.
+                This cannot be undone. You'll need to cancel any active tasks and
+                withdraw your wallet balance first.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => { setDeleteConfirmText(""); setDeleteDialogOpen(true); }}
+                className="mt-4 rounded-xl border-red-500/40 text-red-500 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/60"
+              >
+                Delete my account
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* ── Delete confirmation dialog ── */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { if (!deletingAccount) setDeleteDialogOpen(open); }}>
+        <AlertDialogContent className="bg-card border-border rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-foreground flex items-center gap-2">
+              <Trash2 size={18} className="text-red-500" />
+              Delete your account?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground text-sm">
+              This will permanently remove your profile, portfolio, messages and applications.
+              Completed tasks stay in the other party's history but your name will no longer appear.
+              <span className="block mt-2 text-foreground">This action cannot be undone.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 py-2">
+            <label className="text-xs font-medium text-muted-foreground block">
+              Type <span className="font-mono font-semibold text-red-500">DELETE</span> to confirm
+            </label>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              className="rounded-xl h-10"
+              disabled={deletingAccount}
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-xl" disabled={deletingAccount}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDeleteAccount(); }}
+              disabled={deleteConfirmText !== "DELETE" || deletingAccount}
+              className="rounded-xl bg-red-500 hover:bg-red-600 text-white"
+            >
+              {deletingAccount ? "Deleting…" : "Delete account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ── Experience Modal ── */}
       <Dialog open={expModalOpen} onOpenChange={setExpModalOpen}>
