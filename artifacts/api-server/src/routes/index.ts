@@ -1,8 +1,44 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import statsRouter from "./stats";
+import tasksRouter from "./tasks";
+import profilesRouter from "./profiles";
+import dashboardRouter from "./dashboard";
+import notificationsRouter from "./notifications";
+import walletRouter from "./wallet";
+import bookmarksRouter from "./bookmarks";
+import applicationsRouter from "./applications";
+import conversationsRouter from "./conversations";
+import disputesRouter from "./disputes";
+import ratingsRouter from "./ratings";
+import referralsRouter from "./referrals";
+import subscriptionRouter from "./subscription";
+import userInvitesRouter from "./user-invites";
+import adminUsersRouter from "./admin-users";
+import pushRouter from "./push";
+import storageRouter from "./storage";
+import webhookRouter from "./webhook";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(statsRouter);
+router.use(tasksRouter);
+router.use(profilesRouter);
+router.use(dashboardRouter);
+router.use(notificationsRouter);
+router.use(walletRouter);
+router.use(bookmarksRouter);
+router.use(applicationsRouter);
+router.use(conversationsRouter);
+router.use(disputesRouter);
+router.use(ratingsRouter);
+router.use(referralsRouter);
+router.use(subscriptionRouter);
+router.use(userInvitesRouter);
+router.use(adminUsersRouter);
+router.use(pushRouter);
+router.use(storageRouter);
+router.use("/webhook", webhookRouter);
 
 export default router;

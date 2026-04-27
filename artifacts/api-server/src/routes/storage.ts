@@ -1,11 +1,25 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Readable } from "stream";
 import multer from "multer";
-import {
-  RequestUploadUrlBody,
-  RequestUploadUrlResponse,
-} from "@workspace/api-zod";
+import { z } from "zod";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
+
+const RequestUploadUrlBody = z.object({
+  name: z.string().min(1),
+  size: z.number().int().min(1),
+  contentType: z.string().min(1),
+  purpose: z.enum(["avatar", "portfolio"]).optional(),
+});
+
+const RequestUploadUrlResponse = z.object({
+  uploadURL: z.string(),
+  objectPath: z.string(),
+  metadata: z.object({
+    name: z.string(),
+    size: z.number(),
+    contentType: z.string(),
+  }),
+});
 import { requireAuth } from "../middlewares/requireAuth";
 import { logger } from "../lib/logger";
 
