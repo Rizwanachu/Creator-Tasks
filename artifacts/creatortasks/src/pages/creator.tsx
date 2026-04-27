@@ -279,18 +279,12 @@ export function CreatorPage() {
                       @{profile.username}
                     </span>
                   )}
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border shrink-0 ${
-                      profile.isAvailable
-                        ? "bg-emerald-500/15 border-emerald-500/25 text-emerald-400"
-                        : "bg-zinc-500/15 border-zinc-500/25 text-zinc-400"
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${profile.isAvailable ? "bg-emerald-400" : "bg-zinc-500"}`}
-                    />
-                    {profile.isAvailable ? "Available" : "Unavailable"}
-                  </span>
+                  {profile.isAvailable && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border shrink-0 bg-emerald-500/15 border-emerald-500/25 text-emerald-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      Available
+                    </span>
+                  )}
                 </div>
 
                 {/* Creator role chip + extras below */}

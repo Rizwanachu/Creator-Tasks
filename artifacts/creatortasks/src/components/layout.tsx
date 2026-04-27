@@ -173,8 +173,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   React.useEffect(() => { setMobileOpen(false); }, [location]);
 
   const navLinks = [
-    { href: "/tasks", label: "Browse Tasks", icon: ListTodo },
-    { href: "/creators", label: "Browse Creators", icon: Users },
+    { href: "/tasks", label: "Tasks", icon: ListTodo },
+    { href: "/creators", label: "Creators", icon: Users },
     { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
     { href: "/create", label: "Post a Task", icon: PlusCircle },
     ...(isSignedIn ? [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
@@ -416,8 +416,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <h4 className="text-sm font-semibold text-foreground tracking-wide uppercase">Explore</h4>
               <ul className="flex flex-col gap-2">
                 {[
-                  { href: "/tasks", label: "Browse Tasks" },
-                  { href: "/creators", label: "Browse Creators" },
+                  { href: "/tasks", label: "Tasks" },
+                  { href: "/creators", label: "Creators" },
                   { href: "/leaderboard", label: "Leaderboard" },
                   { href: "/messages", label: "Messages" },
                   { href: "/sign-up", label: "Sign Up Free" },
