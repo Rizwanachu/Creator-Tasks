@@ -46,7 +46,7 @@ export function AdminPage() {
     queryFn: () => apiFetch("/api/admin/audit-logs", {}, getToken),
   });
 
-  const [taskFilter, setTaskFilter] = useState<"active" | "rejected" | "all">("active");
+  const [taskFilter, setTaskFilter] = useState<"new" | "active" | "completed" | "rejected" | "all">("new");
   const { data: adminTasks, isLoading: adminTasksLoading } = useQuery({
     queryKey: ["admin-tasks", taskFilter],
     queryFn: () => apiFetch(`/api/admin/tasks?filter=${taskFilter}`, {}, getToken),
@@ -362,7 +362,7 @@ export function AdminPage() {
             Marketplace Tasks
           </h2>
           <div className="flex gap-1 bg-muted rounded-lg p-1">
-            {(["active", "rejected", "all"] as const).map((f) => (
+            {(["new", "active", "completed", "rejected", "all"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setTaskFilter(f)}
@@ -402,8 +402,12 @@ export function AdminPage() {
                         <span className="text-sm tabular-nums text-green-400">₹{(t.budget ?? 0).toLocaleString()}</span>
                         {isRejected ? (
                           <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/20 text-xs">Rejected</Badge>
+                        ) : t.status === "completed" ? (
+                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs">Completed</Badge>
+                        ) : t.status === "open" ? (
+                          <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-xs">New</Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-xs">Live</Badge>
+                          <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 text-xs capitalize">{(t.status || "live").replace(/_/g, " ")}</Badge>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{t.description}</p>

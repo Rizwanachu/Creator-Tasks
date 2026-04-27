@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { clerkClient } from "@clerk/express";
 import { db, disputes, tasks, users } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
@@ -162,7 +163,35 @@ router.get("/admin/stats", requireAuth, async (req, res) => {
       return;
     }
 
-    const allUsers = await db.select({ id: users.id, name: users.name, email: users.email, balance: users.balance, totalEarnings: users.totalEarnings, suspendedAt: users.suspendedAt, bannedAt: users.bannedAt, moderationReason: users.moderationReason, createdAt: sql<string>`now()` }).from(users).limit(100);
+    const allUsers = await db.select({ id: users.id, clerkId: users.clerkId, name: users.name, email: users.email, balance: users.balance, totalEarnings: users.totalEarnings, suspendedAt: users.suspendedAt, bannedAt: users.bannedAt, moderationReason: users.moderationReason, createdAt: sql<string>`now()` }).from(users).limit(100);
+
+    // Backfill missing names/emails from Clerk (older accounts may have been
+    // created before the auto-sync was in place). Best-effort, capped to keep
+    // the admin dashboard responsive.
+    const missing = allUsers.filter((u) => (!u.email || !u.name) && u.clerkId).slice(0, 25);
+    if (missing.length > 0) {
+      await Promise.all(
+        missing.map(async (u) => {
+          try {
+            const ck = await clerkClient.users.getUser(u.clerkId as string);
+            const primaryId = ck.primaryEmailAddressId;
+            const primary = ck.emailAddresses.find((e) => e.id === primaryId);
+            const email = primary?.emailAddress ?? ck.emailAddresses[0]?.emailAddress ?? "";
+            const name = [ck.firstName, ck.lastName].filter(Boolean).join(" ").trim();
+            const patch: Record<string, string> = {};
+            if (!u.email && email) patch["email"] = email;
+            if (!u.name && name) patch["name"] = name;
+            if (Object.keys(patch).length > 0) {
+              await db.update(users).set(patch).where(eq(users.id, u.id));
+              if (patch["email"]) u.email = patch["email"];
+              if (patch["name"]) u.name = patch["name"];
+            }
+          } catch {
+            // ignore — Clerk user may have been deleted
+          }
+        }),
+      );
+    }
 
     const totalCommission = await db
       .select({ total: sql<number>`coalesce(sum(budget * 0.1), 0)` })

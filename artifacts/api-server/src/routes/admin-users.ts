@@ -177,6 +177,11 @@ router.get("/admin/tasks", requireAuth, requireAdmin, async (req, res) => {
       whereClause = sql`${tasks.rejectedAt} IS NOT NULL`;
     } else if (filter === "active") {
       whereClause = sql`${tasks.rejectedAt} IS NULL`;
+    } else if (filter === "new") {
+      // Tasks awaiting a worker — freshly posted, not yet picked up
+      whereClause = sql`${tasks.rejectedAt} IS NULL AND ${tasks.status} = 'open'`;
+    } else if (filter === "completed") {
+      whereClause = sql`${tasks.status} = 'completed'`;
     }
 
     const rows = await db
