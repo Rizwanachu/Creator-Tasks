@@ -73,7 +73,10 @@ export default defineConfig(async ({ command }) => {
     },
     root: path.resolve(__dirname),
     build: {
-      outDir: path.resolve(__dirname, "../../dist"),
+      // Output to `artifacts/creatortasks/dist` so it matches
+      // `publicDir = "dist"` in `.replit-artifact/artifact.toml` (Replit
+      // production hosting serves files from that path).
+      outDir: path.resolve(__dirname, "dist"),
       emptyOutDir: true,
     },
     optimizeDeps: {

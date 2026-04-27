@@ -34,6 +34,14 @@ app.use(cookieParser());
 // Clerk Frontend API proxy (only active in production when CLERK_SECRET_KEY is set)
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
+// Razorpay webhook needs the raw request body for HMAC signature verification.
+// Mount the raw body parser on this exact path BEFORE express.json() so the
+// signature check in routes/webhook.ts gets a Buffer rather than a parsed object.
+app.use(
+  "/api/webhook/razorpay",
+  express.raw({ type: "application/json", limit: "10mb" }),
+);
+
 // JSON body parser must run after the Clerk proxy (proxy needs the raw stream),
 // but before the business routes that read req.body.
 app.use(express.json({ limit: "10mb" }));
