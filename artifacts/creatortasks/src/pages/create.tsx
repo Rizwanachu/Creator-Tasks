@@ -854,7 +854,7 @@ export function CreateTask() {
           </div>
 
           {/* ── RIGHT: Live preview (sticky on desktop) ── */}
-          <div className="lg:sticky lg:top-24">
+          <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1 [scrollbar-gutter:stable]">
             <div className="text-xs font-semibold text-zinc-600 uppercase tracking-widest mb-3">
               Live Preview
             </div>
