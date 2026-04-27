@@ -382,7 +382,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {isSignedIn && !hideBottomNav && <MobileBottomNav />}
 
-      <footer className={`border-t border-border bg-card/50 mt-auto ${isSignedIn ? "hidden md:block" : ""} ${hideBottomNav ? "hidden md:block" : ""}`}>
+      <footer className={`border-t border-border bg-card/50 mt-auto ${hideBottomNav ? "hidden" : isSignedIn ? "hidden md:block" : ""}`}>
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-2 md:grid-cols-6 gap-10">
             <div className="col-span-2 flex flex-col gap-4">
