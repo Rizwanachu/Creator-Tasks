@@ -207,8 +207,8 @@ router.post("/wallet/withdraw", requireAuth, async (req, res) => {
     }
 
     const amountNum = Number(amount);
-    if (isNaN(amountNum) || amountNum < 100) {
-      res.status(400).json({ error: "Minimum withdrawal is ₹100" });
+    if (isNaN(amountNum) || amountNum < 80) {
+      res.status(400).json({ error: "Minimum withdrawal is ₹80" });
       return;
     }
 

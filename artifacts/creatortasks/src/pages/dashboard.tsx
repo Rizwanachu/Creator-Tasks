@@ -393,7 +393,7 @@ export function Dashboard() {
 
   const handleWithdraw = () => {
     const amount = Number(withdrawAmount);
-    if (isNaN(amount) || amount < 100) { toast.error("Minimum withdrawal is ₹100"); return; }
+    if (isNaN(amount) || amount < 80) { toast.error("Minimum withdrawal is ₹80"); return; }
     if (!upiId.trim()) { toast.error("Please enter your UPI ID"); return; }
     withdraw.mutate({ amount, upiId }, {
       onSuccess: () => { toast.success(`Withdrawal of ₹${amount} requested. You'll receive it within 24 hours.`); setShowWithdrawDialog(false); setWithdrawAmount(""); setUpiId(""); },
@@ -964,7 +964,7 @@ export function Dashboard() {
               <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
               <Input type="number" placeholder="500" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} className="pl-8 focus-visible:ring-ring rounded-xl" />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Available: ₹{wallet?.balance?.toLocaleString() || "0"} · Minimum ₹100</p>
+            <p className="text-xs text-muted-foreground mt-1">Available: ₹{wallet?.balance?.toLocaleString() || "0"} · Minimum ₹80</p>
           </div>
           <div>
             <label className="text-sm text-muted-foreground mb-2 block font-medium">UPI ID</label>
