@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShieldCheck, AlertTriangle, Users, TrendingUp, CheckCircle, Loader2, Wallet, Ban, ShieldOff, ShieldX, History, Trash2, FileText, RotateCcw, Receipt, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { ShieldCheck, AlertTriangle, Users, TrendingUp, CheckCircle, Loader2, Wallet, Ban, ShieldOff, ShieldX, History, Trash2, FileText, RotateCcw, Receipt, ArrowUpRight, ArrowDownLeft, Search, X } from "lucide-react";
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: React.ElementType; color: string }) {
   return (
@@ -52,6 +52,9 @@ export function AdminPage() {
   });
 
   const [taskFilter, setTaskFilter] = useState<"new" | "active" | "completed" | "rejected" | "all">("new");
+  const [taskSearch, setTaskSearch] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [userStatusFilter, setUserStatusFilter] = useState<"all" | "active" | "suspended" | "banned">("all");
   const { data: adminTasks, isLoading: adminTasksLoading } = useQuery({
     queryKey: ["admin-tasks", taskFilter],
     queryFn: () => apiFetch(`/api/admin/tasks?filter=${taskFilter}`, {}, getToken),
@@ -162,6 +165,33 @@ export function AdminPage() {
 
   const openDisputes = (disputes ?? []).filter((d: any) => d.status === "open");
   const resolvedDisputes = (disputes ?? []).filter((d: any) => d.status === "resolved");
+
+  const taskQ = taskSearch.trim().toLowerCase();
+  const filteredAdminTasks = (adminTasks ?? []).filter((t: any) => {
+    if (!taskQ) return true;
+    return (
+      t.title?.toLowerCase().includes(taskQ) ||
+      t.description?.toLowerCase().includes(taskQ) ||
+      t.category?.toLowerCase().includes(taskQ) ||
+      t.creatorName?.toLowerCase().includes(taskQ) ||
+      t.creatorEmail?.toLowerCase().includes(taskQ)
+    );
+  });
+
+  const userQ = userSearch.trim().toLowerCase();
+  const filteredUsers = (stats.users ?? []).filter((u: any) => {
+    const isBanned = !!u.bannedAt;
+    const isSuspended = !!u.suspendedAt && !isBanned;
+    if (userStatusFilter === "banned" && !isBanned) return false;
+    if (userStatusFilter === "suspended" && !isSuspended) return false;
+    if (userStatusFilter === "active" && (isBanned || isSuspended)) return false;
+    if (!userQ) return true;
+    return (
+      u.name?.toLowerCase().includes(userQ) ||
+      u.email?.toLowerCase().includes(userQ) ||
+      u.id?.toLowerCase().includes(userQ)
+    );
+  });
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 max-w-5xl">
@@ -361,25 +391,47 @@ export function AdminPage() {
 
       {/* Tasks Moderation */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden mb-6 sm:mb-8">
-        <div className="p-4 sm:p-6 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h2 className="font-bold text-foreground flex items-center gap-2">
-            <FileText size={16} className="text-cyan-400" />
-            Marketplace Tasks
-          </h2>
-          <div className="flex gap-1 bg-muted rounded-lg p-1 overflow-x-auto -mx-1 px-1 scrollbar-thin">
-            {(["new", "active", "completed", "rejected", "all"] as const).map((f) => (
+        <div className="p-4 sm:p-6 border-b border-border space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 className="font-bold text-foreground flex items-center gap-2">
+              <FileText size={16} className="text-cyan-400" />
+              Marketplace Tasks
+              <span className="text-xs font-normal text-muted-foreground">({filteredAdminTasks.length})</span>
+            </h2>
+            <div className="flex gap-1 bg-muted rounded-lg p-1 overflow-x-auto -mx-1 px-1 scrollbar-thin">
+              {(["new", "active", "completed", "rejected", "all"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setTaskFilter(f)}
+                  className={`px-3 py-1 text-xs rounded-md capitalize transition-colors shrink-0 ${
+                    taskFilter === f
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              value={taskSearch}
+              onChange={(e) => setTaskSearch(e.target.value)}
+              placeholder="Search by title, description, category, or creator..."
+              className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            {taskSearch && (
               <button
-                key={f}
-                onClick={() => setTaskFilter(f)}
-                className={`px-3 py-1 text-xs rounded-md capitalize transition-colors shrink-0 ${
-                  taskFilter === f
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                onClick={() => setTaskSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-card text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
               >
-                {f}
+                <X size={14} />
               </button>
-            ))}
+            )}
           </div>
         </div>
 
@@ -387,14 +439,14 @@ export function AdminPage() {
           <div className="p-6 space-y-3">
             {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
           </div>
-        ) : (adminTasks ?? []).length === 0 ? (
+        ) : filteredAdminTasks.length === 0 ? (
           <div className="py-16 text-center text-muted-foreground">
             <FileText size={32} className="mx-auto mb-3 text-muted-foreground/40" />
-            <p className="text-sm">No tasks to show</p>
+            <p className="text-sm">{taskSearch ? "No tasks match your search" : "No tasks to show"}</p>
           </div>
         ) : (
           <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
-            {(adminTasks ?? []).map((t: any) => {
+            {filteredAdminTasks.map((t: any) => {
               const isRejected = !!t.rejectedAt;
               const isOpen = rejectTaskId === t.id;
               return (
@@ -471,11 +523,50 @@ export function AdminPage() {
 
       {/* Users */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden mb-6 sm:mb-8">
-        <div className="p-4 sm:p-6 border-b border-border">
-          <h2 className="font-bold text-foreground flex items-center gap-2">
-            <Users size={16} className="text-blue-400" />
-            Users ({stats.users?.length ?? 0})
-          </h2>
+        <div className="p-4 sm:p-6 border-b border-border space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 className="font-bold text-foreground flex items-center gap-2">
+              <Users size={16} className="text-blue-400" />
+              Users
+              <span className="text-xs font-normal text-muted-foreground">
+                ({filteredUsers.length}{filteredUsers.length !== (stats.users?.length ?? 0) ? ` / ${stats.users?.length ?? 0}` : ""})
+              </span>
+            </h2>
+            <div className="flex gap-1 bg-muted rounded-lg p-1 overflow-x-auto -mx-1 px-1 scrollbar-thin">
+              {(["all", "active", "suspended", "banned"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setUserStatusFilter(f)}
+                  className={`px-3 py-1 text-xs rounded-md capitalize transition-colors shrink-0 ${
+                    userStatusFilter === f
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              placeholder="Search by name, email, or user ID..."
+              className="w-full pl-9 pr-9 py-2 text-sm rounded-lg border border-border bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            {userSearch && (
+              <button
+                onClick={() => setUserSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-card text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Desktop: table */}
@@ -491,7 +582,14 @@ export function AdminPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {(stats.users ?? []).map((u: any) => {
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
+                    {userSearch || userStatusFilter !== "all" ? "No users match your filters" : "No users to show"}
+                  </td>
+                </tr>
+              )}
+              {filteredUsers.map((u: any) => {
                 const isBanned = !!u.bannedAt;
                 const isSuspended = !!u.suspendedAt && !isBanned;
                 const isThisRowOpen = moderateId === u.id;
@@ -582,7 +680,12 @@ export function AdminPage() {
 
         {/* Mobile: card list */}
         <div className="md:hidden divide-y divide-border">
-          {(stats.users ?? []).map((u: any) => {
+          {filteredUsers.length === 0 && (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              {userSearch || userStatusFilter !== "all" ? "No users match your filters" : "No users to show"}
+            </div>
+          )}
+          {filteredUsers.map((u: any) => {
             const isBanned = !!u.bannedAt;
             const isSuspended = !!u.suspendedAt && !isBanned;
             const isThisRowOpen = moderateId === u.id;
