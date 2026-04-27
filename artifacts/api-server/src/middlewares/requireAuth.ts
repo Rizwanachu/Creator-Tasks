@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { getAuth } from "@clerk/express";
+import { getAuth, clerkClient } from "@clerk/express";
 import { db, users } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
@@ -34,8 +34,30 @@ export const requireAuth = async (
     });
 
     const sessionClaims = auth.sessionClaims as Record<string, unknown> | null;
-    const clerkEmail = (sessionClaims?.email as string) || "";
-    const clerkName = (sessionClaims?.name as string) || (sessionClaims?.full_name as string) || "";
+    let clerkEmail = (sessionClaims?.email as string) || "";
+    let clerkName = (sessionClaims?.name as string) || (sessionClaims?.full_name as string) || "";
+
+    // Clerk's default JWT does NOT include email/name. If the session claims
+    // don't have them, OR our DB row is still missing the email, fetch the
+    // user record from Clerk so admin / owner checks work reliably.
+    const needsClerkLookup = !clerkEmail || (dbUser && !dbUser.email);
+    if (needsClerkLookup) {
+      try {
+        const clerkUser = await clerkClient.users.getUser(clerkUserId);
+        if (!clerkEmail) {
+          const primaryEmailId = clerkUser.primaryEmailAddressId;
+          const primary = clerkUser.emailAddresses.find((e) => e.id === primaryEmailId);
+          clerkEmail = primary?.emailAddress
+            ?? clerkUser.emailAddresses[0]?.emailAddress
+            ?? "";
+        }
+        if (!clerkName) {
+          clerkName = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ").trim();
+        }
+      } catch (lookupErr) {
+        req.log.warn({ err: lookupErr }, "Failed to fetch user from Clerk for email sync");
+      }
+    }
 
     if (!dbUser) {
       // Insert with no username — the user picks one in onboarding.
