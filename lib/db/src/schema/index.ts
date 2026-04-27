@@ -46,6 +46,22 @@ export const adminAuditLogs = pgTable("admin_audit_logs", {
   createdAtIdx: index("admin_audit_created_idx").on(table.createdAt),
 }));
 
+export const pushDevices = pgTable("push_devices", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  kind: text("kind").notNull(),
+  endpoint: text("endpoint"),
+  p256dh: text("p256dh"),
+  auth: text("auth"),
+  expoToken: text("expo_token"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastSeenAt: timestamp("last_seen_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("push_devices_user_id_idx").on(table.userId),
+  endpointIdx: uniqueIndex("push_devices_endpoint_unique").on(table.endpoint),
+}));
+
 export const portfolioItems = pgTable("portfolio_items", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: text("owner_clerk_id").notNull(),

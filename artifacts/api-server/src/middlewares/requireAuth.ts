@@ -66,6 +66,24 @@ export const requireAuth = async (
         .values({ clerkId: clerkUserId, email: clerkEmail, name: clerkName })
         .returning();
       dbUser = inserted;
+
+      // Notify admin about the new sign-up (best effort, non-blocking)
+      void (async () => {
+        try {
+          const { findAdminUser } = await import("../lib/owner");
+          const { createNotification } = await import("../lib/notify");
+          const admin = await findAdminUser();
+          if (admin && admin.id !== inserted.id) {
+            await createNotification(
+              admin.id,
+              "admin_new_user",
+              `${inserted.name || inserted.email || "A new user"} just signed up`,
+            );
+          }
+        } catch {
+          // non-fatal
+        }
+      })();
     } else if (clerkEmail && dbUser.email !== clerkEmail) {
       // Keep email in sync with Clerk (important for owner privilege checks)
       const [updated] = await db

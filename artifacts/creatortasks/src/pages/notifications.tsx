@@ -1,9 +1,18 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "@clerk/react";
 import { useNotifications, useMarkAllRead, useMarkRead } from "@/hooks/use-notifications";
 import { Link } from "wouter";
-import { Bell, Check, CheckCheck, ArrowLeft, Inbox, CheckCircle2, Upload, RotateCcw, XCircle, Ban, Wallet, AlertTriangle, ShieldCheck, Gift } from "lucide-react";
+import { Bell, BellRing, BellOff, Check, CheckCheck, ArrowLeft, Inbox, CheckCircle2, Upload, RotateCcw, XCircle, Ban, Wallet, AlertTriangle, ShieldCheck, Gift, FilePlus, UserPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import {
+  enableWebPush,
+  disableWebPush,
+  isCurrentlySubscribed,
+  isPushSupported,
+  getPushPermission,
+} from "@/lib/web-push";
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   task_accepted: CheckCircle2,
@@ -16,7 +25,111 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ size?: number; className?
   dispute_opened: AlertTriangle,
   dispute_resolved: ShieldCheck,
   referral_commission: Gift,
+  withdrawal_requested: Wallet,
+  withdrawal_paid: Wallet,
+  withdrawal_rejected: XCircle,
+  admin_new_task: FilePlus,
+  admin_new_user: UserPlus,
+  admin_withdrawal_request: Wallet,
 };
+
+function PushEnableCard() {
+  const { getToken } = useAuth();
+  const supported = isPushSupported();
+  const [permission, setPermission] = useState(supported ? getPushPermission() : "unsupported" as const);
+  const [subscribed, setSubscribed] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const sub = await isCurrentlySubscribed();
+      if (!cancelled) setSubscribed(sub);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!supported) {
+    return (
+      <div className="border border-border rounded-2xl p-4 mb-6 flex items-start gap-3 bg-muted/30">
+        <BellOff size={18} className="text-muted-foreground mt-0.5" />
+        <div className="text-sm text-muted-foreground">
+          Push notifications aren't supported in this browser. On iPhone, install the app to your home screen first
+          (Share → Add to Home Screen) and open it from there.
+        </div>
+      </div>
+    );
+  }
+
+  const handleEnable = async () => {
+    setBusy(true);
+    const r = await enableWebPush(getToken);
+    setBusy(false);
+    if (r.ok) {
+      setSubscribed(true);
+      setPermission(getPushPermission());
+      toast.success("Push notifications enabled");
+    } else {
+      toast.error(r.error || "Couldn't enable notifications");
+      setPermission(getPushPermission());
+    }
+  };
+
+  const handleDisable = async () => {
+    setBusy(true);
+    await disableWebPush(getToken);
+    setSubscribed(false);
+    setBusy(false);
+    toast.success("Push notifications disabled");
+  };
+
+  if (subscribed) {
+    return (
+      <div className="border border-green-500/20 bg-green-500/5 rounded-2xl p-4 mb-6 flex items-center justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <BellRing size={18} className="text-green-400 mt-0.5" />
+          <div>
+            <div className="text-sm font-medium text-foreground">Push notifications are on</div>
+            <div className="text-xs text-muted-foreground">You'll get alerts on this device even when the app is closed.</div>
+          </div>
+        </div>
+        <Button size="sm" variant="outline" onClick={handleDisable} disabled={busy} className="rounded-lg text-xs">
+          Turn off
+        </Button>
+      </div>
+    );
+  }
+
+  if (permission === "denied") {
+    return (
+      <div className="border border-amber-500/20 bg-amber-500/5 rounded-2xl p-4 mb-6 flex items-start gap-3">
+        <BellOff size={18} className="text-amber-400 mt-0.5" />
+        <div className="text-sm">
+          <div className="font-medium text-foreground">Notifications are blocked</div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            Enable notifications for this site in your browser settings, then reload this page.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-border bg-card rounded-2xl p-4 mb-6 flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-start gap-3">
+        <Bell size={18} className="text-primary mt-0.5" />
+        <div>
+          <div className="text-sm font-medium text-foreground">Get push notifications</div>
+          <div className="text-xs text-muted-foreground">Real alerts on your phone or desktop — even when the app is closed.</div>
+        </div>
+      </div>
+      <Button size="sm" onClick={handleEnable} disabled={busy} className="rounded-lg text-xs">
+        {busy ? <Loader2 size={13} className="animate-spin mr-1" /> : <BellRing size={13} className="mr-1" />}
+        Enable notifications
+      </Button>
+    </div>
+  );
+}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -73,6 +186,8 @@ export function NotificationsPage() {
           </Button>
         )}
       </div>
+
+      <PushEnableCard />
 
       {isLoading ? (
         <div className="space-y-3">

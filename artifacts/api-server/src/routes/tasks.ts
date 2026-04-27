@@ -4,7 +4,7 @@ import { eq, and, sql, ilike, gte, lte, or, count } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { createNotification } from "../lib/notify";
 import { processReferralRewards } from "../lib/referral-rewards";
-import { isOwner } from "../lib/owner";
+import { isOwner, findAdminUser } from "../lib/owner";
 import {
   emailTaskAccepted,
   emailWorkSubmitted,
@@ -324,6 +324,21 @@ router.post("/tasks", requireAuth, async (req, res) => {
         })
         .returning();
     });
+
+    // Notify admin about the new task (best effort)
+    try {
+      const adminUser = await findAdminUser();
+      if (adminUser && adminUser.id !== currentUser.id) {
+        await createNotification(
+          adminUser.id,
+          "admin_new_task",
+          `${currentUser.name ?? "A user"} posted "${task.title}" — ₹${budgetNum}`,
+          task.id,
+        );
+      }
+    } catch {
+      // notification is non-fatal
+    }
 
     res.status(201).json(task);
   } catch (err) {

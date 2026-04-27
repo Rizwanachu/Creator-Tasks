@@ -26,7 +26,8 @@
     "pino": "^9",
     "pino-http": "^10",
     "razorpay": "^2.9.6",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
@@ -35,6 +36,7 @@
     "@types/multer": "^2.1.0",
     "@types/node": "catalog:",
     "@types/sharp": "^0.32.0",
+    "@types/web-push": "^3.6.4",
     "esbuild": "^0.27.3",
     "esbuild-plugin-pino": "^2.3.3",
     "pino-pretty": "^13",
